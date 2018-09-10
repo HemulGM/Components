@@ -20,7 +20,6 @@ object FormList: TFormList
     Top = 0
     Width = 324
     Height = 200
-    ProcEmpty = False
     ColumnsHeight = 30
     Align = alClient
     BevelInner = bvNone
@@ -30,7 +29,6 @@ object FormList: TFormList
     DefaultRowHeight = 30
     TabOrder = 0
     ItemIndex = -1
-    CanNoSelect = False
     VisibleEdit = True
     ItemCount = 4
     LineColor = 15856370
@@ -59,8 +57,6 @@ object FormList: TFormList
     ColumnsFont.Name = 'Tahoma'
     ColumnsFont.Style = []
     SetFocusOnEnter = False
-    DrawColumnBorded = True
-    FlashSelectedCol = False
     ColWidths = (
       318)
     RowHeights = (

@@ -192,32 +192,30 @@ type
     procedure FOnDblClick;
     procedure SetEditing(Value:Boolean);
    public
-    function DoMouseWheelDown(Shift: TShiftState; MousePos: TPoint): Boolean; override;
-    function DoMouseWheelUp(Shift: TShiftState; MousePos: TPoint): Boolean; override;
-
     function AddColumn:Integer; overload;
     function FirstColumn(aCaption:string; aWidth:Integer; aButton:Boolean = False):Integer; deprecated;
     function AddColumn(aCaption:string; aWidth:Integer; aButton:Boolean = False):Integer; overload;
     procedure DeleteColumn(Index:Integer); override;
     property ColumnCount:Integer read GetColumnCount;
-
+    function DoMouseWheelDown(Shift: TShiftState; MousePos: TPoint): Boolean; override;
+    function DoMouseWheelUp(Shift: TShiftState; MousePos: TPoint): Boolean; override;
     constructor Create(AOwner: TComponent); override;
-    procedure Repaint; override;
-    property Col;
-    //property ColWidths;
-    //property RowHeights;
-
     procedure DoItemClick;
+    procedure SetMaxColumn(ColumnID:Integer);
+    procedure Repaint; override;
+    procedure MouseToItem(Position:TPoint; var Index, Column:Integer);
     procedure CloseEdit;
     procedure CancelEdit;
-    function Edit(AItem, ACol:Integer):Boolean;
-    procedure MouseToItem(Position:TPoint; var Index, Column:Integer);
-    procedure SetMaxColumn(ColumnID:Integer);
-
     property Editing:Boolean read FEditing;
+    function Edit(AItem, ACol:Integer):Boolean;
+    property Col;
     property CordHot:TGridCoord read FCordHot;
-    property FocusedColumn:Integer read GetFocusedColumn;
    published
+    property ProcEmpty:Boolean read FProcEmpty write SetProcEmpty;
+    property Columns:TTableColumns read FColumns write FColumns;
+    property OnActivate:TNotifyEvent read FOnActivate write FOnActivate;
+    property OnDeactivate:TNotifyEvent read FOnDeactivate write FOnDeactivate;
+    property ColumnsHeight:Integer read GetColumnsHeight write SetColumnsHeight;
     property Align;
     property Anchors;
     property BevelEdges;
@@ -230,6 +228,7 @@ type
     property Color;
     property Constraints;
     property Ctl3D;
+    property DefaultRowHeight:Integer read GetDefRowH write SetDefRowH;
     property DoubleBuffered;
     property DragCursor;
     property DragKind;
@@ -265,12 +264,13 @@ type
     property OnStartDrag;
     property OnTopLeftChanged;
     property OnMouseEnter;
-
-    property OnActivate:TNotifyEvent read FOnActivate write FOnActivate;
-    property OnDeactivate:TNotifyEvent read FOnDeactivate write FOnDeactivate;
     property OnMouseUp:TMouseEvent read FOnMouseUp write FOnMouseUp;
+    property ShowScrollBar:Boolean read GetShowScrollBar write SetShowScrollBar default True;
+    property DefaultDataDrawing:Boolean read FDefDrawing write SetDefDrawing default True;
     property OnDrawCellData:TDrawCellEvent read FOnDrawCell write FOnDrawCell;
     property OnDrawColumnData:TDrawCellEvent read FOnDrawColumn write FOnDrawColumn;
+    property Width:Integer read GetWidth write SetWidth;
+    property ItemIndex:Integer read FItemIndex write SetItemIndex;
     property OnMouseDown:TMouseEvent read FOnMouseDown write FOnMouseDown;
     property OnMouseLeave:TNotifyEvent read FOnMouseLeave write FOnMouseLeave;
     property OnKeyUp:TKeyEvent read FOnKeyUp write FOnKeyUp;
@@ -282,40 +282,29 @@ type
     property GetData:TGetTableDataProc read FGetDataProc write FGetDataProc;
     property OnMouseWheelDown:TMouseWheelUpDownEvent read FWheelDown write FWheelDown;
     property OnMouseWheelUp:TMouseWheelUpDownEvent read FWheelUp write FWheelUp;
+    property CanNoSelect:Boolean read FCanNoSelect write FCanNoSelect;
+
+    property VisibleEdit:Boolean read FVisibleEdit write FVisibleEdit;
+    property ItemCount:Integer read GetRowCount write SetRowCount default 5;
     property OnEdit:TOnEdit read FOnEdit write FOnEdit;
     property OnEditCancel:TOnEditCancel read FOnEditCancel write FOnEditCancel;
     property OnEditOk:TOnEditOk read FOnEditOk write FOnEditOk;
-
-    property Columns:TTableColumns read FColumns write FColumns;
-
-    property ItemIndex:Integer read FItemIndex write SetItemIndex default -1;
-    property ItemCount:Integer read GetRowCount write SetRowCount default 0;
-    property DefaultRowHeight:Integer read GetDefRowH write SetDefRowH;
-    property ColumnsHeight:Integer read GetColumnsHeight write SetColumnsHeight default 30;
-    property Width:Integer read GetWidth write SetWidth;
-
     property LineColor:TColor read FLineColor write FLineColor;
     property LineColorXor:TColor read FLineColorXor write FLineColorXor;
     property LineHotColor:TColor read FLineHotColor write FLineHotColor;
     property LineSelColor:TColor read FLineSelColor write FLineSelColor;
     property ColumnsColor:TColor read FColumnsColor write FColumnsColor;
-
-    property FontColumns:TFont read FColumnsFont write FColumnsFont;
     property FontHotLine:TFont read FFontHotLine write FFontHotLine;
     property FontLine:TFont read FFontLine write FFontLine;
     property FontSelLine:TFont read FFontSelLine write FFontSelLine;
-
-    property ProcEmpty:Boolean read FProcEmpty write SetProcEmpty default False;
-    property ShowScrollBar:Boolean read GetShowScrollBar write SetShowScrollBar default True;
-    property DefaultDataDrawing:Boolean read FDefDrawing write SetDefDrawing default True;
-    property CanNoSelect:Boolean read FCanNoSelect write FCanNoSelect default False;
-    property VisibleEdit:Boolean read FVisibleEdit write FVisibleEdit default True;
     property ShowColumns:Boolean read FShowColumns write SetShowColumns default True;
     property RoundLineRect:Integer read FRoundLineRect write SetRoundLineRect default 0;
-    property SetFocusOnEnter:Boolean read FSetFocusOnEnter write FSetFocusOnEnter default False;
+    property ColumnsFont:TFont read FColumnsFont write FColumnsFont;
+    property SetFocusOnEnter:Boolean read FSetFocusOnEnter write FSetFocusOnEnter;
     property ShowFocus:Boolean read FShowFocus write FShowFocus default False;
-    property DrawColumnBorded:Boolean read FDrawColumnBorded write FDrawColumnBorded default False;
-    property FlashSelectedCol:Boolean read FFlashSelectedCol write SetFlashSelectedCol default False;
+    property DrawColumnBorded:Boolean read FDrawColumnBorded write FDrawColumnBorded;
+    property FocusedColumn:Integer read GetFocusedColumn;
+    property FlashSelectedCol:Boolean read FFlashSelectedCol write SetFlashSelectedCol;
   end;
 
  function DrawTextCentered(Canvas: TCanvas; const R: TRect; S: String; FDrawFlags:Cardinal): Integer;
@@ -325,7 +314,6 @@ type
  function ColorDarker(Color:TColor; Percent:Byte = 40):TColor;
  function ColorLighter(Color:TColor; Percent:Byte = 40):TColor;
  function IndexInList(const Index:Integer; ListCount:Integer):Boolean;
- function FlashControl(Control:TControl):Boolean;
 
 
 procedure Register;
@@ -419,6 +407,7 @@ begin
      FTables[i].ItemCount:=Count;
     end;
 end;
+
 
 function FlashControl(Control:TControl):Boolean;
 var SaveColor, BufColor:TColor;
@@ -822,8 +811,8 @@ begin
  //inherited BorderStyle:=bsNone;
  //FButtonOnItem:=-1;
  FUpdatesCount:=0;
- //FDrawColumnBorded:=True;
- //FFlashSelectedCol:=False;
+ FDrawColumnBorded:=True;
+ FFlashSelectedCol:=False;
 
  FFieldEdit:=TFieldMaskEdit.Create(Self);
  with FFieldEdit do
@@ -901,12 +890,15 @@ begin
  UpdateColumnIndex;
 
  ColCount:=1;
+ RowCount:=2;
+ FItemCount:=1;
+ FixedCols:=0;
+ FixedRows:=1;
  Width:=400;
  DefaultColWidth:=60;
  DefaultRowHeight:=25;
  Options:=[goThumbTracking, goColSizing];
  ColumnsHeight:=30;
- ItemCount:=1;
  ShowColumns:=True;
 end;
 

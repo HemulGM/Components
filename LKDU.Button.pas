@@ -90,11 +90,9 @@ type
     property ButtonState:TButtonFlatState read FButtonState write SetButtonState;
     property StyledColor:TColor read FStyledColor write SetStyledColor;
     property NeedColor:TColor read FNeedColor write SetNeedColor;
-    procedure DoRepaint;
    protected
     procedure Paint; override;
    public
-    procedure Repaint; override;
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
     procedure TimedText(Text:string; Delay:Cardinal);
@@ -180,7 +178,7 @@ begin
  FDrawTimedText:=True;
  FTimerTT.Interval:=Delay;
  FTimerTT.Enabled:=True;
- DoRepaint;
+ Repaint;
 end;
 
 procedure TButtonFlat.SetShape(Value:TShapeType);
@@ -209,7 +207,8 @@ end;
 constructor TButtonFlat.Create(AOwner: TComponent);
 begin
  inherited Create(AOwner);
- ControlStyle:=ControlStyle + [csReplicatable, csParentBackground, csOpaque];
+ inherited Cursor:=crHandPoint;
+ ControlStyle:=ControlStyle + [csReplicatable, csOpaque];
  FTimerAnimate:=TTimer.Create(nil);
  FTimerAnimate.Interval:=10;
  FTimerAnimate.Enabled:=False;
@@ -230,7 +229,6 @@ begin
  FNotifyWidth:=8;
  FNotifyVisible:=False;
  ParentColor:=False;
- Cursor:=crHandPoint;
  TabStop:=True;
  ParentBackground:=False;
 
@@ -272,35 +270,6 @@ begin
  if FMouseOver then ButtonState:=bfsOver else ButtonState:=bfsNormal;
  FDowned:=False;
  if Assigned(FOnMouseUp) then FOnMouseUp(Sender, Button, Shift, X, Y);
-end;
-
-procedure TButtonFlat.Repaint;
-var
-  DC: HDC;
-begin
-  if (Visible or (csDesigning in ComponentState) and
-    not (csNoDesignVisible in ControlStyle)) and (Parent <> nil) and
-    Parent.HandleAllocated then
-    if csOpaque in ControlStyle then
-    begin
-      DC := GetDC(Parent.Handle);
-      try
-        IntersectClipRect(DC, Left, Top, Left + Width, Top + Height);
-        //TControl(Self).Parent.PaintControls(DC, Self);
-        Paint;
-      finally
-        ReleaseDC(Parent.Handle, DC);
-      end;
-    end else
-    begin
-      Invalidate;
-      Update;
-    end;
-end;
-
-procedure TButtonFlat.DoRepaint;
-begin
- Repaint;
 end;
 
 function TButtonFlat.GetColorNormal: TColor;
@@ -352,7 +321,7 @@ procedure TButtonFlat.OnTimerTTTime(Sender: TObject);
 begin
  FDrawTimedText:=False;
  FTimerTT.Enabled:=False;
- DoRepaint;
+ Repaint;
 end;
 
 type
@@ -427,7 +396,7 @@ begin
       begin
        FRect:=Rect(0, 0, FNotifyWidth, FNotifyWidth);
        if Assigned(Images) then
-        FRect.SetLocation(ImageIndentLeft+Images.Width-4, (Height div 2 - Images.Height div 2)-4)
+        FRect.SetLocation(Min(ImageIndentLeft+Images.Width-4, ClientWidth-FNotifyWidth-2), (Height div 2 - Images.Height div 2)-4)
        else FRect.SetLocation(FNotifyWidth div 2, FNotifyWidth div 2);
        Brush.Style:=bsSolid;
        Pen.Style:=psSolid;
@@ -537,71 +506,67 @@ end;
 procedure TButtonFlat.SetEllipseRectVertical(const Value: Boolean);
 begin
  FEllipseRectVertical:= Value;
- DoRepaint;
+ Repaint;
 end;
 
 procedure TButtonFlat.SetFont(const Value: TFont);
 begin
  FFont:=Value;
- DoRepaint;
+ Repaint;
 end;
 
 procedure TButtonFlat.SetGroupItemKind(const Value: TButtonFlatGroupItem);
 begin
  FGroupItemKind := Value;
- DoRepaint;
+ Repaint;
 end;
 
 procedure TButtonFlat.SetIgnorBounds(const Value: Boolean);
 begin
  FIgnorBounds:=Value;
- DoRepaint;
+ Repaint;
 end;
 
 procedure TButtonFlat.SetImageIndentLeft(const Value: Integer);
 begin
  FImageIndentLeft:=Value;
- DoRepaint;
+ Repaint;
 end;
 
 procedure TButtonFlat.SetImageIndentRight(const Value: Integer);
 begin
  FImageIndentRight:=Value;
- DoRepaint;
+ Repaint;
 end;
 
 procedure TButtonFlat.SetImageIndex(const Value: Integer);
 begin
  FImageIndex:=Value;
- DoRepaint;
+ Repaint;
 end;
 
 procedure TButtonFlat.SetImages(const Value: TImageList);
 begin
- if FImages = Value then Exit;
  FImages:= Value;
- DoRepaint;
+ Repaint;
 end;
 
 procedure TButtonFlat.SetImagesOver(const Value: TImageList);
 begin
- if FImagesOver = Value then Exit;
  FImagesOver:= Value;
- DoRepaint;
+ Repaint;
 end;
 
 procedure TButtonFlat.SetImagesPress(const Value: TImageList);
 begin
- if FImagesPress = Value then Exit;
  FImagesPress:= Value;
- DoRepaint;
+ Repaint;
 end;
 
 procedure TButtonFlat.SetLabel(const Value: string);
 begin
- if FLabel = Value then Exit;
  FLabel:=Value;
- DoRepaint;
+ Repaint;
 end;
 
 procedure TButtonFlat.SetNeedColor(const Value: TColor);
@@ -610,25 +575,25 @@ begin
  if (csFreeNotification in ComponentState)
  then FTimerAnimate.Enabled:=True
  else FStyledColor:=FNeedColor;
- DoRepaint;
+ Repaint;
 end;
 
 procedure TButtonFlat.SetNotifyColor(const Value: TColor);
 begin
  FNotifyColor:=Value;
- DoRepaint;
+ Repaint;
 end;
 
 procedure TButtonFlat.SetNotifyVisible(const Value: Boolean);
 begin
  FNotifyVisible:=Value;
- DoRepaint;
+ Repaint;
 end;
 
 procedure TButtonFlat.SetNotifyWidth(const Value: Integer);
 begin
  FNotifyWidth := Value;
- DoRepaint;
+ Repaint;
 end;
 
 procedure TButtonFlat.StopAnimate;
@@ -639,19 +604,19 @@ end;
 procedure TButtonFlat.SetRoundRectParam(const Value: integer);
 begin
  FRoundRectParam:=Value;
- DoRepaint;
+ Repaint;
 end;
 
 procedure TButtonFlat.SetStyledColor(const Value: TColor);
 begin
  FStyledColor:=Value;
- DoRepaint;
+ Repaint;
 end;
 
 procedure TButtonFlat.SetTextFormat(const Value: TextAling);
 begin
  FTextFormat:=Value;
- DoRepaint;
+ Repaint;
 end;
 
 end.

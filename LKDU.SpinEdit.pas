@@ -138,6 +138,12 @@ type
     property Anchors;
     property AutoSelect;
     property AutoSize;
+    property BorderStyle;
+    property BevelEdges;
+    property BevelInner;
+    property BevelKind default bkNone;
+    property BevelOuter;
+    property BevelWidth;
     property Color;
     property Constraints;
     property Ctl3D;
@@ -523,7 +529,7 @@ begin
 
   SendMessage(Handle, EM_GETRECT, 0, IntPtr(@Loc));
   Loc.Bottom := ClientHeight + 1;  {+1 is workaround for windows paint bug}
-  Loc.Right := ClientWidth - FButton.Width - 6;
+  Loc.Right := ClientWidth - FButton.Width - 0;
   Loc.Top := 1;
   Loc.Left := 3;
   SendMessage(Handle, EM_SETRECTNP, 0, IntPtr(@Loc));

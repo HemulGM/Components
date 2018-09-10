@@ -31,12 +31,10 @@ type
     FEllipseRectVertical:Boolean;
     FIgnorBounds:Boolean;
     FFont:TFont;
-    FStyledColor: TColor;
     FOnPaint:TNotifyEvent;
     FRoundRectParam:TPoint;
     procedure SetLabel(const Value: string);
     procedure SetFont(const Value: TFont);
-    procedure SetStyledColor(const Value: TColor);
     procedure SetTextFormat(const Value: TextAling);
     procedure SetEllipseRectVertical(const Value: Boolean);
     procedure SetRoundRectParam(const Value: TPoint);
@@ -44,6 +42,7 @@ type
    protected
     procedure Paint; override;
    public
+    procedure StyledColor(Value:TColor);
     constructor Create(AOwner: TComponent); override;
    published
     property Caption:string read FLabel write SetLabel;
@@ -53,7 +52,6 @@ type
     property RoundRectParam:TPoint read FRoundRectParam write SetRoundRectParam;
     property IgnorBounds:Boolean read FIgnorBounds write SetIgnorBounds;
     property EllipseRectVertical:Boolean read FEllipseRectVertical write SetEllipseRectVertical;
-    property StyledColor:TColor read FStyledColor write SetStyledColor;
   end;
 
 
@@ -95,7 +93,7 @@ end;
 constructor TLabelEx.Create(AOwner: TComponent);
 begin
  inherited;
- StyledColor:=$00996666;
+ StyledColor($00996666);
  FLabel:='Текст';
  FFont:=TFont.Create;
  FFont.Color:=clWhite;
@@ -202,17 +200,16 @@ begin
  Repaint;
 end;
 
-procedure TLabelEx.SetStyledColor(const Value: TColor);
-begin
- FStyledColor:= Value;
- Brush.Color:=FStyledColor;
- Pen.Color:=ColorDarker(Brush.Color);
-end;
-
 procedure TLabelEx.SetTextFormat(const Value: TextAling);
 begin
  FTextFormat:= Value;
  Repaint;
+end;
+
+procedure TLabelEx.StyledColor(Value: TColor);
+begin
+ Brush.Color:=Value;
+ Pen.Color:=ColorDarker(Brush.Color);
 end;
 
 end.
