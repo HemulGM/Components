@@ -29,6 +29,7 @@ type
     FIgnorBounds:Boolean;
     FFont:TFont;
     FNeedColor:TColor;
+    FAnimPerc:Integer;
     FStyledColor:TColor;
     FOnPaint:TNotifyEvent;
     FRoundRectParam:Integer;
@@ -55,6 +56,7 @@ type
     FImagesPress: TImageList;
     FFontOver: TFont;
     FFontDown: TFont;
+    FFromColor: TColor;
     procedure SetLabel(const Value: string);
     procedure SetFont(const Value: TFont);
     procedure SetStyledColor(const Value: TColor);
@@ -93,6 +95,7 @@ type
     procedure SetFontOver(const Value: TFont);
     property ButtonState:TButtonFlatState read FButtonState write SetButtonState;
     property StyledColor:TColor read FStyledColor write SetStyledColor;
+    property FromColor:TColor read FFromColor write FFromColor;
     property NeedColor:TColor read FNeedColor write SetNeedColor;
    protected
     procedure Paint; override;
@@ -223,6 +226,7 @@ begin
  FTimerTT.Enabled:=False;
  FTimerTT.OnTimer:=OnTimerTTTime;
  FDrawTimedText:=False;
+ FAnimPerc:=0;
  FTimedText:='';
  FImageIndex:=-1;
  FImagePress:=-1;
@@ -307,7 +311,17 @@ var R, NR, G, NG, B, NB:Integer;
     pRGB:Cardinal;
     IncC:Integer;
 begin
- IncC:=10;
+ IncC:=8;
+ Inc(FAnimPerc, IncC);
+ if FAnimPerc >= 100 then
+  begin
+   StopAnimate;
+   StyledColor:=NeedColor;
+  end
+ else
+  StyledColor:=MixColors(NeedColor, FromColor, FAnimPerc);
+
+ {
  pRGB:=ColorToRGB(StyledColor);
  R:=GetRValue(pRGB);
  G:=GetGValue(pRGB);
@@ -329,7 +343,7 @@ begin
  G:=Max(0, Min(G, 255));
  B:=Max(0, Min(B, 255));
  StyledColor:=RGB(R, G, B);
- if StyledColor = FNeedColor then StopAnimate;
+ if StyledColor = FNeedColor then StopAnimate;}
 end;
 
 procedure TButtonFlat.OnTimerTTTime(Sender: TObject);
@@ -354,149 +368,149 @@ var X, Y, W, H, S, DF, Rx:Integer;
 begin
  Canvas.Lock;
  try
-   with TDirect2DCanvas.Create(Canvas, ClientRect) do
-    begin
-     RenderTarget.BeginDraw;
-     RenderTarget.SetTransform(TD2DMatrix3x2F.Identity);
-     Brush.Style:=bsSolid;
-     if Assigned(Parent) and (Parent is TControl) then
-      begin
-       Pen.Color:=TColorControl(Parent).Color;
-       Brush.Color:=Pen.Color;
-       FillRect(ClientRect);
-      end;
-     Pen.Color:=StyledColor;
-     Brush.Color:=StyledColor;
-     X:=Pen.Width div 2;
-     Y:=X;
-     W:=Width - Pen.Width + 1;
-     H:=Height - Pen.Width + 1;
-     if Pen.Width = 0 then begin Dec(W); Dec(H); end;
-     if W < H then S:=W else S:=H;
-     if Self.Shape in [stSquare, stRoundSquare, stCircle] then
-      begin
-       if W < H then S:=W else S:=H;
-       Inc(X, (W - S) div 2); W:=S;
-       Inc(Y, (H - S) div 2); H:=S;
-      end;
-     case Self.Shape of
-      stRectangle,
-      stSquare: Rectangle(X, Y, X + W, Y + H);
-      stRoundRect,
-      stRoundSquare:
-       begin
-        if FRoundRectParam = 0 then Rx:=S div 4 else Rx:=FRoundRectParam;
-        if GroupItemKind = giCenter then RoundRect(X, Y, X + W, Y + H, 0, 0)
-        else RoundRect(X, Y, X + W, Y + H, Rx, Rx);
-        case GroupItemKind of
-         giLeft:
-          begin
-           FRect:=Rect(X, Y, X + W, Y + H);
-           FRect.Width:=FRect.Width - (Rx + Rx);
-           FRect.Offset(Rx + Rx, 0);
-           Rectangle(FRect);
-          end;
-         giRight:
-          begin
-           FRect:=Rect(X, Y, X + W, Y + H);
-           FRect.Width:=FRect.Width - (Rx + Rx);
-           Rectangle(FRect);
-          end;
-        end;
-       end;
-      stCircle, stEllipse: Ellipse(X, Y, X + W, Y + H);
+  with TDirect2DCanvas.Create(Canvas, ClientRect) do
+   begin
+    RenderTarget.BeginDraw;
+    RenderTarget.SetTransform(TD2DMatrix3x2F.Identity);
+    Brush.Style:=bsSolid;
+    if Assigned(Parent) and (Parent is TControl) then
+     begin
+      Pen.Color:=TColorControl(Parent).Color;
+      Brush.Color:=Pen.Color;
+      FillRect(ClientRect);
      end;
-     // Notify
-     if FNotifyVisible then
+    Pen.Color:=StyledColor;
+    Brush.Color:=StyledColor;
+    X:=Pen.Width div 2;
+    Y:=X;
+    W:=Width - Pen.Width + 1;
+    H:=Height - Pen.Width + 1;
+    if Pen.Width = 0 then begin Dec(W); Dec(H); end;
+    if W < H then S:=W else S:=H;
+    if Self.Shape in [stSquare, stRoundSquare, stCircle] then
+     begin
+      if W < H then S:=W else S:=H;
+      Inc(X, (W - S) div 2); W:=S;
+      Inc(Y, (H - S) div 2); H:=S;
+     end;
+    case Self.Shape of
+     stRectangle,
+     stSquare: Rectangle(X, Y, X + W, Y + H);
+     stRoundRect,
+     stRoundSquare:
       begin
-       FRect:=Rect(0, 0, FNotifyWidth, FNotifyWidth);
-       if Assigned(Images) then
-        FRect.SetLocation(Min(ImageIndentLeft+Images.Width-4, ClientWidth-FNotifyWidth-2), (Height div 2 - Images.Height div 2)-4)
-       else FRect.SetLocation(FNotifyWidth div 2, FNotifyWidth div 2);
-       Brush.Style:=bsSolid;
-       Pen.Style:=psSolid;
-       Pen.Color:=FNotifyColor;
-       Brush.Color:=FNotifyColor;
-       Ellipse(FRect);
+       if FRoundRectParam = 0 then Rx:=S div 4 else Rx:=FRoundRectParam;
+       if GroupItemKind = giCenter then RoundRect(X, Y, X + W, Y + H, 0, 0)
+       else RoundRect(X, Y, X + W, Y + H, Rx, Rx);
+       case GroupItemKind of
+        giLeft:
+         begin
+          FRect:=Rect(X, Y, X + W, Y + H);
+          FRect.Width:=FRect.Width - (Rx + Rx);
+          FRect.Offset(Rx + Rx, 0);
+          Rectangle(FRect);
+         end;
+        giRight:
+         begin
+          FRect:=Rect(X, Y, X + W, Y + H);
+          FRect.Width:=FRect.Width - (Rx + Rx);
+          Rectangle(FRect);
+         end;
+       end;
       end;
-     //
-     RenderTarget.EndDraw;
-     Free;
+     stCircle, stEllipse: Ellipse(X, Y, X + W, Y + H);
     end;
-   if Assigned(FFont) then Canvas.Font.Assign(FFont);
-   case FButtonState of
-    bfsOver: if Assigned(FFontOver) then Canvas.Font.Assign(FFontOver);
-    bfsPressed: if Assigned(FFontDown) then Canvas.Font.Assign(FFontDown);
+    // Notify
+    if FNotifyVisible then
+     begin
+      FRect:=Rect(0, 0, FNotifyWidth, FNotifyWidth);
+      if Assigned(Images) then
+       FRect.SetLocation(Min(ImageIndentLeft+Images.Width-4, ClientWidth-FNotifyWidth-2), (Height div 2 - Images.Height div 2)-4)
+      else FRect.SetLocation(FNotifyWidth div 2, FNotifyWidth div 2);
+      Brush.Style:=bsSolid;
+      Pen.Style:=psSolid;
+      Pen.Color:=FNotifyColor;
+      Brush.Color:=FNotifyColor;
+      Ellipse(FRect);
+     end;
+    //
+    RenderTarget.EndDraw;
+    Free;
    end;
-   Canvas.Brush.Color:=clWhite;
-   Canvas.Brush.Style:=bsClear;
-   if FIgnorBounds then FRect:=ClientRect
-   else
-    begin
-     d:=1.6; //6.8
-     if FEllipseRectVertical then
-          FRect:=Rect(Round(X + W / (6.8 / d)), Round(Y + H / (6.8 * d)), Round(X + W - W / (6.8 / d)), Round(Y + H - H / (6.8 * d)))
-     else FRect:=Rect(Round(X + W / (6.8 * d)), Round(Y + H / (6.8 / d)), Round(X + W - W / (6.8 * d)), Round(Y + H - H / (6.8 / d)));
+  if Assigned(FFont) then Canvas.Font.Assign(FFont);
+  case FButtonState of
+   bfsOver: if Assigned(FFontOver) then Canvas.Font.Assign(FFontOver);
+   bfsPressed: if Assigned(FFontDown) then Canvas.Font.Assign(FFontDown);
+  end;
+  Canvas.Brush.Color:=clWhite;
+  Canvas.Brush.Style:=bsClear;
+  if FIgnorBounds then FRect:=ClientRect
+  else
+   begin
+    d:=1.6; //6.8
+    if FEllipseRectVertical then
+         FRect:=Rect(Round(X + W / (6.8 / d)), Round(Y + H / (6.8 * d)), Round(X + W - W / (6.8 / d)), Round(Y + H - H / (6.8 * d)))
+    else FRect:=Rect(Round(X + W / (6.8 * d)), Round(Y + H / (6.8 / d)), Round(X + W - W / (6.8 * d)), Round(Y + H - H / (6.8 / d)));
+   end;
+  DF:=0;
+  if taTop in FTextFormat then DF:=DF or DT_TOP;
+  if taLeft in FTextFormat then DF:=DF or DT_LEFT;
+  if taRight in FTextFormat then DF:=DF or DT_RIGHT;
+  if taCenter in FTextFormat then DF:=DF or DT_CENTER;
+  if taBottom in FTextFormat then DF:=DF or DT_BOTTOM;
+  if taVCenter in FTextFormat then DF:=DF or DT_VCENTER;
+  if taWordBrake in FTextFormat then DF:=DF or DT_WORDBREAK;
+  if taSingleLine in FTextFormat then DF:=DF or DT_SINGLELINE;
+  ///
+  FRect.Offset(FImageIndentLeft, 0);
+  if Assigned(FImages) and (FImageIndex >= 0) then
+   begin
+    FRect.Offset(FImages.Width + FImageIndentRight, 0);
+    case FButtonState of
+     bfsNormal:
+      begin
+       FDrawImg:=FImageIndex;
+       if IndexInList(FDrawImg, FImages.Count) then FImages.Draw(Canvas, FImageIndentLeft, Height div 2 - FImages.Height div 2, FDrawImg, Enabled);
+      end;
+     bfsOver:
+      begin
+       FDrawImg:=FImageOver;
+       if FDrawImg < 0 then FDrawImg:=FImageIndex;
+       if Assigned(FImagesOver) then
+        begin
+         if IndexInList(FDrawImg, FImagesOver.Count) then FImagesOver.Draw(Canvas, FImageIndentLeft, Height div 2 - FImagesOver.Height div 2, FDrawImg, Enabled);
+        end
+       else
+        begin
+         if IndexInList(FDrawImg, FImages.Count) then FImages.Draw(Canvas, FImageIndentLeft, Height div 2 - FImages.Height div 2, FDrawImg, Enabled);
+        end;
+      end;
+     bfsPressed:
+      begin
+       FDrawImg:=FImagePress;
+       if FDrawImg < 0 then FDrawImg:=FImageIndex;
+       if Assigned(FImagesPress) then
+        begin
+         if IndexInList(FDrawImg, FImagesPress.Count) then FImagesPress.Draw(Canvas, FImageIndentLeft, Height div 2 - FImagesPress.Height div 2, FDrawImg, Enabled);
+        end
+       else
+        begin
+         if IndexInList(FDrawImg, FImages.Count) then FImages.Draw(Canvas, FImageIndentLeft, Height div 2 - FImages.Height div 2, FDrawImg, Enabled);
+        end;
+      end;
     end;
-   DF:=0;
-   if taTop in FTextFormat then DF:=DF or DT_TOP;
-   if taLeft in FTextFormat then DF:=DF or DT_LEFT;
-   if taRight in FTextFormat then DF:=DF or DT_RIGHT;
-   if taCenter in FTextFormat then DF:=DF or DT_CENTER;
-   if taBottom in FTextFormat then DF:=DF or DT_BOTTOM;
-   if taVCenter in FTextFormat then DF:=DF or DT_VCENTER;
-   if taWordBrake in FTextFormat then DF:=DF or DT_WORDBREAK;
-   if taSingleLine in FTextFormat then DF:=DF or DT_SINGLELINE;
-   ///
-   FRect.Offset(FImageIndentLeft, 0);
-   if Assigned(FImages) and (FImageIndex >= 0) then
-    begin
-     FRect.Offset(FImages.Width + FImageIndentRight, 0);
-     case FButtonState of
-      bfsNormal:
-       begin
-        FDrawImg:=FImageIndex;
-        if IndexInList(FDrawImg, FImages.Count) then FImages.Draw(Canvas, FImageIndentLeft, Height div 2 - FImages.Height div 2, FDrawImg, Enabled);
-       end;
-      bfsOver:
-       begin
-        FDrawImg:=FImageOver;
-        if FDrawImg < 0 then FDrawImg:=FImageIndex;
-        if Assigned(FImagesOver) then
-         begin
-          if IndexInList(FDrawImg, FImagesOver.Count) then FImagesOver.Draw(Canvas, FImageIndentLeft, Height div 2 - FImagesOver.Height div 2, FDrawImg, Enabled);
-         end
-        else
-         begin
-          if IndexInList(FDrawImg, FImages.Count) then FImages.Draw(Canvas, FImageIndentLeft, Height div 2 - FImages.Height div 2, FDrawImg, Enabled);
-         end;
-       end;
-      bfsPressed:
-       begin
-        FDrawImg:=FImagePress;
-        if FDrawImg < 0 then FDrawImg:=FImageIndex;
-        if Assigned(FImagesPress) then
-         begin
-          if IndexInList(FDrawImg, FImagesPress.Count) then FImagesPress.Draw(Canvas, FImageIndentLeft, Height div 2 - FImagesPress.Height div 2, FDrawImg, Enabled);
-         end
-        else
-         begin
-          if IndexInList(FDrawImg, FImages.Count) then FImages.Draw(Canvas, FImageIndentLeft, Height div 2 - FImages.Height div 2, FDrawImg, Enabled);
-         end;
-       end;
-     end;
-    end;
-   ///
-   Canvas.Brush.Style:=bsClear;
-   if FDrawTimedText then
-    DrawTextCentered(Canvas, FRect, FTimedText, DF)
-   else
-    DrawTextCentered(Canvas, FRect, FLabel, DF);
-   if Assigned(FOnPaint) then FOnPaint(Self);
+   end;
+  ///
+  Canvas.Brush.Style:=bsClear;
+  if FDrawTimedText then
+   DrawTextCentered(Canvas, FRect, FTimedText, DF)
+  else
+   DrawTextCentered(Canvas, FRect, FLabel, DF);
+  if Assigned(FOnPaint) then FOnPaint(Self);
  finally
   Canvas.Unlock;
  end;
- end;
+end;
 
 procedure TButtonFlat.SetButtonState(const Value: TButtonFlatState);
 begin
@@ -603,9 +617,12 @@ end;
 procedure TButtonFlat.SetNeedColor(const Value: TColor);
 begin
  FNeedColor:=Value;
- if (csFreeNotification in ComponentState)
- then FTimerAnimate.Enabled:=True
- else FStyledColor:=FNeedColor;
+ if (csFreeNotification in ComponentState) then
+  begin
+   FromColor:=StyledColor;
+   FTimerAnimate.Enabled:=True;
+  end
+ else StyledColor:=FNeedColor;
  Repaint;
 end;
 
@@ -629,6 +646,7 @@ end;
 
 procedure TButtonFlat.StopAnimate;
 begin
+ FAnimPerc:=0;
  if (csFreeNotification in ComponentState) then FTimerAnimate.Enabled:=False;
 end;
 
