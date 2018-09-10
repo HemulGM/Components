@@ -53,6 +53,8 @@ type
     FGroupItemKind: TButtonFlatGroupItem;
     FImagesOver: TImageList;
     FImagesPress: TImageList;
+    FFontOver: TFont;
+    FFontDown: TFont;
     procedure SetLabel(const Value: string);
     procedure SetFont(const Value: TFont);
     procedure SetStyledColor(const Value: TColor);
@@ -87,6 +89,8 @@ type
     procedure SetImages(const Value: TImageList);
     procedure SetImagesOver(const Value: TImageList);
     procedure SetImagesPress(const Value: TImageList);
+    procedure SetFontDown(const Value: TFont);
+    procedure SetFontOver(const Value: TFont);
     property ButtonState:TButtonFlatState read FButtonState write SetButtonState;
     property StyledColor:TColor read FStyledColor write SetStyledColor;
     property NeedColor:TColor read FNeedColor write SetNeedColor;
@@ -97,61 +101,63 @@ type
     destructor Destroy; override;
     procedure TimedText(Text:string; Delay:Cardinal);
    published
-    property OnClick;
-    property Images:TImageList read FImages write SetImages;
-    property ImagesOver:TImageList read FImagesOver write SetImagesOver;
-    property ImagesPress:TImageList read FImagesPress write SetImagesPress;
-    property ImageIndex:Integer read FImageIndex write SetImageIndex;
-    property ImageOver:Integer read FImageOver write FImageOver;
-    property ImagePress:Integer read FImagePress write FImagePress;
-    property ImageIndentLeft:Integer read FImageIndentLeft write SetImageIndentLeft;
-    property ImageIndentRight:Integer read FImageIndentRight write SetImageIndentRight;
-    property Shape: TShapeType read FShape write SetShape default stRectangle;
-    property OnMouseDown: TMouseEvent read FOnMouseDown write FOnMouseDown;
-    property OnMouseUp: TMouseEvent read FOnMouseUp write FOnMouseUp;
-    property Caption:string read FLabel write SetLabel;
-    property Font:TFont read FFont write SetFont;
-    property OnPaint:TNotifyEvent read FOnPaint write FOnPaint;
-    property TextFormat:TextAling read FTextFormat write SetTextFormat;
-    property RoundRectParam:Integer read FRoundRectParam write SetRoundRectParam;
-    property IgnorBounds:Boolean read FIgnorBounds write SetIgnorBounds;
-    property EllipseRectVertical:Boolean read FEllipseRectVertical write SetEllipseRectVertical;
-    property ColorNormal:TColor read GetColorNormal write SetColorNormal;
-    property ColorPressed:TColor read GetColorPressed write SetColorPressed;
-    property ColorOver:TColor read GetColorOver write SetColorOver;
-    property ParentBackground;
-    property DoubleBuffered;
     property Align;
     property Anchors;
+    property Canvas;
+    property Caption:string read FLabel write SetLabel;
+    property ColorNormal:TColor read GetColorNormal write SetColorNormal;
+    property ColorOver:TColor read GetColorOver write SetColorOver;
+    property ColorPressed:TColor read GetColorPressed write SetColorPressed;
+    property Constraints;
+    property Cursor default crHandPoint;
+    property DoubleBuffered;
     property DragCursor;
     property DragKind;
     property DragMode;
+    property EllipseRectVertical:Boolean read FEllipseRectVertical write SetEllipseRectVertical;
     property Enabled;
-    property Constraints;
+    property Font:TFont read FFont write SetFont;
+    property FontOver:TFont read FFontOver write SetFontOver;
+    property FontDown:TFont read FFontDown write SetFontDown;
     property GroupItemKind:TButtonFlatGroupItem read FGroupItemKind write SetGroupItemKind;
-    property Cursor default crHandPoint;
-    property ParentShowHint;
-    property ShowHint;
-    property TabOrder;
-    property TabStop;
-    property Touch;
-    property Canvas;
-    property Visible;
+    property IgnorBounds:Boolean read FIgnorBounds write SetIgnorBounds;
+    property ImageIndentLeft:Integer read FImageIndentLeft write SetImageIndentLeft;
+    property ImageIndentRight:Integer read FImageIndentRight write SetImageIndentRight;
+    property ImageIndex:Integer read FImageIndex write SetImageIndex;
+    property ImageOver:Integer read FImageOver write FImageOver;
+    property ImagePress:Integer read FImagePress write FImagePress;
+    property Images:TImageList read FImages write SetImages;
+    property ImagesOver:TImageList read FImagesOver write SetImagesOver;
+    property ImagesPress:TImageList read FImagesPress write SetImagesPress;
+    property NotifyColor:TColor read FNotifyColor write SetNotifyColor default $0042A4FF;
+    property NotifyVisible:Boolean read FNotifyVisible write SetNotifyVisible default False;
+    property NotifyWidth:Integer read FNotifyWidth write SetNotifyWidth default 8;
+    property OnClick;
     property OnContextPopup;
     property OnDragDrop;
     property OnDragOver;
     property OnEndDock;
     property OnEndDrag;
+    property OnGesture;
     property OnMouseActivate;
+    property OnMouseDown: TMouseEvent read FOnMouseDown write FOnMouseDown;
     property OnMouseEnter;
     property OnMouseLeave;
     property OnMouseMove;
-    property OnGesture;
+    property OnMouseUp: TMouseEvent read FOnMouseUp write FOnMouseUp;
+    property OnPaint:TNotifyEvent read FOnPaint write FOnPaint;
     property OnStartDock;
     property OnStartDrag;
-    property NotifyColor:TColor read FNotifyColor write SetNotifyColor default $0042A4FF;
-    property NotifyWidth:Integer read FNotifyWidth write SetNotifyWidth default 8;
-    property NotifyVisible:Boolean read FNotifyVisible write SetNotifyVisible default False;
+    property ParentBackground;
+    property ParentShowHint;
+    property RoundRectParam:Integer read FRoundRectParam write SetRoundRectParam;
+    property Shape: TShapeType read FShape write SetShape default stRectangle;
+    property ShowHint;
+    property TabOrder;
+    property TabStop;
+    property TextFormat:TextAling read FTextFormat write SetTextFormat;
+    property Touch;
+    property Visible;
   end;
 
 
@@ -237,9 +243,19 @@ begin
  FColors[bfsPressed]:=$009F7949;
  FDowned:=False;
  FMouseOver:=False;
+
  FFont:=TFont.Create;
  FFont.Color:=clWhite;
  FFont.Size:=10;
+
+ FFontOver:=TFont.Create;
+ FFontOver.Color:=clWhite;
+ FFontOver.Size:=10;
+
+ FFontDown:=TFont.Create;
+ FFontDown.Color:=clWhite;
+ FFontDown.Size:=10;
+
  Width:=90;
  Height:=30;
  FRoundRectParam:=0;
@@ -409,7 +425,11 @@ begin
      Free;
     end;
    if Assigned(FFont) then Canvas.Font.Assign(FFont);
-   Canvas.Brush.Color:=clRed;
+   case FButtonState of
+    bfsOver: if Assigned(FFontOver) then Canvas.Font.Assign(FFontOver);
+    bfsPressed: if Assigned(FFontDown) then Canvas.Font.Assign(FFontDown);
+   end;
+   Canvas.Brush.Color:=clWhite;
    Canvas.Brush.Style:=bsClear;
    if FIgnorBounds then FRect:=ClientRect
    else
@@ -512,6 +532,18 @@ end;
 procedure TButtonFlat.SetFont(const Value: TFont);
 begin
  FFont:=Value;
+ Repaint;
+end;
+
+procedure TButtonFlat.SetFontDown(const Value: TFont);
+begin
+ FFontDown:=Value;
+ Repaint;
+end;
+
+procedure TButtonFlat.SetFontOver(const Value: TFont);
+begin
+ FFontOver:=Value;
  Repaint;
 end;
 

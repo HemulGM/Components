@@ -314,6 +314,7 @@ type
  function ColorDarker(Color:TColor; Percent:Byte = 40):TColor;
  function ColorLighter(Color:TColor; Percent:Byte = 40):TColor;
  function IndexInList(const Index:Integer; ListCount:Integer):Boolean;
+ function FlashControl(Control:TControl):Boolean;
 
 
 procedure Register;
