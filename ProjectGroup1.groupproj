@@ -1,0 +1,48 @@
+﻿	<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+		<PropertyGroup>
+			<ProjectGuid>{C2C7460C-988B-4604-AF26-E9EF46F1CDD1}</ProjectGuid>
+		</PropertyGroup>
+		<ItemGroup>
+			<Projects Include="LKDUPackage.dproj">
+				<Dependencies/>
+			</Projects>
+			<Projects Include="..\SupportApp\SupportApp.dproj">
+				<Dependencies/>
+			</Projects>
+		</ItemGroup>
+		<ProjectExtensions>
+			<Borland.Personality>Default.Personality.12</Borland.Personality>
+			<Borland.ProjectType/>
+			<BorlandProject>
+				<Default.Personality/>
+			</BorlandProject>
+		</ProjectExtensions>
+		<Target Name="LKDUPackage">
+			<MSBuild Projects="LKDUPackage.dproj"/>
+		</Target>
+		<Target Name="LKDUPackage:Clean">
+			<MSBuild Projects="LKDUPackage.dproj" Targets="Clean"/>
+		</Target>
+		<Target Name="LKDUPackage:Make">
+			<MSBuild Projects="LKDUPackage.dproj" Targets="Make"/>
+		</Target>
+		<Target Name="SupportApp">
+			<MSBuild Projects="..\SupportApp\SupportApp.dproj"/>
+		</Target>
+		<Target Name="SupportApp:Clean">
+			<MSBuild Projects="..\SupportApp\SupportApp.dproj" Targets="Clean"/>
+		</Target>
+		<Target Name="SupportApp:Make">
+			<MSBuild Projects="..\SupportApp\SupportApp.dproj" Targets="Make"/>
+		</Target>
+		<Target Name="Build">
+			<CallTarget Targets="LKDUPackage;SupportApp"/>
+		</Target>
+		<Target Name="Clean">
+			<CallTarget Targets="LKDUPackage:Clean;SupportApp:Clean"/>
+		</Target>
+		<Target Name="Make">
+			<CallTarget Targets="LKDUPackage:Make;SupportApp:Make"/>
+		</Target>
+		<Import Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')" Project="$(BDS)\Bin\CodeGear.Group.Targets"/>
+	</Project>

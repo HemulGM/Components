@@ -1,0 +1,54 @@
+package LKDUPackage;
+
+{$R *.res}
+{$IFDEF IMPLICITBUILDING This IFDEF should not be used by users}
+{$ALIGN 8}
+{$ASSERTIONS ON}
+{$BOOLEVAL OFF}
+{$DEBUGINFO OFF}
+{$EXTENDEDSYNTAX ON}
+{$IMPORTEDDATA ON}
+{$IOCHECKS ON}
+{$LOCALSYMBOLS ON}
+{$LONGSTRINGS ON}
+{$OPENSTRINGS ON}
+{$OPTIMIZATION OFF}
+{$OVERFLOWCHECKS OFF}
+{$RANGECHECKS OFF}
+{$REFERENCEINFO ON}
+{$SAFEDIVIDE OFF}
+{$STACKFRAMES ON}
+{$TYPEDADDRESS OFF}
+{$VARSTRINGCHECKS ON}
+{$WRITEABLECONST OFF}
+{$MINENUMSIZE 1}
+{$IMAGEBASE $400000}
+{$DEFINE DEBUG}
+{$ENDIF IMPLICITBUILDING}
+{$DESCRIPTION 'LKDUPackage'}
+{$IMPLICITBUILD ON}
+
+requires
+  rtl,
+  vcl,
+  vclactnband,
+  vclx,
+  xmlrtl,
+  vclimg;
+
+contains
+  EditPanel in 'EditPanel.pas',
+  LabelButton in 'LabelButton.pas',
+  ListBoxDraw in 'ListBoxDraw.pas',
+  TableDraw in 'TableDraw.pas',
+  LKDU.Edit in 'LKDU.Edit.pas',
+  LKDU.Edit.Form in 'LKDU.Edit.Form.pas' {FormList},
+  LKDU.Hint in 'LKDU.Hint.pas',
+  PanelExt in 'PanelExt.pas',
+  LKDU.PanelCollapsed in 'LKDU.PanelCollapsed.pas',
+  LKDU.SpinEdit in 'LKDU.SpinEdit.pas',
+  LKDU.Button in 'LKDU.Button.pas';
+
+end.
+
+
