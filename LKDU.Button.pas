@@ -148,7 +148,6 @@ type
     property OnPaint:TNotifyEvent read FOnPaint write FOnPaint;
     property OnStartDock;
     property OnStartDrag;
-    property ParentBackground;
     property ParentShowHint;
     property RoundRectParam:Integer read FRoundRectParam write SetRoundRectParam;
     property Shape: TShapeType read FShape write SetShape default stRectangle;
