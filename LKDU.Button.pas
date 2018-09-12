@@ -8,8 +8,8 @@ uses
   TableDraw, Vcl.Direct2D, Winapi.D2D1;
 
 type
-  TTextAligns = (taLeft, taTop, taRight, taBottom, taVCenter, taCenter, taWordBrake, taSingleLine);
-  TextAling = set of TTextAligns;
+  //TTextAligns = (taLeft, taTop, taRight, taBottom, taVCenter, taCenter, taWordBrake, taSingleLine);
+  //TextAling = set of TTextAligns;
   TButtonFlatState = (bfsNormal, bfsOver, bfsPressed);
 
   TButtonFlatGroupItem = (giNone, giLeft, giCenter, giRight);
@@ -24,7 +24,7 @@ type
     FDowned:Boolean;
     FMouseOver:Boolean;
     FLabel:string;
-    FTextFormat:TextAling;
+    FTextFormat:TTextFormat;
     FEllipseRectVertical:Boolean;
     FIgnorBounds:Boolean;
     FFont:TFont;
@@ -38,6 +38,7 @@ type
     FOnMouseUp: TMouseEvent;
     FOnMouseLeave: TNotifyEvent;
     FOnMouseEnter: TNotifyEvent;
+    FFlat:Boolean;
     FImages:TImageList;
     FImageIndex:Integer;
     FImageOver:Integer;
@@ -60,7 +61,7 @@ type
     procedure SetLabel(const Value: string);
     procedure SetFont(const Value: TFont);
     procedure SetStyledColor(const Value: TColor);
-    procedure SetTextFormat(const Value: TextAling);
+    procedure SetTextFormat(const Value: TTextFormat);
     procedure SetEllipseRectVertical(const Value: Boolean);
     procedure SetRoundRectParam(const Value: Integer);
     procedure SetIgnorBounds(const Value: Boolean);
@@ -93,6 +94,7 @@ type
     procedure SetImagesPress(const Value: TImageList);
     procedure SetFontDown(const Value: TFont);
     procedure SetFontOver(const Value: TFont);
+    procedure SetFlat(const Value: Boolean);
     property ButtonState:TButtonFlatState read FButtonState write SetButtonState;
     property StyledColor:TColor read FStyledColor write SetStyledColor;
     property FromColor:TColor read FFromColor write FFromColor;
@@ -117,18 +119,19 @@ type
     property DragCursor;
     property DragKind;
     property DragMode;
-    property EllipseRectVertical:Boolean read FEllipseRectVertical write SetEllipseRectVertical;
     property Enabled;
+    property EllipseRectVertical:Boolean read FEllipseRectVertical write SetEllipseRectVertical default False;
+    property Flat:Boolean read FFlat write SetFlat default True;
     property Font:TFont read FFont write SetFont;
     property FontOver:TFont read FFontOver write SetFontOver;
     property FontDown:TFont read FFontDown write SetFontDown;
-    property GroupItemKind:TButtonFlatGroupItem read FGroupItemKind write SetGroupItemKind;
-    property IgnorBounds:Boolean read FIgnorBounds write SetIgnorBounds;
-    property ImageIndentLeft:Integer read FImageIndentLeft write SetImageIndentLeft;
-    property ImageIndentRight:Integer read FImageIndentRight write SetImageIndentRight;
-    property ImageIndex:Integer read FImageIndex write SetImageIndex;
-    property ImageOver:Integer read FImageOver write FImageOver;
-    property ImagePress:Integer read FImagePress write FImagePress;
+    property GroupItemKind:TButtonFlatGroupItem read FGroupItemKind write SetGroupItemKind default giNone;
+    property IgnorBounds:Boolean read FIgnorBounds write SetIgnorBounds default False;
+    property ImageIndentLeft:Integer read FImageIndentLeft write SetImageIndentLeft default 3;
+    property ImageIndentRight:Integer read FImageIndentRight write SetImageIndentRight default 0;
+    property ImageIndex:Integer read FImageIndex write SetImageIndex default -1;
+    property ImageOver:Integer read FImageOver write FImageOver default -1;
+    property ImagePress:Integer read FImagePress write FImagePress default -1;
     property Images:TImageList read FImages write SetImages;
     property ImagesOver:TImageList read FImagesOver write SetImagesOver;
     property ImagesPress:TImageList read FImagesPress write SetImagesPress;
@@ -157,7 +160,7 @@ type
     property ShowHint;
     property TabOrder;
     property TabStop;
-    property TextFormat:TextAling read FTextFormat write SetTextFormat;
+    property TextFormat:TTextFormat read FTextFormat write SetTextFormat;
     property Touch;
     property Visible;
   end;
@@ -227,12 +230,13 @@ begin
  FTimerTT.OnTimer:=OnTimerTTTime;
  FDrawTimedText:=False;
  FAnimPerc:=0;
+ FFlat:=True;
  FTimedText:='';
  FImageIndex:=-1;
  FImagePress:=-1;
  FImageOver:=-1;
  FImageIndentLeft:=3;
- FImageIndentRight:=3;
+ FImageIndentRight:=0;
  FLabel:='Кнопка';
  FNotifyColor:=$0042A4FF;
  FNotifyWidth:=8;
@@ -263,7 +267,7 @@ begin
  Height:=30;
  FRoundRectParam:=0;
  FIgnorBounds:=True;
- FTextFormat:=[taCenter, taVCenter, taWordBrake];
+ FTextFormat:=[tfCenter, tfVerticalCenter, tfSingleLine];
  ButtonState:=bfsNormal;
  inherited OnMouseDown:=DoMouseDown;
  inherited OnMouseUp:=DoMouseUp;
@@ -361,7 +365,8 @@ type
 
 procedure TButtonFlat.Paint;
 
-var X, Y, W, H, S, DF, Rx:Integer;
+var X, Y, W, H, S, Rx:Integer;
+    DF:TDrawTextFlags;
     FRect:TRect;
     d:Double;
     FDrawImg:Integer;
@@ -375,12 +380,14 @@ begin
     Brush.Style:=bsSolid;
     if Assigned(Parent) and (Parent is TControl) then
      begin
-      Pen.Color:=TColorControl(Parent).Color;
-      Brush.Color:=Pen.Color;
+      Brush.Color:=TColorControl(Parent).Color;
       FillRect(ClientRect);
      end;
-    Pen.Color:=StyledColor;
     Brush.Color:=StyledColor;
+    // Плоский стиль
+    if Flat then Pen.Color:=Brush.Color
+    else Pen.Color:=ColorDarker(StyledColor);
+    // Фигура
     X:=Pen.Width div 2;
     Y:=X;
     W:=Width - Pen.Width + 1;
@@ -409,18 +416,28 @@ begin
           FRect.Width:=FRect.Width - (Rx + Rx);
           FRect.Offset(Rx + Rx, 0);
           Rectangle(FRect);
+          FRect.Inflate(-1, -1);
+          FRect.Left:=FRect.Left - 1;
+          FillRect(FRect);
+          FRect.Inflate(1, 1);
+          FRect.Left:=FRect.Left + 1;
          end;
         giRight:
          begin
           FRect:=Rect(X, Y, X + W, Y + H);
           FRect.Width:=FRect.Width - (Rx + Rx);
           Rectangle(FRect);
+          FRect.Inflate(0, -1);
+          FRect.Left:=FRect.Right - 1;
+          FillRect(FRect);
+          FRect.Inflate(0, 1);
+          FRect.Left:=FRect.Right + 1;
          end;
        end;
       end;
      stCircle, stEllipse: Ellipse(X, Y, X + W, Y + H);
     end;
-    // Notify
+    // Уведомление
     if FNotifyVisible then
      begin
       FRect:=Rect(0, 0, FNotifyWidth, FNotifyWidth);
@@ -437,6 +454,7 @@ begin
     RenderTarget.EndDraw;
     Free;
    end;
+  // Текст
   if Assigned(FFont) then Canvas.Font.Assign(FFont);
   case FButtonState of
    bfsOver: if Assigned(FFontOver) then Canvas.Font.Assign(FFontOver);
@@ -452,25 +470,17 @@ begin
          FRect:=Rect(Round(X + W / (6.8 / d)), Round(Y + H / (6.8 * d)), Round(X + W - W / (6.8 / d)), Round(Y + H - H / (6.8 * d)))
     else FRect:=Rect(Round(X + W / (6.8 * d)), Round(Y + H / (6.8 / d)), Round(X + W - W / (6.8 * d)), Round(Y + H - H / (6.8 / d)));
    end;
-  DF:=0;
-  if taTop in FTextFormat then DF:=DF or DT_TOP;
-  if taLeft in FTextFormat then DF:=DF or DT_LEFT;
-  if taRight in FTextFormat then DF:=DF or DT_RIGHT;
-  if taCenter in FTextFormat then DF:=DF or DT_CENTER;
-  if taBottom in FTextFormat then DF:=DF or DT_BOTTOM;
-  if taVCenter in FTextFormat then DF:=DF or DT_VCENTER;
-  if taWordBrake in FTextFormat then DF:=DF or DT_WORDBREAK;
-  if taSingleLine in FTextFormat then DF:=DF or DT_SINGLELINE;
-  ///
   FRect.Offset(FImageIndentLeft, 0);
+  FRect.Width:=FRect.Width - FImageIndentLeft;
   if Assigned(FImages) and (FImageIndex >= 0) then
    begin
     FRect.Offset(FImages.Width + FImageIndentRight, 0);
+    FRect.Width:=FRect.Width - FImages.Width + FImageIndentRight;
     case FButtonState of
      bfsNormal:
       begin
        FDrawImg:=FImageIndex;
-       if IndexInList(FDrawImg, FImages.Count) then FImages.Draw(Canvas, FImageIndentLeft, Height div 2 - FImages.Height div 2, FDrawImg, Enabled);
+       if IndexInList(FDrawImg, FImages.Count) then FImages.Draw(Canvas, FImageIndentLeft, Height div 2 - FImages.Height div 2, FDrawImg, True);
       end;
      bfsOver:
       begin
@@ -478,11 +488,11 @@ begin
        if FDrawImg < 0 then FDrawImg:=FImageIndex;
        if Assigned(FImagesOver) then
         begin
-         if IndexInList(FDrawImg, FImagesOver.Count) then FImagesOver.Draw(Canvas, FImageIndentLeft, Height div 2 - FImagesOver.Height div 2, FDrawImg, Enabled);
+         if IndexInList(FDrawImg, FImagesOver.Count) then FImagesOver.Draw(Canvas, FImageIndentLeft, Height div 2 - FImagesOver.Height div 2, FDrawImg, True);
         end
        else
         begin
-         if IndexInList(FDrawImg, FImages.Count) then FImages.Draw(Canvas, FImageIndentLeft, Height div 2 - FImages.Height div 2, FDrawImg, Enabled);
+         if IndexInList(FDrawImg, FImages.Count) then FImages.Draw(Canvas, FImageIndentLeft, Height div 2 - FImages.Height div 2, FDrawImg, True);
         end;
       end;
      bfsPressed:
@@ -491,17 +501,18 @@ begin
        if FDrawImg < 0 then FDrawImg:=FImageIndex;
        if Assigned(FImagesPress) then
         begin
-         if IndexInList(FDrawImg, FImagesPress.Count) then FImagesPress.Draw(Canvas, FImageIndentLeft, Height div 2 - FImagesPress.Height div 2, FDrawImg, Enabled);
+         if IndexInList(FDrawImg, FImagesPress.Count) then FImagesPress.Draw(Canvas, FImageIndentLeft, Height div 2 - FImagesPress.Height div 2, FDrawImg, True);
         end
        else
         begin
-         if IndexInList(FDrawImg, FImages.Count) then FImages.Draw(Canvas, FImageIndentLeft, Height div 2 - FImages.Height div 2, FDrawImg, Enabled);
+         if IndexInList(FDrawImg, FImages.Count) then FImages.Draw(Canvas, FImageIndentLeft, Height div 2 - FImages.Height div 2, FDrawImg, True);
         end;
       end;
     end;
    end;
   ///
   Canvas.Brush.Style:=bsClear;
+  DF:=TTextFormatFlags(FTextFormat);
   if FDrawTimedText then
    DrawTextCentered(Canvas, FRect, FTimedText, DF)
   else
@@ -539,6 +550,12 @@ end;
 procedure TButtonFlat.SetEllipseRectVertical(const Value: Boolean);
 begin
  FEllipseRectVertical:= Value;
+ Repaint;
+end;
+
+procedure TButtonFlat.SetFlat(const Value: Boolean);
+begin
+ FFlat:=Value;
  Repaint;
 end;
 
@@ -662,7 +679,7 @@ begin
  Repaint;
 end;
 
-procedure TButtonFlat.SetTextFormat(const Value: TextAling);
+procedure TButtonFlat.SetTextFormat(const Value: TTextFormat);
 begin
  FTextFormat:=Value;
  Repaint;
