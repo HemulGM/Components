@@ -413,8 +413,8 @@ begin
         giLeft:
          begin
           FRect:=Rect(X, Y, X + W, Y + H);
-          FRect.Width:=FRect.Width - (Rx + Rx);
-          FRect.Offset(Rx + Rx, 0);
+          FRect.Offset(FRect.Width div 2 + 1, 0);
+          FRect.Width:=FRect.Width div 2;
           Rectangle(FRect);
           FRect.Inflate(-1, -1);
           FRect.Left:=FRect.Left - 1;
@@ -425,7 +425,7 @@ begin
         giRight:
          begin
           FRect:=Rect(X, Y, X + W, Y + H);
-          FRect.Width:=FRect.Width - (Rx + Rx);
+          FRect.Width:=FRect.Width - (FRect.Width div 2);
           Rectangle(FRect);
           FRect.Inflate(0, -1);
           FRect.Left:=FRect.Right - 1;

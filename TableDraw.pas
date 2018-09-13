@@ -113,6 +113,7 @@ type
     FOnItemColClick:TItemClick;
     FOnColumnClick:TColumnClick;
     FOnDrawCell:TDrawCellEvent;
+    FAfterDrawText:TDrawCellEvent;
     FOnDrawColumn:TDrawCellEvent;
     FDefDrawing: Boolean;
     FColumns:TTableColumns;
@@ -268,6 +269,7 @@ type
     property ShowScrollBar:Boolean read GetShowScrollBar write SetShowScrollBar default True;
     property DefaultDataDrawing:Boolean read FDefDrawing write SetDefDrawing default True;
     property OnDrawCellData:TDrawCellEvent read FOnDrawCell write FOnDrawCell;
+    property AfterDrawText:TDrawCellEvent read FAfterDrawText write FAfterDrawText;
     property OnDrawColumnData:TDrawCellEvent read FOnDrawColumn write FOnDrawColumn;
     property Width:Integer read GetWidth write SetWidth;
     property ItemIndex:Integer read FItemIndex write SetItemIndex;
@@ -1223,6 +1225,7 @@ begin
       end;
      if ItemCount > 0 then
       begin
+       if Assigned(FAfterDrawText) then FAfterDrawText(Sender, ACol, DataARow, Rect, State);
        if FColumns[ACol].AsButton then
         begin
          if not (FColumns[ACol].ShowButtonOnlySelect and (ARow <> DataRow)) then
@@ -1253,16 +1256,20 @@ begin
           end;
         end;
 
-      end;
+      end
+     else
+      if ProcEmpty then
+       if Assigned(FAfterDrawText) then FAfterDrawText(Sender, ACol, DataARow, Rect, State);
      //Inc(FUpdatesCount);
     end;
    if (ItemCount > 0) or (ProcEmpty) then
     begin
      if Assigned(FOnDrawCell) then FOnDrawCell(Sender, ACol, DataARow, Rect, State);
-     if (ACol = Col) and (ARow = DataRow) and Focused and FShowFocus and (not FColumns[ACol].AsButton) then
-      begin
-       DrawFocusRect(Rect);
-      end;
+     if FShowFocus then
+      if (ACol = Col) and (ARow = DataRow) and Focused and (not FColumns[ACol].AsButton) then
+       begin
+        DrawFocusRect(Rect);
+       end;
     end;
   { if (ACol = 0) and (ARow = 1) then
     TextOut(Rect.Left, Rect.Top, IntToStr(FUpdatesCount));}
