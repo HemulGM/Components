@@ -106,7 +106,7 @@ type
     FButton: TSpinButton;
     FEditorEnabled: Boolean;
     FOnChange: TNotifyEvent;
-    function GetMinHeight: Integer;
+    //function GetMinHeight: Integer;
     function GetValue: LongInt;
     function CheckValue (NewValue: LongInt): LongInt;
     procedure SetValue (NewValue: LongInt);
@@ -554,7 +554,7 @@ begin
     SetEditRect;
   end;
 end;
-
+        {
 function TlkSpinEdit.GetMinHeight: Integer;
 var
   DC: HDC;
@@ -571,7 +571,7 @@ begin
   I := SysMetrics.tmHeight;
   if I > Metrics.tmHeight then I := Metrics.tmHeight;
   Result := Metrics.tmHeight + I div 4 + GetSystemMetrics(SM_CYBORDER) * 4 + 2;
-end;
+end;  }
 
 procedure TlkSpinEdit.UpClick (Sender: TObject);
 begin

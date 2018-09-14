@@ -13,7 +13,7 @@ type
     FCollapsing:Boolean;
     FHeight:Integer;
     FCollapseButton:TSpeedButton;
-    FOnPaint: TNotifyEvent;
+   // FOnPaint: TNotifyEvent;
     FShowSimpleBorder: Boolean;
     FSimpleBorderColor: TColor;
     FCollapsed: Boolean;

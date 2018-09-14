@@ -211,12 +211,11 @@ type
     function Edit(AItem, ACol:Integer):Boolean;
     property Col;
     property CordHot:TGridCoord read FCordHot;
+    property FocusedColumn:Integer read GetFocusedColumn;
    published
-    property ProcEmpty:Boolean read FProcEmpty write SetProcEmpty;
-    property Columns:TTableColumns read FColumns write FColumns;
     property OnActivate:TNotifyEvent read FOnActivate write FOnActivate;
     property OnDeactivate:TNotifyEvent read FOnDeactivate write FOnDeactivate;
-    property ColumnsHeight:Integer read GetColumnsHeight write SetColumnsHeight;
+    property ColumnsHeight:Integer read GetColumnsHeight write SetColumnsHeight default 30;
     property Align;
     property Anchors;
     property BevelEdges;
@@ -265,48 +264,51 @@ type
     property OnStartDrag;
     property OnTopLeftChanged;
     property OnMouseEnter;
-    property OnMouseUp:TMouseEvent read FOnMouseUp write FOnMouseUp;
-    property ShowScrollBar:Boolean read GetShowScrollBar write SetShowScrollBar default True;
-    property DefaultDataDrawing:Boolean read FDefDrawing write SetDefDrawing default True;
-    property OnDrawCellData:TDrawCellEvent read FOnDrawCell write FOnDrawCell;
-    property AfterDrawText:TDrawCellEvent read FAfterDrawText write FAfterDrawText;
-    property OnDrawColumnData:TDrawCellEvent read FOnDrawColumn write FOnDrawColumn;
     property Width:Integer read GetWidth write SetWidth;
-    property ItemIndex:Integer read FItemIndex write SetItemIndex;
+    property OnMouseUp:TMouseEvent read FOnMouseUp write FOnMouseUp;
     property OnMouseDown:TMouseEvent read FOnMouseDown write FOnMouseDown;
     property OnMouseLeave:TNotifyEvent read FOnMouseLeave write FOnMouseLeave;
     property OnKeyUp:TKeyEvent read FOnKeyUp write FOnKeyUp;
     property OnKeyDown:TKeyEvent read FOnKeyDown write FOnKeyDown;
     property OnMouseMove:TMouseMoveEvent read FOnMouseMove write FOnMouseMove;
-    property OnItemClick:TItemClick read FOnItemClick write FOnItemClick;
-    property OnItemColClick:TItemClick read FOnItemColClick write FOnItemColClick;
-    property OnColumnClick:TColumnClick read FOnColumnClick write FOnColumnClick;
-    property GetData:TGetTableDataProc read FGetDataProc write FGetDataProc;
     property OnMouseWheelDown:TMouseWheelUpDownEvent read FWheelDown write FWheelDown;
     property OnMouseWheelUp:TMouseWheelUpDownEvent read FWheelUp write FWheelUp;
-    property CanNoSelect:Boolean read FCanNoSelect write FCanNoSelect;
 
-    property VisibleEdit:Boolean read FVisibleEdit write FVisibleEdit;
-    property ItemCount:Integer read GetRowCount write SetRowCount default 5;
+    property AfterDrawText:TDrawCellEvent read FAfterDrawText write FAfterDrawText;
+    property OnDrawCellData:TDrawCellEvent read FOnDrawCell write FOnDrawCell;
+    property OnDrawColumnData:TDrawCellEvent read FOnDrawColumn write FOnDrawColumn;
+
+    property ItemIndex:Integer read FItemIndex write SetItemIndex;
+    property OnColumnClick:TColumnClick read FOnColumnClick write FOnColumnClick;
+    property OnItemClick:TItemClick read FOnItemClick write FOnItemClick;
+    property OnItemColClick:TItemClick read FOnItemColClick write FOnItemColClick;
+    property GetData:TGetTableDataProc read FGetDataProc write FGetDataProc;
     property OnEdit:TOnEdit read FOnEdit write FOnEdit;
     property OnEditCancel:TOnEditCancel read FOnEditCancel write FOnEditCancel;
     property OnEditOk:TOnEditOk read FOnEditOk write FOnEditOk;
-    property LineColor:TColor read FLineColor write FLineColor;
-    property LineColorXor:TColor read FLineColorXor write FLineColorXor;
-    property LineHotColor:TColor read FLineHotColor write FLineHotColor;
-    property LineSelColor:TColor read FLineSelColor write FLineSelColor;
-    property ColumnsColor:TColor read FColumnsColor write FColumnsColor;
+
+    property ProcEmpty:Boolean read FProcEmpty write SetProcEmpty default False;
+    property Columns:TTableColumns read FColumns write FColumns;
+    property DefaultDataDrawing:Boolean read FDefDrawing write SetDefDrawing default True;
+    property ShowScrollBar:Boolean read GetShowScrollBar write SetShowScrollBar default True;
+    property CanNoSelect:Boolean read FCanNoSelect write FCanNoSelect default True;
+    property VisibleEdit:Boolean read FVisibleEdit write FVisibleEdit default True;
+    property ItemCount:Integer read GetRowCount write SetRowCount default 5;
+    property LineColor:TColor read FLineColor write FLineColor default $00F1F2F2;
+    property LineColorXor:TColor read FLineColorXor write FLineColorXor default $00E7E8E8;
+    property LineHotColor:TColor read FLineHotColor write FLineHotColor default $00DCDCDC;
+    property LineSelColor:TColor read FLineSelColor write FLineSelColor default $006C6C6C;
+    property ColumnsColor:TColor read FColumnsColor write FColumnsColor default $00DCDCDC;
     property FontHotLine:TFont read FFontHotLine write FFontHotLine;
     property FontLine:TFont read FFontLine write FFontLine;
     property FontSelLine:TFont read FFontSelLine write FFontSelLine;
     property ShowColumns:Boolean read FShowColumns write SetShowColumns default True;
     property RoundLineRect:Integer read FRoundLineRect write SetRoundLineRect default 0;
     property ColumnsFont:TFont read FColumnsFont write FColumnsFont;
-    property SetFocusOnEnter:Boolean read FSetFocusOnEnter write FSetFocusOnEnter;
+    property SetFocusOnEnter:Boolean read FSetFocusOnEnter write FSetFocusOnEnter default False;
     property ShowFocus:Boolean read FShowFocus write FShowFocus default False;
-    property DrawColumnBorded:Boolean read FDrawColumnBorded write FDrawColumnBorded;
-    property FocusedColumn:Integer read GetFocusedColumn;
-    property FlashSelectedCol:Boolean read FFlashSelectedCol write SetFlashSelectedCol;
+    property DrawColumnBorded:Boolean read FDrawColumnBorded write FDrawColumnBorded default True;
+    property FlashSelectedCol:Boolean read FFlashSelectedCol write SetFlashSelectedCol default False;
   end;
 
  function DrawTextCentered(Canvas: TCanvas; const R: TRect; S: String; FDrawFlags:Cardinal): Integer;
@@ -1065,8 +1067,6 @@ begin
      if ACol = 0 then
       begin
        RoundRect(ARect, FRoundLineRect, FRoundLineRect);
-       //ARect.Width:=ARect.Width - ARect.Width div 2;
-       //ARect.Offset(ARect.Width div 2, 0);
        Rectangle(System.Classes.Rect(ARect.Left + ARect.Width div 2, ARect.Top, ARect.Right, ARect.Bottom));
       end
      else
@@ -1089,7 +1089,8 @@ end;
 begin
  if (csDestroying in ComponentState) then Exit;
  with Canvas do
-  begin
+  try
+   Lock;
    State:=[];
    if FShowColumns then DataARow:=ARow - 1 else DataARow:=ARow;
 
@@ -1103,6 +1104,7 @@ begin
        FFieldEdit.PaintTo(Canvas.Handle, FFieldEdit.Left+FFieldEdit.BevelWidth, FFieldEdit.Top+FFieldEdit.BevelWidth);
      // if FFieldCombo.Visible then
       // FFieldCombo.PaintTo(Canvas.Handle, FFieldCombo.Left, FFieldCombo.Top);
+      Unlock;
       Exit;
      end;
    TextValue:='?';
@@ -1114,7 +1116,11 @@ begin
    Rectangle(Rect);
                       //$00F1F2F2
    Brush.Color:=clBlack;
-   if FColumns.Count <= 0 then Exit;
+   if FColumns.Count <= 0 then
+    begin
+     Unlock;
+     Exit;
+    end;
    if ARow mod 2 = 0 then Brush.Color:=FLineColorXor else Brush.Color:=FLineColor;
 
    //Если элемент выбран и это не заголовок
@@ -1125,18 +1131,6 @@ begin
      Pen.Color:=Brush.Color;
      FillCell(Rect);
      Include(State, gdSelected);
-                       {
-     Pen.Color:=ColorDarker(Brush.Color, 40);
-     MoveTo(Rect.Left, Rect.Bottom-1);
-     LineTo(Rect.Right, Rect.Bottom-1);
-     MoveTo(Rect.Left, Rect.Top);
-     LineTo(Rect.Right, Rect.Top);
-
-     Pen.Color:=ColorDarker(Brush.Color, 20);
-     MoveTo(Rect.Left, Rect.Bottom-2);
-     LineTo(Rect.Right, Rect.Bottom-2);
-     MoveTo(Rect.Left, Rect.Top+1);
-     LineTo(Rect.Right, Rect.Top+1);    }
     end
    else
     begin
@@ -1221,9 +1215,10 @@ begin
        DrawText(TextValue, Columns[ACol].FormatColumns);
        if Assigned(FOnDrawColumn) then FOnDrawColumn(Sender, ACol, -1, Rect, State);
        //TextOut(Rect.Left, Rect.Top, IntToStr(ARow)+' '+IntToStr(RowCount));
+       Unlock;
        Exit;
       end;
-     if ItemCount > 0 then
+     if (ItemCount > 0) or ProcEmpty then
       begin
        if Assigned(FAfterDrawText) then FAfterDrawText(Sender, ACol, DataARow, Rect, State);
        if FColumns[ACol].AsButton then
@@ -1256,10 +1251,7 @@ begin
           end;
         end;
 
-      end
-     else
-      if ProcEmpty then
-       if Assigned(FAfterDrawText) then FAfterDrawText(Sender, ACol, DataARow, Rect, State);
+      end;
      //Inc(FUpdatesCount);
     end;
    if (ItemCount > 0) or (ProcEmpty) then
@@ -1273,7 +1265,8 @@ begin
     end;
   { if (ACol = 0) and (ARow = 1) then
     TextOut(Rect.Left, Rect.Top, IntToStr(FUpdatesCount));}
-
+  finally
+   Unlock;
   end;
 end;
 

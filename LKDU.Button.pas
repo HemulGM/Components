@@ -17,8 +17,6 @@ type
   TButtonFlat = class(TCustomControl)
    private
     FColors:array[TButtonFlatState] of TColor;
-    FPen: TPen;
-    FBrush: TBrush;
     FShape: TShapeType;
     FButtonState:TButtonFlatState;
     FDowned:Boolean;
@@ -34,7 +32,6 @@ type
     FOnPaint:TNotifyEvent;
     FRoundRectParam:Integer;
     FOnMouseDown: TMouseEvent;
-    FOnMouseMove: TMouseMoveEvent;
     FOnMouseUp: TMouseEvent;
     FOnMouseLeave: TNotifyEvent;
     FOnMouseEnter: TNotifyEvent;
@@ -76,7 +73,6 @@ type
     procedure SetNeedColor(const Value: TColor);
     procedure SetShape(Value: TShapeType);
     procedure SetColorNormal(const Value: TColor);
-    procedure StyleChanged(Sender: TObject);
     function GetColorNormal: TColor;
     function GetColorOver: TColor;
     function GetColorPressed: TColor;
@@ -177,11 +173,6 @@ begin
 end;
 
 { TLabelEx }
-
-procedure TButtonFlat.StyleChanged(Sender: TObject);
-begin
- Invalidate;
-end;
 
 procedure TButtonFlat.TimedText(Text: string; Delay: Cardinal);
 begin
@@ -311,43 +302,14 @@ begin
 end;
 
 procedure TButtonFlat.OnTimerAnimateTime(Sender: TObject);
-var R, NR, G, NG, B, NB:Integer;
-    pRGB:Cardinal;
-    IncC:Integer;
 begin
- IncC:=8;
- Inc(FAnimPerc, IncC);
+ Inc(FAnimPerc, 8);
  if FAnimPerc >= 100 then
   begin
    StopAnimate;
    StyledColor:=NeedColor;
   end
- else
-  StyledColor:=MixColors(NeedColor, FromColor, FAnimPerc);
-
- {
- pRGB:=ColorToRGB(StyledColor);
- R:=GetRValue(pRGB);
- G:=GetGValue(pRGB);
- B:=GetBValue(pRGB);
-
- pRGB:=ColorToRGB(FNeedColor);
- NR:=GetRValue(pRGB);
- NG:=GetGValue(pRGB);
- NB:=GetBValue(pRGB);
-
- if Abs(R - NR) < IncC then R:=NR;
- if Abs(G - NG) < IncC then G:=NG;
- if Abs(B - NB) < IncC then B:=NB;
- if R < NR then R:=R+IncC else if R > NR then R:=R-IncC;
- if G < NG then G:=G+IncC else if G > NG then G:=G-IncC;
- if B < NB then B:=B+IncC else if B > NB then B:=B-IncC;
-
- R:=Max(0, Min(R, 255));
- G:=Max(0, Min(G, 255));
- B:=Max(0, Min(B, 255));
- StyledColor:=RGB(R, G, B);
- if StyledColor = FNeedColor then StopAnimate;}
+ else StyledColor:=MixColors(NeedColor, FromColor, FAnimPerc);
 end;
 
 procedure TButtonFlat.OnTimerTTTime(Sender: TObject);

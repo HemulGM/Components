@@ -15,7 +15,6 @@ interface
     FRect, FRectAnimate:TRect;
     FHeight, FWidth:Integer;
     FPanel:TPanelExt;
-    FHintWind:TWinControl;
     FAutoHide: Cardinal;
     procedure FHide;
     procedure FShow;

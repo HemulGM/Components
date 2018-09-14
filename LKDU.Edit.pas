@@ -69,7 +69,7 @@ interface
     property State:TEditExState read FState;
     function Flash:Boolean;
     procedure Reset;
-    procedure SetFocus;
+    procedure SetFocus; override;
     property Date:TDate read GetDate write SetDate;
     property Value:Integer read GetValue write SetValue;
    published
@@ -111,7 +111,7 @@ interface
     FGetDataProc: TGetTableDataProc;
     FViewListSize: Integer;
     FViewListWidth:Integer;
-    FListWindow:TFormList;
+    //FListWindow:TFormList;
 
     procedure OnEditChange(Sender:TObject);
     procedure OnButtonClick(Sender:TObject);
