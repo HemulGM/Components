@@ -55,6 +55,7 @@ type
     FFontOver: TFont;
     FFontDown: TFont;
     FFromColor: TColor;
+    FTransparent: Boolean;
     procedure SetLabel(const Value: string);
     procedure SetFont(const Value: TFont);
     procedure SetStyledColor(const Value: TColor);
@@ -91,6 +92,7 @@ type
     procedure SetFontDown(const Value: TFont);
     procedure SetFontOver(const Value: TFont);
     procedure SetFlat(const Value: Boolean);
+    procedure SetTransparent(const Value: Boolean);
     property ButtonState:TButtonFlatState read FButtonState write SetButtonState;
     property StyledColor:TColor read FStyledColor write SetStyledColor;
     property FromColor:TColor read FFromColor write FFromColor;
@@ -98,13 +100,13 @@ type
    protected
     procedure Paint; override;
    public
+    property Canvas;
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
     procedure TimedText(Text:string; Delay:Cardinal);
    published
     property Align;
     property Anchors;
-    property Canvas;
     property Caption:string read FLabel write SetLabel;
     property ColorNormal:TColor read GetColorNormal write SetColorNormal;
     property ColorOver:TColor read GetColorOver write SetColorOver;
@@ -134,6 +136,7 @@ type
     property NotifyColor:TColor read FNotifyColor write SetNotifyColor default $0042A4FF;
     property NotifyVisible:Boolean read FNotifyVisible write SetNotifyVisible default False;
     property NotifyWidth:Integer read FNotifyWidth write SetNotifyWidth default 8;
+    property Transparent:Boolean read FTransparent write SetTransparent default False;
     property OnClick;
     property OnContextPopup;
     property OnDragDrop;
@@ -343,62 +346,67 @@ begin
     if Assigned(Parent) and (Parent is TControl) then
      begin
       Brush.Color:=TColorControl(Parent).Color;
-      FillRect(ClientRect);
-     end;
-    Brush.Color:=StyledColor;
-    // Плоский стиль
-    if Flat then Pen.Color:=Brush.Color
-    else Pen.Color:=ColorDarker(StyledColor);
-    // Фигура
-    X:=Pen.Width div 2;
-    Y:=X;
-    W:=Width - Pen.Width + 1;
-    H:=Height - Pen.Width + 1;
-    if Pen.Width = 0 then begin Dec(W); Dec(H); end;
-    if W < H then S:=W else S:=H;
-    if Self.Shape in [stSquare, stRoundSquare, stCircle] then
+     end
+    else Brush.Color:=ColorNormal;
+    FillRect(ClientRect);
+    //Если не прозрачная кнопка, то рисуем фигуру
+    if not FTransparent then
      begin
+      Brush.Color:=StyledColor;
+      // Плоский стиль
+      if Flat then Pen.Color:=Brush.Color
+      else Pen.Color:=ColorDarker(StyledColor);
+      // Фигура
+      X:=Pen.Width div 2;
+      Y:=X;
+      W:=Width - Pen.Width + 1;
+      H:=Height - Pen.Width + 1;
+      if Pen.Width = 0 then begin Dec(W); Dec(H); end;
       if W < H then S:=W else S:=H;
-      Inc(X, (W - S) div 2); W:=S;
-      Inc(Y, (H - S) div 2); H:=S;
-     end;
-    case Self.Shape of
-     stRectangle,
-     stSquare: Rectangle(X, Y, X + W, Y + H);
-     stRoundRect,
-     stRoundSquare:
-      begin
-       if FRoundRectParam = 0 then Rx:=S div 4 else Rx:=FRoundRectParam;
-       if GroupItemKind = giCenter then RoundRect(X, Y, X + W, Y + H, 0, 0)
-       else RoundRect(X, Y, X + W, Y + H, Rx, Rx);
-       case GroupItemKind of
-        giLeft:
-         begin
-          FRect:=Rect(X, Y, X + W, Y + H);
-          FRect.Offset(FRect.Width div 2 + 1, 0);
-          FRect.Width:=FRect.Width div 2;
-          Rectangle(FRect);
-          FRect.Inflate(-1, -1);
-          FRect.Left:=FRect.Left - 1;
-          FillRect(FRect);
-          FRect.Inflate(1, 1);
-          FRect.Left:=FRect.Left + 1;
-         end;
-        giRight:
-         begin
-          FRect:=Rect(X, Y, X + W, Y + H);
-          FRect.Width:=FRect.Width - (FRect.Width div 2);
-          Rectangle(FRect);
-          FRect.Inflate(0, -1);
-          FRect.Left:=FRect.Right - 1;
-          FillRect(FRect);
-          FRect.Inflate(0, 1);
-          FRect.Left:=FRect.Right + 1;
-         end;
+      if Self.Shape in [stSquare, stRoundSquare, stCircle] then
+       begin
+        if W < H then S:=W else S:=H;
+        Inc(X, (W - S) div 2); W:=S;
+        Inc(Y, (H - S) div 2); H:=S;
        end;
+      case Self.Shape of
+       stRectangle,
+       stSquare: Rectangle(X, Y, X + W, Y + H);
+       stRoundRect,
+       stRoundSquare:
+        begin
+         if FRoundRectParam = 0 then Rx:=S div 4 else Rx:=FRoundRectParam;
+         if GroupItemKind = giCenter then RoundRect(X, Y, X + W, Y + H, 0, 0)
+         else RoundRect(X, Y, X + W, Y + H, Rx, Rx);
+         case GroupItemKind of
+          giLeft:
+           begin
+            FRect:=Rect(X, Y, X + W, Y + H);
+            FRect.Offset(FRect.Width div 2 + 1, 0);
+            FRect.Width:=FRect.Width div 2;
+            Rectangle(FRect);
+            FRect.Inflate(-1, -1);
+            FRect.Left:=FRect.Left - 1;
+            FillRect(FRect);
+            FRect.Inflate(1, 1);
+            FRect.Left:=FRect.Left + 1;
+           end;
+          giRight:
+           begin
+            FRect:=Rect(X, Y, X + W, Y + H);
+            FRect.Width:=FRect.Width - (FRect.Width div 2);
+            Rectangle(FRect);
+            FRect.Inflate(0, -1);
+            FRect.Left:=FRect.Right - 1;
+            FillRect(FRect);
+            FRect.Inflate(0, 1);
+            FRect.Left:=FRect.Right + 1;
+           end;
+         end;
+        end;
+       stCircle, stEllipse: Ellipse(X, Y, X + W, Y + H);
       end;
-     stCircle, stEllipse: Ellipse(X, Y, X + W, Y + H);
-    end;
+     end;
     // Уведомление
     if FNotifyVisible then
      begin
@@ -416,14 +424,7 @@ begin
     RenderTarget.EndDraw;
     Free;
    end;
-  // Текст
-  if Assigned(FFont) then Canvas.Font.Assign(FFont);
-  case FButtonState of
-   bfsOver: if Assigned(FFontOver) then Canvas.Font.Assign(FFontOver);
-   bfsPressed: if Assigned(FFontDown) then Canvas.Font.Assign(FFontDown);
-  end;
-  Canvas.Brush.Color:=clWhite;
-  Canvas.Brush.Style:=bsClear;
+  //Прямоугольник для текста
   if FIgnorBounds then FRect:=ClientRect
   else
    begin
@@ -432,6 +433,7 @@ begin
          FRect:=Rect(Round(X + W / (6.8 / d)), Round(Y + H / (6.8 * d)), Round(X + W - W / (6.8 / d)), Round(Y + H - H / (6.8 * d)))
     else FRect:=Rect(Round(X + W / (6.8 * d)), Round(Y + H / (6.8 / d)), Round(X + W - W / (6.8 * d)), Round(Y + H - H / (6.8 / d)));
    end;
+  //Изображение
   FRect.Offset(FImageIndentLeft, 0);
   FRect.Width:=FRect.Width - FImageIndentLeft;
   if Assigned(FImages) and (FImageIndex >= 0) then
@@ -472,7 +474,13 @@ begin
       end;
     end;
    end;
-  ///
+  // Текст
+  if Assigned(FFont) then Canvas.Font.Assign(FFont);
+  case FButtonState of
+   bfsOver: if Assigned(FFontOver) then Canvas.Font.Assign(FFontOver);
+   bfsPressed: if Assigned(FFontDown) then Canvas.Font.Assign(FFontDown);
+  end;
+  Canvas.Brush.Color:=clWhite;
   Canvas.Brush.Style:=bsClear;
   DF:=TTextFormatFlags(FTextFormat);
   if FDrawTimedText then
@@ -644,6 +652,12 @@ end;
 procedure TButtonFlat.SetTextFormat(const Value: TTextFormat);
 begin
  FTextFormat:=Value;
+ Repaint;
+end;
+
+procedure TButtonFlat.SetTransparent(const Value: Boolean);
+begin
+ FTransparent:=Value;
  Repaint;
 end;
 
