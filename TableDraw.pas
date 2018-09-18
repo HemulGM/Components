@@ -142,9 +142,11 @@ type
     FItemCount:Integer;
     FCanNoSelect:Boolean;
     FDrawColumnBorded: Boolean;
+
     FFlashSelectedCol: Boolean;
     FRoundLineRect: Integer;
     FProcEmpty: Boolean;
+    FDrawColumnSections: Boolean;
     function DataRow:Integer;
     procedure CloseControl(Sender:TObject);
     procedure DoEditCancel;
@@ -183,10 +185,24 @@ type
     procedure SetFlashSelectedCol(const Value: Boolean);
     procedure SetRoundLineRect(const Value: Integer);
     procedure SetProcEmpty(const Value: Boolean);
+    procedure SetShowFocus(const Value: Boolean);
+    procedure SetDrawColumnBorded(const Value: Boolean);
+    procedure SetColumnsFont(const Value: TFont);
+    procedure SetFontSelLine(const Value: TFont);
+    procedure SetFontLine(const Value: TFont);
+    procedure SetFontHotLine(const Value: TFont);
+    procedure SetColumnsColor(const Value: TColor);
+    procedure SetLineSelColor(const Value: TColor);
+    procedure SetLineHotColor(const Value: TColor);
+    procedure SetLineColorXor(const Value: TColor);
+    procedure SetLineColor(const Value: TColor);
+    procedure SetDrawColumnSections(const Value: Boolean);
     property ItemDowned:Boolean read FItemDowned write SetItemDowned;
     procedure UpdateColumnIndex;
     procedure FUpdateColumnsHeight;
     procedure WMReSize(var Msg:TWMSize); message WM_SIZE;
+    property RowHeights;
+    property ColWidths;
    protected
     procedure ColWidthsChanged; override;
     procedure LastFocus(var Msg:TMessage); message WM_ACTIVATE;
@@ -294,20 +310,21 @@ type
     property CanNoSelect:Boolean read FCanNoSelect write FCanNoSelect default True;
     property VisibleEdit:Boolean read FVisibleEdit write FVisibleEdit default True;
     property ItemCount:Integer read GetRowCount write SetRowCount default 5;
-    property LineColor:TColor read FLineColor write FLineColor default $00F1F2F2;
-    property LineColorXor:TColor read FLineColorXor write FLineColorXor default $00E7E8E8;
-    property LineHotColor:TColor read FLineHotColor write FLineHotColor default $00DCDCDC;
-    property LineSelColor:TColor read FLineSelColor write FLineSelColor default $006C6C6C;
-    property ColumnsColor:TColor read FColumnsColor write FColumnsColor default $00DCDCDC;
-    property FontHotLine:TFont read FFontHotLine write FFontHotLine;
-    property FontLine:TFont read FFontLine write FFontLine;
-    property FontSelLine:TFont read FFontSelLine write FFontSelLine;
+    property LineColor:TColor read FLineColor write SetLineColor default $00F1F2F2;
+    property LineColorXor:TColor read FLineColorXor write SetLineColorXor default $00E7E8E8;
+    property LineHotColor:TColor read FLineHotColor write SetLineHotColor default $00DCDCDC;
+    property LineSelColor:TColor read FLineSelColor write SetLineSelColor default $006C6C6C;
+    property ColumnsColor:TColor read FColumnsColor write SetColumnsColor default $00DCDCDC;
+    property FontHotLine:TFont read FFontHotLine write SetFontHotLine;
+    property FontLine:TFont read FFontLine write SetFontLine;
+    property FontSelLine:TFont read FFontSelLine write SetFontSelLine;
     property ShowColumns:Boolean read FShowColumns write SetShowColumns default True;
     property RoundLineRect:Integer read FRoundLineRect write SetRoundLineRect default 0;
-    property ColumnsFont:TFont read FColumnsFont write FColumnsFont;
+    property ColumnsFont:TFont read FColumnsFont write SetColumnsFont;
     property SetFocusOnEnter:Boolean read FSetFocusOnEnter write FSetFocusOnEnter default False;
-    property ShowFocus:Boolean read FShowFocus write FShowFocus default False;
-    property DrawColumnBorded:Boolean read FDrawColumnBorded write FDrawColumnBorded default True;
+    property ShowFocus:Boolean read FShowFocus write SetShowFocus default False;
+    property DrawColumnBorded:Boolean read FDrawColumnBorded write SetDrawColumnBorded default True;
+    property DrawColumnSections:Boolean read FDrawColumnSections write SetDrawColumnSections default True;
     property FlashSelectedCol:Boolean read FFlashSelectedCol write SetFlashSelectedCol default False;
   end;
 
@@ -629,6 +646,12 @@ begin
  Repaint;
 end;
 
+procedure TTableEx.SetShowFocus(const Value: Boolean);
+begin
+ FShowFocus := Value;
+ Repaint;
+end;
+
 procedure TTableEx.SetShowScrollBar(const Value: Boolean);
 begin
  case Value of
@@ -692,6 +715,18 @@ begin
  SetMaxColumn(ColumnCount-1);
 end;
 
+procedure TTableEx.SetColumnsColor(const Value: TColor);
+begin
+ FColumnsColor := Value;
+ Repaint;
+end;
+
+procedure TTableEx.SetColumnsFont(const Value: TFont);
+begin
+ FColumnsFont := Value;
+ Repaint;
+end;
+
 procedure TTableEx.SetColumnsHeight(const Value: Integer);
 begin
  FColumnsHeight:=Value;
@@ -710,6 +745,18 @@ begin
  FUpdateColumnsHeight;
 end;
 
+procedure TTableEx.SetDrawColumnBorded(const Value: Boolean);
+begin
+ FDrawColumnBorded := Value;
+ Repaint;
+end;
+
+procedure TTableEx.SetDrawColumnSections(const Value: Boolean);
+begin
+ FDrawColumnSections := Value;
+ Repaint;
+end;
+
 procedure TTableEx.SetEditing(Value: Boolean);
 begin
  FEditing:=Value;
@@ -718,6 +765,24 @@ end;
 procedure TTableEx.SetFlashSelectedCol(const Value: Boolean);
 begin
  FFlashSelectedCol:=Value;
+ Repaint;
+end;
+
+procedure TTableEx.SetFontHotLine(const Value: TFont);
+begin
+ FFontHotLine := Value;
+ Repaint;
+end;
+
+procedure TTableEx.SetFontLine(const Value: TFont);
+begin
+ FFontLine := Value;
+ Repaint;
+end;
+
+procedure TTableEx.SetFontSelLine(const Value: TFont);
+begin
+ FFontSelLine := Value;
  Repaint;
 end;
 
@@ -731,7 +796,7 @@ procedure TTableEx.SetItemIndex(const Value: Integer);
 begin
  FItemIndex:= Value;
  if FItemIndex >= 0 then
-  Row:=Max(0, FItemIndex + Ord(FShowColumns))
+  Row:=Max(0, Min(ItemCount, FItemIndex + Ord(FShowColumns)))
  else
   begin
    Col:=0;
@@ -740,6 +805,30 @@ begin
     SendMessage(Handle, WM_VSCROLL, SB_THUMBPOSITION, 0);
   end;
  UpdateMouse(FCordHot, True);
+ Repaint;
+end;
+
+procedure TTableEx.SetLineColor(const Value: TColor);
+begin
+ FLineColor := Value;
+ Repaint;
+end;
+
+procedure TTableEx.SetLineColorXor(const Value: TColor);
+begin
+ FLineColorXor := Value;
+ Repaint;
+end;
+
+procedure TTableEx.SetLineHotColor(const Value: TColor);
+begin
+ FLineHotColor := Value;
+ Repaint;
+end;
+
+procedure TTableEx.SetLineSelColor(const Value: TColor);
+begin
+ FLineSelColor := Value;
  Repaint;
 end;
 
@@ -817,6 +906,7 @@ begin
  //FButtonOnItem:=-1;
  FUpdatesCount:=0;
  FDrawColumnBorded:=True;
+ FDrawColumnSections:=True;
  FFlashSelectedCol:=False;
 
  FFieldEdit:=TFieldMaskEdit.Create(Self);
@@ -1064,22 +1154,29 @@ begin
     begin
      BeginDraw;
      ARect.Inflate(0, -2);
-     if ACol = 0 then
+     if ColumnCount > 1 then
       begin
-       RoundRect(ARect, FRoundLineRect, FRoundLineRect);
-       Rectangle(System.Classes.Rect(ARect.Left + ARect.Width div 2, ARect.Top, ARect.Right, ARect.Bottom));
+       if ACol = 0 then
+        begin
+         RoundRect(ARect, FRoundLineRect, FRoundLineRect);
+         Rectangle(System.Classes.Rect(ARect.Left + ARect.Width div 2, ARect.Top, ARect.Right, ARect.Bottom));
+        end
+       else
+        if ACol = ColumnCount-1 then
+         begin
+          RoundRect(ARect, FRoundLineRect, FRoundLineRect);
+          ARect.Width:=ARect.Width - ARect.Width div 2;
+          Rectangle(ARect);
+         end
+        else
+          begin
+           Rectangle(ARect);
+          end;
       end
      else
-      if ACol = ColumnCount-1 then
-       begin
-        RoundRect(ARect, FRoundLineRect, FRoundLineRect);
-        ARect.Width:=ARect.Width - ARect.Width div 2;
-        Rectangle(ARect);
-       end
-      else
-        begin
-         Rectangle(ARect);
-        end;
+      begin
+       RoundRect(ARect, FRoundLineRect, FRoundLineRect);
+      end;
      EndDraw;
      Free;
     end;
@@ -1116,11 +1213,11 @@ begin
    Rectangle(Rect);
                       //$00F1F2F2
    Brush.Color:=clBlack;
-   if FColumns.Count <= 0 then
+   {if FColumns.Count <= 0 then
     begin
      Unlock;
      Exit;
-    end;
+    end;   }
    if ARow mod 2 = 0 then Brush.Color:=FLineColorXor else Brush.Color:=FLineColor;
 
    //Если элемент выбран и это не заголовок
@@ -1197,12 +1294,19 @@ begin
        MoveTo(Rect.Left, Rect.Bottom-1);
        LineTo(Rect.Right, Rect.Bottom-1);
       end;
-    { if ACol <> 0 then
+     if FDrawColumnSections and (ACol <> 0) then
       begin
        Pen.Color:=ColorDarker(FColumnsColor, 10);
-       MoveTo(Rect.Left, Rect.Top);
-       LineTo(Rect.Left, Rect.Bottom);
-      end; }
+       MoveTo(Rect.Left, Rect.Top+1);
+       LineTo(Rect.Left, Rect.Bottom-1);
+      end;
+     if csDesigning in ComponentState then
+      if FDrawColumnSections then
+       begin
+        Pen.Color:=ColorDarker(FColumnsColor, 10);
+        MoveTo(Rect.Left + Rect.Width div 2, Rect.Top+1);
+        LineTo(Rect.Left + Rect.Width div 2, Rect.Bottom-1);
+       end;
     end;
    if FDefDrawing then
     begin
@@ -1210,9 +1314,13 @@ begin
      if (ARow = 0) and (FShowColumns) then
       begin
        Brush.Style:=bsClear;
-       TextValue:=Columns[ACol].Caption;
+       if not (csDesigning in ComponentState) then
+        TextValue:=Columns[ACol].Caption
+       else TextValue:='Заголовок';
        Font.Assign(FColumnsFont);
-       DrawText(TextValue, Columns[ACol].FormatColumns);
+       if not (csDesigning in ComponentState) then
+        DrawText(TextValue, Columns[ACol].FormatColumns)
+       else DrawText(TextValue, [tfVerticalCenter, tfSingleLine]);
        if Assigned(FOnDrawColumn) then FOnDrawColumn(Sender, ACol, -1, Rect, State);
        //TextOut(Rect.Left, Rect.Top, IntToStr(ARow)+' '+IntToStr(RowCount));
        Unlock;
@@ -1221,47 +1329,57 @@ begin
      if (ItemCount > 0) or ProcEmpty then
       begin
        if Assigned(FAfterDrawText) then FAfterDrawText(Sender, ACol, DataARow, Rect, State);
-       if FColumns[ACol].AsButton then
+       if not (csDesigning in ComponentState) then
         begin
-         if not (FColumns[ACol].ShowButtonOnlySelect and (ARow <> DataRow)) then
+         if Columns[ACol].AsButton then
           begin
-           if Assigned(FGetDataProc) then FGetDataProc(ACol, DataARow, TextValue);
-           if (FCordHot.X = ACol) and (FCordHot.Y = ARow) then
+           if not (Columns[ACol].ShowButtonOnlySelect and (ARow <> DataRow)) then
             begin
-             //if ItemDowned then Brush.Color:=clBtnHighlight else Brush.Color:=clBtnFace;
-             if ItemDowned then Brush.Color:=ColorDarker(Brush.Color) else Brush.Color:=ColorDarker(Brush.Color, 20);
+             if Assigned(FGetDataProc) then FGetDataProc(ACol, DataARow, TextValue);
+             if (FCordHot.X = ACol) and (FCordHot.Y = ARow) then
+              begin
+               //if ItemDowned then Brush.Color:=clBtnHighlight else Brush.Color:=clBtnFace;
+               if ItemDowned then Brush.Color:=ColorDarker(Brush.Color) else Brush.Color:=ColorDarker(Brush.Color, 20);
+              end;
+             Brush.Style:=bsSolid;
+             Pen.Color:=Brush.Color;
+             FillCell(Rect);
+             if TextValue <> '' then
+              begin
+               Brush.Style:=bsClear;
+               DrawText(TextValue, Columns[ACol].Format);
+              end;
             end;
-           Brush.Style:=bsSolid;
-           Pen.Color:=Brush.Color;
-           FillCell(Rect);
+          end
+         else
+          begin
+           Brush.Style:=bsClear;
+           if Assigned(FGetDataProc) then FGetDataProc(ACol, DataARow, TextValue);
            if TextValue <> '' then
             begin
-             Brush.Style:=bsClear;
-             DrawText(TextValue, FColumns[ACol].Format);
+             DrawText(TextValue, Columns[ACol].Format);
             end;
           end;
         end
        else
         begin
          Brush.Style:=bsClear;
-         if Assigned(FGetDataProc) then FGetDataProc(ACol, DataARow, TextValue);
-         if TextValue <> '' then
-          begin
-           DrawText(TextValue, FColumns[ACol].Format);
-          end;
+         DrawText('Значение', [tfVerticalCenter, tfSingleLine]);
         end;
-
       end;
      //Inc(FUpdatesCount);
     end;
-   if (ItemCount > 0) or (ProcEmpty) then
+   if not (csDesigning in ComponentState) then
     begin
-     if Assigned(FOnDrawCell) then FOnDrawCell(Sender, ACol, DataARow, Rect, State);
-     if FShowFocus then
-      if (ACol = Col) and (ARow = DataRow) and Focused and (not FColumns[ACol].AsButton) then
-       begin
-        DrawFocusRect(Rect);
-       end;
+     if (ItemCount > 0) or (ProcEmpty) then
+      begin
+       if Assigned(FOnDrawCell) then FOnDrawCell(Sender, ACol, DataARow, Rect, State);
+       if FShowFocus then
+        if (ACol = Col) and (ARow = DataRow) and Focused and (not Columns[ACol].AsButton) then
+         begin
+          DrawFocusRect(Rect);
+         end;
+      end;
     end;
   { if (ACol = 0) and (ARow = 1) then
     TextOut(Rect.Left, Rect.Top, IntToStr(FUpdatesCount));}
