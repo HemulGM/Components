@@ -47,7 +47,8 @@ contains
   PanelExt in 'PanelExt.pas',
   LKDU.PanelCollapsed in 'LKDU.PanelCollapsed.pas',
   LKDU.SpinEdit in 'LKDU.SpinEdit.pas',
-  LKDU.Button in 'LKDU.Button.pas';
+  LKDU.Button in 'LKDU.Button.pas',
+  HGM.Common.Notify in 'HGM.Common.Notify.pas';
 
 end.
 
