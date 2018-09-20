@@ -146,7 +146,8 @@ type
     FFlashSelectedCol: Boolean;
     FRoundLineRect: Integer;
     FProcEmpty: Boolean;
-    FDrawColumnSections: Boolean;
+    FDrawColumnSections:Boolean;
+    FMouseRightClickTooClick:Boolean;
     function DataRow:Integer;
     procedure CloseControl(Sender:TObject);
     procedure DoEditCancel;
@@ -197,6 +198,7 @@ type
     procedure SetLineColorXor(const Value: TColor);
     procedure SetLineColor(const Value: TColor);
     procedure SetDrawColumnSections(const Value: Boolean);
+    function GetItemUnderMouse: Integer;
     property ItemDowned:Boolean read FItemDowned write SetItemDowned;
     procedure UpdateColumnIndex;
     procedure FUpdateColumnsHeight;
@@ -228,6 +230,7 @@ type
     property Col;
     property CordHot:TGridCoord read FCordHot;
     property FocusedColumn:Integer read GetFocusedColumn;
+    property ItemUnderMouse:Integer read GetItemUnderMouse;
    published
     property OnActivate:TNotifyEvent read FOnActivate write FOnActivate;
     property OnDeactivate:TNotifyEvent read FOnDeactivate write FOnDeactivate;
@@ -326,6 +329,7 @@ type
     property DrawColumnBorded:Boolean read FDrawColumnBorded write SetDrawColumnBorded default True;
     property DrawColumnSections:Boolean read FDrawColumnSections write SetDrawColumnSections default True;
     property FlashSelectedCol:Boolean read FFlashSelectedCol write SetFlashSelectedCol default False;
+    property MouseRightClickTooClick:Boolean read FMouseRightClickTooClick write FMouseRightClickTooClick default False;
   end;
 
  function DrawTextCentered(Canvas: TCanvas; const R: TRect; S: String; FDrawFlags:Cardinal): Integer;
@@ -1495,10 +1499,6 @@ end;
 function TTableEx.FirstColumn(aCaption: string; aWidth: Integer; aButton: Boolean):Integer;
 begin
  Result:=AddColumn(aCaption, aWidth, aButton);
- {FColumns[0].Caption:=aCaption;
- FColumns[0].Width:=aWidth;
- FColumns[0].AsButton:=aButton;
- Result:=0;   }
 end;
 
 procedure TTableEx.FKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
@@ -1541,7 +1541,7 @@ end;
 
 procedure TTableEx.FMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 begin
- if (Button = mbLeft) and (ssDouble in Shift) then
+ if ((Button = mbLeft) or (FMouseRightClickTooClick and (Button = mbRight))) and (ssDouble in Shift) then
   begin
    if (FCordHot.X = Col) and (FCordHot.Y = Row) then FOnDblClick;
   end;
@@ -1552,42 +1552,45 @@ end;
 procedure TTableEx.FMouseUp(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 var ACol, ARow, NewRow:Integer;
 begin
- MouseToCell(X, Y, ACol, ARow);
- if ARow >= 0 then
+ if (Button = mbLeft) or (FMouseRightClickTooClick and (Button = mbRight)) then
   begin
-   if ItemDowned then
+   MouseToCell(X, Y, ACol, ARow);
+   if ARow >= 0 then
     begin
-     if FShowColumns then
+     if ItemDowned then
       begin
-       if ARow = 0 then
+       if FShowColumns then
         begin
-         if Assigned(FOnColumnClick) then FOnColumnClick(Sender, Button, ACol);
-         ItemDowned:=False;
-         if Assigned(FOnMouseUp) then FOnMouseUp(Sender, Button, Shift, X, Y);
-         Exit;
+         if ARow = 0 then
+          begin
+           if Assigned(FOnColumnClick) then FOnColumnClick(Sender, Button, ACol);
+           ItemDowned:=False;
+           if Assigned(FOnMouseUp) then FOnMouseUp(Sender, Button, Shift, X, Y);
+           Exit;
+          end;
+         NewRow:=ARow - 1;
+        end
+       else
+        begin
+         NewRow:=ARow;
         end;
-       NewRow:=ARow - 1;
-      end
-     else
-      begin
-       NewRow:=ARow;
+       if ItemIndex = NewRow then
+        begin
+         if Assigned(FOnItemColClick) then FOnItemColClick(Sender, Button, ACol);
+        end
+       else
+        begin
+         ItemIndex:=NewRow;
+        end;
+       DoItemClick;
       end;
-     if ItemIndex = NewRow then
-      begin
-       if Assigned(FOnItemColClick) then FOnItemColClick(Sender, Button, ACol);
-      end
-     else
-      begin
-       ItemIndex:=NewRow;
-      end;
-     DoItemClick;
+    end
+   else
+    begin
+     if FCanNoSelect then ItemIndex:=-1;
     end;
-  end
- else
-  begin
-   if FCanNoSelect then ItemIndex:=-1;
+   ItemDowned:=False;
   end;
- ItemDowned:=False;
  if Assigned(FOnMouseUp) then FOnMouseUp(Sender, Button, Shift, X, Y);
 end;
 
@@ -1708,6 +1711,11 @@ procedure TTableEx.MouseToItem(Position: TPoint; var Index, Column: Integer);
 begin
  MouseToCell(Position.X, Position.Y, Column, Index);
  if FShowColumns then Index:=Index-1;
+end;
+
+function TTableEx.GetItemUnderMouse:Integer;
+begin
+ Result:=FCordHot.Y - Ord(FShowColumns);
 end;
 
 procedure TTableEx.FOnDblClick;
