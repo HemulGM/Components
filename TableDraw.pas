@@ -994,7 +994,7 @@ begin
  FixedCols:=0;
  FixedRows:=1;
  Width:=400;
- DefaultColWidth:=60;
+ DefaultColWidth:=200;
  DefaultRowHeight:=25;
  Options:=[goThumbTracking, goColSizing];
  ColumnsHeight:=30;
