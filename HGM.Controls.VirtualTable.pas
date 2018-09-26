@@ -1,11 +1,11 @@
-unit TableDraw;
+unit HGM.Controls.VirtualTable;
 
 interface
 
 uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Classes, Vcl.Graphics,
   Vcl.Controls, Vcl.Forms, Vcl.StdCtrls, System.Generics.Collections,
-  Vcl.ExtCtrls, System.UITypes, Vcl.Grids, Vcl.Mask, Direct2D, D2D1;
+  Vcl.ExtCtrls, System.UITypes, Vcl.Grids, Vcl.Mask, Direct2D, D2D1, HGM.Common, HGM.Common.Utils;
 
 type
   TTableEx = class;
@@ -332,15 +332,7 @@ type
     property MouseRightClickTooClick:Boolean read FMouseRightClickTooClick write FMouseRightClickTooClick default False;
   end;
 
- function DrawTextCentered(Canvas: TCanvas; const R: TRect; S: String; FDrawFlags:Cardinal): Integer;
- function Between(FMin, FValue, FMax:Integer):Boolean;
- function ScaledRect(const Src:TRect; Delta:Integer):TRect;
- function MixColors(Color1, Color2:TColor; Alpha:Byte):TColor;
- function ColorDarker(Color:TColor; Percent:Byte = 40):TColor;
- function ColorLighter(Color:TColor; Percent:Byte = 40):TColor;
- function IndexInList(const Index:Integer; ListCount:Integer):Boolean;
- function FlashControl(Control:TControl):Boolean;
-
+  function IndexInList(const Index:Integer; ListCount:Integer):Boolean;
 
 procedure Register;
 
@@ -354,7 +346,7 @@ end;
 
 procedure Register;
 begin
- RegisterComponents('LKDU', [TTableEx]);
+ RegisterComponents(PackageName, [TTableEx]);
 end;
 
 { TTableData<T> }
@@ -432,187 +424,6 @@ begin
     begin
      FTables[i].ItemCount:=Count;
     end;
-end;
-
-
-function FlashControl(Control:TControl):Boolean;
-var SaveColor, BufColor:TColor;
-
-procedure SetColorE(Control:TEdit; Color:TColor; var OldColor:TColor);
-begin
- OldColor:=Control.Color;
- Control.Color:=Color;
-end;
-
-procedure SetColorME(Control:TMaskEdit; Color:TColor; var OldColor:TColor);
-begin
- OldColor:=Control.Color;
- Control.Color:=Color;
-end;
-
-procedure SetColorC(Control:TComboBox; Color:TColor; var OldColor:TColor);
-begin
- OldColor:=Control.Color;
- Control.Color:=Color;
-end;
-
-procedure SetColorP(Control:TPanel; Color:TColor; var OldColor:TColor);
-begin
- OldColor:=Control.Color;
- Control.Color:=Color;
-end;
-
-procedure SetColorM(Control:TMemo; Color:TColor; var OldColor:TColor);
-begin
- OldColor:=Control.Color;
- Control.Color:=Color;
-end;
-
-procedure SetColorL(Control:TListBox; Color:TColor; var OldColor:TColor);
-begin
- OldColor:=Control.Color;
- Control.Color:=Color;
-end;
-
-procedure SetColor(Control:TControl; Color:TColor; var OldColor:TColor);
-begin
- if Control is TEdit then SetColorE(Control as TEdit, Color, OldColor);
- if Control is TMaskEdit then SetColorME(Control as TMaskEdit, Color, OldColor);
- if Control is TComboBox then SetColorC(Control as TComboBox, Color, OldColor);
- if Control is TPanel then SetColorP(Control as TPanel, Color, OldColor);
- if Control is TMemo then SetColorM(Control as TMemo, Color, OldColor);
- if Control is TListBox then SetColorL(Control as TListBox, Color, OldColor);
-end;
-
-begin
- Result:=True;
- with Control do
-  begin
-   SetColor(Control, clRed, SaveColor);
-   Repaint;
-   Sleep(60);
-
-   SetColor(Control, clMaroon, BufColor);
-   Repaint;
-   Sleep(60);
-
-   SetColor(Control, clWhite, BufColor);
-   Repaint;
-   Sleep(60);
-
-   SetColor(Control, clMaroon, BufColor);
-   Repaint;
-   Sleep(60);
-
-   SetColor(Control, clRed, BufColor);
-   Repaint;
-   Sleep(60);
-
-   SetColor(Control, clMaroon, BufColor);
-   Repaint;
-   Sleep(60);
-
-   SetColor(Control, clWhite, BufColor);
-   Repaint;
-   Sleep(60);
-
-   SetColor(Control, clMaroon, BufColor);
-   Repaint;
-   Sleep(60);
-
-   SetColor(Control, clRed, BufColor);
-   Repaint;
-   Sleep(60);
-
-   SetColor(Control, clRed, BufColor);
-   Repaint;
-   Sleep(60);
-
-   SetColor(Control, SaveColor, BufColor);
-   Repaint;
-   Sleep(60);
-  end;
-end;
-
-function Between(FMin, FValue, FMax:Integer):Boolean;
-begin
- Result:=(FValue >= FMin) and (FValue <= FMax);
-end;
-
-function ScaledRect(const Src:TRect; Delta:Integer):TRect;
-begin
- Result:=Src;                           //Rect(1, 1, 4, 4)
- Result.Left:=Result.Left - Delta;      //Scale 1 = Rect(0, 0, 5, 5)
- Result.Top:=Result.Top - Delta;
- Result.Right:=Result.Right + Delta;
- Result.Bottom:=Result.Bottom + Delta;
-end;
-
-function MixColors(Color1, Color2:TColor; Alpha:Byte):TColor;
-var C1, C2:LongInt;
-    R, G, B, V1, V2:Byte;
-begin
- Alpha:=Round(2.55 * Alpha);
- C1:=ColorToRGB(Color1);
- C2:=ColorToRGB(Color2);
- V1:=Byte(C1);
- V2:=Byte(C2);
- R:=Alpha * (V1 - V2) shr 8 + V2;
- V1:=Byte(C1 shr 8);
- V2:=Byte(C2 shr 8);
- G:=Alpha * (V1 - V2) shr 8 + V2;
- V1:=Byte(C1 shr 16);
- V2:=Byte(C2 shr 16);
- B:=Alpha * (V1 - V2) shr 8 + V2;
- Result:=(B shl 16) + (G shl 8) + R;
-end;
-
-function ColorDarker(Color:TColor; Percent:Byte = 40):TColor;
-var R, G, B:Byte;
-begin
- if Percent > 100 then Percent:=100;
- Color:=ColorToRGB(Color);
- R:=GetRValue(Color);
- G:=GetGValue(Color);
- B:=GetBValue(Color);
- R:=R - MulDiv(R, Percent, 100);
- G:=G - MulDiv(G, Percent, 100);
- B:=B - MulDiv(B, Percent, 100);
- Result:=RGB(R, G, B);
-end;
-
-function ColorLighter(Color:TColor; Percent:Byte = 40):TColor;
-var R, G, B:Byte;
-begin
- Color:=ColorToRGB(Color);
- R:=GetRValue(Color);
- G:=GetGValue(Color);
- B:=GetBValue(Color);
- R:=R + MulDiv(255-R, Percent, 100);
- G:=G + MulDiv(255-G, Percent, 100);
- B:=B + MulDiv(255-B, Percent, 100);
- Result:=RGB(R, G, B);
-end;
-
-function DrawTextCentered(Canvas: TCanvas; const R: TRect; S: String; FDrawFlags:Cardinal): Integer;
-var DrawRect: TRect;
-    DrawFlags: Cardinal;
-    DrawParams: TDrawTextParams;
-begin
- DrawRect:=R;
- DrawFlags:= DT_END_ELLIPSIS or DT_NOPREFIX or DT_EDITCONTROL or FDrawFlags;
- DrawText(Canvas.Handle, PChar(S), -1, DrawRect, DrawFlags or DT_CALCRECT);
- DrawRect.Right:= R.Right;
- if DT_VCENTER and FDrawFlags = DT_VCENTER then
-  begin
-   if DrawRect.Bottom < R.Bottom then
-        OffsetRect(DrawRect, 0, (R.Bottom - DrawRect.Bottom) div 2)
-   else DrawRect.Bottom:= R.Bottom;
-  end;
- ZeroMemory(@DrawParams, SizeOf(DrawParams));
- DrawParams.cbSize:= SizeOf(DrawParams);
- DrawTextEx(Canvas.Handle, PChar(S), -1, DrawRect, DrawFlags, @DrawParams);
- Result:= DrawParams.uiLengthDrawn;
 end;
 
 { TTableEx }
@@ -1312,7 +1123,7 @@ begin
         LineTo(Rect.Left + Rect.Width div 2, Rect.Bottom-1);
        end;
     end;
-   if FDefDrawing then
+   if FDefDrawing and IndexInList(ACol, Columns.Count) then
     begin
      //Заголовки
      if (ARow = 0) and (FShowColumns) then
@@ -1335,7 +1146,7 @@ begin
        if Assigned(FAfterDrawText) then FAfterDrawText(Sender, ACol, DataARow, Rect, State);
        if not (csDesigning in ComponentState) then
         begin
-         if Columns[ACol].AsButton then
+         if IndexInList(ACol, Columns.Count) and Columns[ACol].AsButton then
           begin
            if not (Columns[ACol].ShowButtonOnlySelect and (ARow <> DataRow)) then
             begin
@@ -1359,7 +1170,7 @@ begin
           begin
            Brush.Style:=bsClear;
            if Assigned(FGetDataProc) then FGetDataProc(ACol, DataARow, TextValue);
-           if TextValue <> '' then
+           if (TextValue <> '') and IndexInList(ACol, Columns.Count) then
             begin
              DrawText(TextValue, Columns[ACol].Format);
             end;
@@ -1379,7 +1190,7 @@ begin
       begin
        if Assigned(FOnDrawCell) then FOnDrawCell(Sender, ACol, DataARow, Rect, State);
        if FShowFocus then
-        if (ACol = Col) and (ARow = DataRow) and Focused and (not Columns[ACol].AsButton) then
+        if IndexInList(ACol, Columns.Count) and (ACol = Col) and (ARow = DataRow) and Focused and (not Columns[ACol].AsButton) then
          begin
           DrawFocusRect(Rect);
          end;

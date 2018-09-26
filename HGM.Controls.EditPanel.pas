@@ -1,11 +1,10 @@
-unit EditPanel;
+unit HGM.Controls.EditPanel;
 
 interface
 
 uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
-  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, System.Generics.Collections,
-  Vcl.ExtCtrls;
+  Vcl.Controls, Vcl.Forms, Vcl.StdCtrls, Vcl.ExtCtrls, HGM.Common;
 
 type
   TOnPressEnter = procedure(Sender:TObject; var AllowNext:Boolean) of object;
@@ -57,7 +56,6 @@ type
     constructor Create(AOwner: TComponent); override;
     procedure ErrorFlash;
   published
-
     property Caption:string read GetCaption write SetCaption;
     property EnterColor:TColor read FEnterColor write SetEnterColor;
     property LeaveColor:TColor read FLeaveColor write SetLeaveColor;
@@ -80,7 +78,7 @@ implementation
 
 procedure Register;
 begin
- RegisterComponents('LKDU', [TEditPanel]);
+ RegisterComponents(PackageName, [TEditPanel]);
 end;
 
 { TEditPanel }

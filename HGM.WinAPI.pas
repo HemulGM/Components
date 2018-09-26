@@ -35,7 +35,7 @@ interface
   function GetLastDir(Path:string):string;
 
 implementation
- uses ShlObj, ActiveX, System.Win.ComObj, PNGWork, PNGFunctions, PNGImageList;
+ uses ShlObj, ActiveX, System.Win.ComObj, HGM.Common.Utils, PNGFunctions, PNGImageList;
 
 function GetLastDir(Path:string):string;
 begin

@@ -1,11 +1,11 @@
-unit ListBoxDraw;
+unit HGM.Controls.ListBoxDraw;
 
 interface
 
 uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
   Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, System.Generics.Collections,
-  Vcl.ExtCtrls, System.UITypes, Vcl.Grids;
+  Vcl.ExtCtrls, System.UITypes, Vcl.Grids, HGM.Common;
 
 type
   TGetDataProc = procedure(Index:Integer; var Value:string) of object;
@@ -137,7 +137,7 @@ end;
 
 procedure Register;
 begin
- RegisterComponents('LKDU', [TListBoxEx]);
+ RegisterComponents(PackageName, [TListBoxEx]);
 end;
 
 function Between(FMin, FValue, FMax:Integer):Boolean;

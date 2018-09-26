@@ -1,10 +1,12 @@
-unit LKDU.Hint;
+unit HGM.Tools.Hint;
 
 interface
  uses
   Vcl.Controls, System.Classes, Winapi.Messages, Winapi.Windows,
   System.SysUtils, Vcl.Graphics, Vcl.ExtCtrls, Vcl.Themes, Vcl.Forms,
-  Vcl.ImgList, Vcl.ActnList, System.SyncObjs, System.Types, System.UITypes, PanelExt;
+  Vcl.ImgList, Vcl.ActnList, System.SyncObjs, System.Types, System.UITypes,
+
+  HGM.Controls.PanelExt, HGM.Common;
 
  type
   TlkHint = class(TComponent)
@@ -39,7 +41,7 @@ implementation
 
 procedure Register;
 begin
- RegisterComponents('LKDU', [TlkHint]);
+ RegisterComponents(PackageName, [TlkHint]);
 end;
 
 { TlkHint }

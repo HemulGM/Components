@@ -1,4 +1,4 @@
-unit BlurGaussian;
+unit HGM.BlurGaussian;
 
 interface
 

@@ -7,11 +7,12 @@
 {                                                       }
 {*******************************************************}
 
-unit LKDU.SpinEdit;
+unit HGM.Controls.SpinEdit;
 
 interface
 
-uses Winapi.Windows, System.Classes, Vcl.StdCtrls, Vcl.ExtCtrls, Vcl.Controls, Winapi.Messages, System.SysUtils,
+uses Winapi.Windows, System.Classes, Vcl.StdCtrls, Vcl.ExtCtrls, Vcl.Controls,
+     Winapi.Messages, System.SysUtils, HGM.Common,
      Vcl.Forms, Vcl.Graphics, Vcl.Menus, Vcl.Buttons;
 
 const
@@ -213,7 +214,7 @@ uses Vcl.Themes, Vcl.GraphUtil;
 
 procedure Register;
 begin
- RegisterComponents('LKDU', [TlkSpinEdit]);
+ RegisterComponents(PackageName, [TlkSpinEdit]);
 end;
 
 { TSpinButton }

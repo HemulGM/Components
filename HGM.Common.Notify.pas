@@ -3,7 +3,8 @@
 interface
  uses
   Winapi.Windows, System.Classes, Vcl.Graphics, Vcl.Controls, Vcl.Forms,
-  Vcl.StdCtrls, Vcl.ExtCtrls, Vcl.Imaging.pngimage, Vcl.Buttons, System.SysUtils;
+  Vcl.StdCtrls, Vcl.ExtCtrls, Vcl.Imaging.pngimage, Vcl.Buttons, System.SysUtils,
+  HGM.Common;
 
  type
   TNotifyControl = class(TWinControl)
@@ -88,20 +89,20 @@ interface
 
   TNotifyWindow = class(TNotify)
    private
-    procedure HideNotify; override;
-    procedure ShowNotify; override;
     procedure UpdatePanel; override;
     procedure SetOwner(const Value: TForm); override;
    public
+    procedure HideNotify; override;
+    procedure ShowNotify; override;
     constructor Create(AOwner: TComponent); override;
   end;
 
   TNotifyPanel = class(TNotify)
    private
-    procedure HideNotify; override;
-    procedure ShowNotify; override;
     procedure UpdatePanel; override;
    public
+    procedure HideNotify; override;
+    procedure ShowNotify; override;
     constructor Create(AOwner: TComponent); override;
   end;
 
@@ -111,7 +112,7 @@ implementation
 
 procedure Register;
 begin
- RegisterComponents('HGM Components', [TNotifyWindow, TNotifyPanel]);
+ RegisterComponents(PackageName, [TNotifyWindow, TNotifyPanel]);
 end;
 
 { TNotify }

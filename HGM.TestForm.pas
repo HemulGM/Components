@@ -1,14 +1,13 @@
-unit LKDU.Edit.Form;
+unit HGM.TestForm;
 
 interface
 
 uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
-  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.Grids, TableDraw;
+  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.Grids, HGM.Controls.VirtualTable;
 
 type
   TFormList = class(TForm)
-    TableEx1: TTableEx;
   private
     { Private declarations }
   public

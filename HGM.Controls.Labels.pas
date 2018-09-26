@@ -1,14 +1,14 @@
-unit LabelButton;
+unit HGM.Controls.Labels;
 
 interface
 
 uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
-  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, System.Generics.Collections,
-  Vcl.ExtCtrls, System.UITypes, TableDraw, Vcl.Direct2D, Winapi.D2D1;
+  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls,
+  Vcl.ExtCtrls, System.UITypes, Vcl.Direct2D, Winapi.D2D1, HGM.Common, HGM.Common.Utils;
 
 type
-  TLabelButton = class(TLabel)
+  ThLink = class(TLabel)
    private
     FOnMouseLeave: TNotifyEvent;
     FOnMouseEnter: TNotifyEvent;
@@ -21,13 +21,10 @@ type
     property OnMouseLeave: TNotifyEvent read FOnMouseLeave write FOnMouseLeave;
   end;
 
-  TTextAligns = (taLeft, taTop, taRight, taBottom, taVCenter, taCenter, taWordBrake, taSingleLine);
-  TextAling = set of TTextAligns;
-
   TLabelEx = class(TShape)
    private
     FLabel:string;
-    FTextFormat:TextAling;
+    FTextFormat:TTextFormat;
     FEllipseRectVertical:Boolean;
     FIgnorBounds:Boolean;
     FFont:TFont;
@@ -35,7 +32,7 @@ type
     FRoundRectParam:TPoint;
     procedure SetLabel(const Value: string);
     procedure SetFont(const Value: TFont);
-    procedure SetTextFormat(const Value: TextAling);
+    procedure SetTextFormat(const Value: TTextFormat);
     procedure SetEllipseRectVertical(const Value: Boolean);
     procedure SetRoundRectParam(const Value: TPoint);
     procedure SetIgnorBounds(const Value: Boolean);
@@ -48,7 +45,7 @@ type
     property Caption:string read FLabel write SetLabel;
     property Font:TFont read FFont write SetFont;
     property OnPaint:TNotifyEvent read FOnPaint write FOnPaint;
-    property TextFormat:TextAling read FTextFormat write SetTextFormat;
+    property TextFormat:TTextFormat read FTextFormat write SetTextFormat;
     property RoundRectParam:TPoint read FRoundRectParam write SetRoundRectParam;
     property IgnorBounds:Boolean read FIgnorBounds write SetIgnorBounds;
     property EllipseRectVertical:Boolean read FEllipseRectVertical write SetEllipseRectVertical;
@@ -61,28 +58,29 @@ implementation
 
 procedure Register;
 begin
- RegisterComponents('LKDU', [TLabelButton]);
- RegisterComponents('LKDU', [TLabelEx]);
+ RegisterComponents(PackageName, [ThLink]);
+ RegisterComponents(PackageName, [TLabelEx]);
 end;
 
 
 { TLableButton }
 
-constructor TLabelButton.Create(AOwner: TComponent);
+constructor ThLink.Create(AOwner: TComponent);
 begin
  inherited;
  inherited OnMouseEnter:=MouseEnter;
  inherited OnMouseLeave:=MouseLeave;
+ Font.Color:=$00D8963B;
  Cursor:=crHandPoint;
 end;
 
-procedure TLabelButton.MouseEnter(Sender: TObject);
+procedure ThLink.MouseEnter(Sender: TObject);
 begin
  Font.Style:=Font.Style + [fsUnderLine];
  if Assigned(OnMouseEnter) then OnMouseEnter(Sender);
 end;
 
-procedure TLabelButton.MouseLeave(Sender: TObject);
+procedure ThLink.MouseLeave(Sender: TObject);
 begin
  Font.Style:=Font.Style - [fsUnderLine];
  if Assigned(OnMouseLeave) then OnMouseLeave(Sender);
@@ -94,7 +92,7 @@ constructor TLabelEx.Create(AOwner: TComponent);
 begin
  inherited;
  StyledColor($00996666);
- FLabel:='Текст';
+ FLabel:=Name;
  FFont:=TFont.Create;
  FFont.Color:=clWhite;
  FFont.Size:=10;
@@ -102,12 +100,13 @@ begin
  Height:=30;
  FRoundRectParam:=Point(0, 0);
  FIgnorBounds:=True;
- FTextFormat:=[taCenter, taVCenter, taWordBrake];
+ FTextFormat:=[tfCenter, tfVerticalCenter, tfWordBreak, tfWordEllipsis, tfSingleLine];
 end;
 
 procedure TLabelEx.Paint;
 var LD2DCanvas: TDirect2DCanvas;
-var X, Y, W, H, S, DF, Rx, Ry:Integer;
+var X, Y, W, H, S, Rx, Ry:Integer;
+    //DF:TDrawTextFlags;
     FRect:TRect;
     d:Double;
     Str:string;
@@ -138,7 +137,6 @@ begin
       begin
        if FRoundRectParam.X = 0 then Rx:=S div 4 else Rx:=FRoundRectParam.X;
        if FRoundRectParam.Y = 0 then Ry:=S div 4 else Ry:=FRoundRectParam.Y;
-
        RoundRect(X, Y, X + W, Y + H, Rx, Ry);
       end;
      stCircle, stEllipse: Ellipse(X, Y, X + W, Y + H);
@@ -157,17 +155,10 @@ begin
         FRect:=Rect(Round(X + W / (6.8 / d)), Round(Y + H / (6.8 * d)), Round(X + W - W / (6.8 / d)), Round(Y + H - H / (6.8 * d)))
    else FRect:=Rect(Round(X + W / (6.8 * d)), Round(Y + H / (6.8 / d)), Round(X + W - W / (6.8 * d)), Round(Y + H - H / (6.8 / d)));
   end;
- DF:=0;
- if taLeft in FTextFormat then DF:=DF or DT_LEFT;
- if taRight in FTextFormat then DF:=DF or DT_RIGHT;
- if taTop in FTextFormat then DF:=DF or DT_TOP;
- if taBottom in FTextFormat then DF:=DF or DT_BOTTOM;
- if taVCenter in FTextFormat then DF:=DF or DT_VCENTER;
- if taCenter in FTextFormat then DF:=DF or DT_CENTER;
- if taWordBrake in FTextFormat then DF:=DF or DT_WORDBREAK;
- if taSingleLine in FTextFormat then DF:=DF or DT_SINGLELINE;
+ //DF:=TTextFormatFlags(FTextFormat);
  Str:=FLabel;
- DrawTextCentered(Canvas, FRect, Str, DF);
+ Canvas.TextRect(FRect, Str, FTextFormat);
+ //DrawTextCentered(Canvas, FRect, Str, DF);
 end;
 
 procedure TLabelEx.SetEllipseRectVertical(const Value: Boolean);
@@ -200,7 +191,7 @@ begin
  Repaint;
 end;
 
-procedure TLabelEx.SetTextFormat(const Value: TextAling);
+procedure TLabelEx.SetTextFormat(const Value: TTextFormat);
 begin
  FTextFormat:= Value;
  Repaint;

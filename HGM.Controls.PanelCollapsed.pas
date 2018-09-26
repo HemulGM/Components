@@ -1,10 +1,11 @@
-unit LKDU.PanelCollapsed;
+unit HGM.Controls.PanelCollapsed;
 
 interface
 
 uses
-  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
-  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, Vcl.ExtCtrls, PanelExt, Vcl.Buttons, Vcl.Imaging.pngimage;
+  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes,
+  Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, Vcl.ExtCtrls,
+  HGM.Controls.PanelExt, Vcl.Buttons, Vcl.Imaging.pngimage, HGM.Common;
 
 type
   TPanelCollapsed = class(TPanelExt)
@@ -64,7 +65,7 @@ implementation
 
 procedure Register;
 begin
- RegisterComponents('LKDU', [TPanelCollapsed]);
+ RegisterComponents(PackageName, [TPanelCollapsed]);
 end;
 
 { TPanelCollapsed }

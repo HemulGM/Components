@@ -1,11 +1,11 @@
-unit LKDU.Button;
+unit HGM.Button;
 
 interface
 
 uses
   Winapi.Windows, Winapi.Messages, System.Classes, Vcl.Graphics, Vcl.Controls,
   Vcl.StdCtrls, System.Generics.Collections, Vcl.ExtCtrls, System.UITypes,
-  TableDraw, Vcl.Direct2D, Winapi.D2D1;
+  HGM.Controls.VirtualTable, Vcl.Direct2D, Winapi.D2D1, HGM.Common, HGM.Common.Utils;
 
 type
   //TTextAligns = (taLeft, taTop, taRight, taBottom, taVCenter, taCenter, taWordBrake, taSingleLine);
@@ -172,7 +172,7 @@ implementation
 
 procedure Register;
 begin
- RegisterComponents('LKDU', [TButtonFlat]);
+ RegisterComponents(PackageName, [TButtonFlat]);
 end;
 
 { TLabelEx }
@@ -349,26 +349,26 @@ begin
      end
     else Brush.Color:=ColorNormal;
     FillRect(ClientRect);
+    Brush.Color:=StyledColor;
+    // Плоский стиль
+    if Flat then Pen.Color:=Brush.Color
+    else Pen.Color:=ColorDarker(StyledColor);
+    // Фигура
+    X:=Pen.Width div 2;
+    Y:=X;
+    W:=Width - Pen.Width + 1;
+    H:=Height - Pen.Width + 1;
+    if Pen.Width = 0 then begin Dec(W); Dec(H); end;
+    if W < H then S:=W else S:=H;
+    if Self.Shape in [stSquare, stRoundSquare, stCircle] then
+     begin
+      if W < H then S:=W else S:=H;
+      Inc(X, (W - S) div 2); W:=S;
+      Inc(Y, (H - S) div 2); H:=S;
+     end;
     //Если не прозрачная кнопка, то рисуем фигуру
     if not FTransparent then
      begin
-      Brush.Color:=StyledColor;
-      // Плоский стиль
-      if Flat then Pen.Color:=Brush.Color
-      else Pen.Color:=ColorDarker(StyledColor);
-      // Фигура
-      X:=Pen.Width div 2;
-      Y:=X;
-      W:=Width - Pen.Width + 1;
-      H:=Height - Pen.Width + 1;
-      if Pen.Width = 0 then begin Dec(W); Dec(H); end;
-      if W < H then S:=W else S:=H;
-      if Self.Shape in [stSquare, stRoundSquare, stCircle] then
-       begin
-        if W < H then S:=W else S:=H;
-        Inc(X, (W - S) div 2); W:=S;
-        Inc(Y, (H - S) div 2); H:=S;
-       end;
       case Self.Shape of
        stRectangle,
        stSquare: Rectangle(X, Y, X + W, Y + H);

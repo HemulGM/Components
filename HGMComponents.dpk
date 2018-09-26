@@ -1,0 +1,67 @@
+package HGMComponents;
+
+{$R *.res}
+{$IFDEF IMPLICITBUILDING This IFDEF should not be used by users}
+{$ALIGN 8}
+{$ASSERTIONS ON}
+{$BOOLEVAL OFF}
+{$DEBUGINFO OFF}
+{$EXTENDEDSYNTAX ON}
+{$IMPORTEDDATA ON}
+{$IOCHECKS ON}
+{$LOCALSYMBOLS ON}
+{$LONGSTRINGS ON}
+{$OPENSTRINGS ON}
+{$OPTIMIZATION OFF}
+{$OVERFLOWCHECKS OFF}
+{$RANGECHECKS OFF}
+{$REFERENCEINFO ON}
+{$SAFEDIVIDE OFF}
+{$STACKFRAMES ON}
+{$TYPEDADDRESS OFF}
+{$VARSTRINGCHECKS ON}
+{$WRITEABLECONST OFF}
+{$MINENUMSIZE 1}
+{$IMAGEBASE $400000}
+{$DEFINE DEBUG}
+{$ENDIF IMPLICITBUILDING}
+{$DESCRIPTION 'HGM Components'}
+{$IMPLICITBUILD ON}
+
+requires
+  rtl,
+  vcl,
+  vclactnband,
+  vclx,
+  xmlrtl,
+  vclimg,
+  IndySystem,
+  IndyProtocols,
+  IndyCore,
+  VclSmp;
+
+contains
+  HGM.Autorun in 'HGM.Autorun.pas',
+  HGM.Button in 'HGM.Button.pas',
+  HGM.Common.Notify in 'HGM.Common.Notify.pas',
+  HGM.Common in 'HGM.Common.pas',
+  HGM.Common.Settings in 'HGM.Common.Settings.pas',
+  HGM.Common.Utils in 'HGM.Common.Utils.pas',
+  HGM.Controls.Edit in 'HGM.Controls.Edit.pas',
+  HGM.Controls.EditPanel in 'HGM.Controls.EditPanel.pas',
+  HGM.Controls.Labels in 'HGM.Controls.Labels.pas',
+  HGM.Controls.ListBoxDraw in 'HGM.Controls.ListBoxDraw.pas',
+  HGM.Controls.PanelCollapsed in 'HGM.Controls.PanelCollapsed.pas',
+  HGM.Controls.PanelExt in 'HGM.Controls.PanelExt.pas',
+  HGM.Controls.SpinEdit in 'HGM.Controls.SpinEdit.pas',
+  HGM.Controls.VirtualTable in 'HGM.Controls.VirtualTable.pas',
+  HGM.Graphics.AnimateControl in 'HGM.Graphics.AnimateControl.pas',
+  HGM.Mail.ServerOptions in 'HGM.Mail.ServerOptions.pas',
+  HGM.TestForm in 'HGM.TestForm.pas' {FormList},
+  HGM.Tools.Hint in 'HGM.Tools.Hint.pas',
+  HGM.WinAPI in 'HGM.WinAPI.pas',
+  HGM.WinAPI.ShellDlg in 'HGM.WinAPI.ShellDlg.pas',
+  HGM.BlurGaussian in 'HGM.BlurGaussian.pas';
+
+end.
+

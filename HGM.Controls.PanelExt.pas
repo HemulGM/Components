@@ -1,10 +1,10 @@
-unit PanelExt;
+unit HGM.Controls.PanelExt;
 
 interface
 
 uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
-  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, Vcl.ExtCtrls;
+  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, Vcl.ExtCtrls, HGM.Common;
 
 type
   TPanelExt = class(TCustomPanel)
@@ -119,8 +119,8 @@ implementation
 
 procedure Register;
 begin
- RegisterComponents('LKDU', [TPanelExt]);
- RegisterComponents('LKDU', [TDrawPanel]);
+ RegisterComponents(PackageName, [TPanelExt]);
+ RegisterComponents(PackageName, [TDrawPanel]);
 end;
 
 constructor TDrawPanel.Create(AOwner: TComponent);

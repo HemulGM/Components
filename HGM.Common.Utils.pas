@@ -4,7 +4,8 @@ interface
  uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
   Vcl.Controls, Vcl.Forms, Vcl.Dialogs, System.Generics.Collections, Winapi.Dwmapi, Vcl.ValEdit, System.DateUtils,
-  System.Math, System.Rtti, System.TypInfo, Vcl.ComCtrls, Vcl.Imaging.jpeg, Vcl.Grids, Vcl.Imaging.pngimage;
+  System.Math, System.Rtti, System.TypInfo, Vcl.ComCtrls, Vcl.Imaging.jpeg, Vcl.Grids, Vcl.Imaging.pngimage,
+  Vcl.StdCtrls, Vcl.Mask, Vcl.ExtCtrls;
 
  // function SendTelegram(BotToken, Chat_ID, SendText:string):Boolean;
   function AdvSelectDirectory(const Caption: string; const Root: WideString; var Directory: string; EditBox: Boolean = False; ShowFiles: Boolean = False; AllowCreateDirs: Boolean = True): Boolean;
@@ -32,8 +33,21 @@ interface
   procedure SetImageListColor(ImgList:TImageList; Color:TColor);
   function Centred(V1, V2:Integer):Integer;
 
+  procedure DrawTo(X, Y:Integer; Src, Dest:TPngImage);
+  procedure CopyFrom(SrcPt, DestPt, Size:TPoint; Src:TPngImage; var Dest:TPngImage);
+  function MixBytes(FG, BG, TRANS:Byte):Byte;
+  function CreateFrom(X, Y, W, H:Word; Src:TPngImage):TPngImage;
+  function CreatePNG(FName:string):TPngImage; overload;
+  function CreatePNG(Dll:Cardinal; ID:string):TPngImage; overload;
+  procedure PNGColored(X, Y:Integer; Src, Dest:TPngImage; MColor:TColor);
+  function DrawTextCentered(Canvas: TCanvas; const R: TRect; S: String; FDrawFlags:Cardinal): Integer;
+  function ScaledRect(const Src:TRect; Delta:Integer):TRect;
+  function MixColors(Color1, Color2:TColor; Alpha:Byte):TColor;
+  function IndexInList(const Index:Integer; ListCount:Integer):Boolean;
+  function FlashControl(Control:TControl):Boolean;
+
 implementation
- uses ShlObj, ActiveX, System.Win.ComObj, PNGWork, PNGFunctions, PNGImageList;
+ uses ShlObj, ActiveX, System.Win.ComObj, PNGFunctions, PNGImageList;
 
 function Centred(V1, V2:Integer):Integer;
 begin
@@ -463,6 +477,275 @@ begin
  except
   Result:=nil;
  end;
+end;
+
+
+function IndexInList(const Index:Integer; ListCount:Integer):Boolean;
+begin
+ Result:=(Index >= 0) and (Index <= ListCount - 1) and (ListCount > 0);
+end;
+
+function FlashControl(Control:TControl):Boolean;
+var SaveColor, BufColor:TColor;
+
+procedure SetColorE(Control:TEdit; Color:TColor; var OldColor:TColor);
+begin
+ OldColor:=Control.Color;
+ Control.Color:=Color;
+end;
+
+procedure SetColorME(Control:TMaskEdit; Color:TColor; var OldColor:TColor);
+begin
+ OldColor:=Control.Color;
+ Control.Color:=Color;
+end;
+
+procedure SetColorC(Control:TComboBox; Color:TColor; var OldColor:TColor);
+begin
+ OldColor:=Control.Color;
+ Control.Color:=Color;
+end;
+
+procedure SetColorP(Control:TPanel; Color:TColor; var OldColor:TColor);
+begin
+ OldColor:=Control.Color;
+ Control.Color:=Color;
+end;
+
+procedure SetColorM(Control:TMemo; Color:TColor; var OldColor:TColor);
+begin
+ OldColor:=Control.Color;
+ Control.Color:=Color;
+end;
+
+procedure SetColorL(Control:TListBox; Color:TColor; var OldColor:TColor);
+begin
+ OldColor:=Control.Color;
+ Control.Color:=Color;
+end;
+
+procedure SetColor(Control:TControl; Color:TColor; var OldColor:TColor);
+begin
+ if Control is TEdit then SetColorE(Control as TEdit, Color, OldColor);
+ if Control is TMaskEdit then SetColorME(Control as TMaskEdit, Color, OldColor);
+ if Control is TComboBox then SetColorC(Control as TComboBox, Color, OldColor);
+ if Control is TPanel then SetColorP(Control as TPanel, Color, OldColor);
+ if Control is TMemo then SetColorM(Control as TMemo, Color, OldColor);
+ if Control is TListBox then SetColorL(Control as TListBox, Color, OldColor);
+end;
+
+begin
+ Result:=True;
+ with Control do
+  begin
+   SetColor(Control, clRed, SaveColor);
+   Repaint;
+   Sleep(60);
+
+   SetColor(Control, clMaroon, BufColor);
+   Repaint;
+   Sleep(60);
+
+   SetColor(Control, clWhite, BufColor);
+   Repaint;
+   Sleep(60);
+
+   SetColor(Control, clMaroon, BufColor);
+   Repaint;
+   Sleep(60);
+
+   SetColor(Control, clRed, BufColor);
+   Repaint;
+   Sleep(60);
+
+   SetColor(Control, clMaroon, BufColor);
+   Repaint;
+   Sleep(60);
+
+   SetColor(Control, clWhite, BufColor);
+   Repaint;
+   Sleep(60);
+
+   SetColor(Control, clMaroon, BufColor);
+   Repaint;
+   Sleep(60);
+
+   SetColor(Control, clRed, BufColor);
+   Repaint;
+   Sleep(60);
+
+   SetColor(Control, clRed, BufColor);
+   Repaint;
+   Sleep(60);
+
+   SetColor(Control, SaveColor, BufColor);
+   Repaint;
+   Sleep(60);
+  end;
+end;
+
+function ScaledRect(const Src:TRect; Delta:Integer):TRect;
+begin
+ Result:=Src;                           //Rect(1, 1, 4, 4)
+ Result.Left:=Result.Left - Delta;      //Scale 1 = Rect(0, 0, 5, 5)
+ Result.Top:=Result.Top - Delta;
+ Result.Right:=Result.Right + Delta;
+ Result.Bottom:=Result.Bottom + Delta;
+end;
+
+function MixColors(Color1, Color2:TColor; Alpha:Byte):TColor;
+var C1, C2:LongInt;
+    R, G, B, V1, V2:Byte;
+begin
+ Alpha:=Round(2.55 * Alpha);
+ C1:=ColorToRGB(Color1);
+ C2:=ColorToRGB(Color2);
+ V1:=Byte(C1);
+ V2:=Byte(C2);
+ R:=Alpha * (V1 - V2) shr 8 + V2;
+ V1:=Byte(C1 shr 8);
+ V2:=Byte(C2 shr 8);
+ G:=Alpha * (V1 - V2) shr 8 + V2;
+ V1:=Byte(C1 shr 16);
+ V2:=Byte(C2 shr 16);
+ B:=Alpha * (V1 - V2) shr 8 + V2;
+ Result:=(B shl 16) + (G shl 8) + R;
+end;
+
+function DrawTextCentered(Canvas: TCanvas; const R: TRect; S: String; FDrawFlags:Cardinal): Integer;
+var DrawRect: TRect;
+    DrawFlags: Cardinal;
+    DrawParams: TDrawTextParams;
+begin
+ DrawRect:=R;
+ DrawFlags:= DT_END_ELLIPSIS or DT_NOPREFIX or DT_EDITCONTROL or FDrawFlags;
+ DrawText(Canvas.Handle, PChar(S), -1, DrawRect, DrawFlags or DT_CALCRECT);
+ DrawRect.Right:= R.Right;
+ if DT_VCENTER and FDrawFlags = DT_VCENTER then
+  begin
+   if DrawRect.Bottom < R.Bottom then
+        OffsetRect(DrawRect, 0, (R.Bottom - DrawRect.Bottom) div 2)
+   else DrawRect.Bottom:= R.Bottom;
+  end;
+ ZeroMemory(@DrawParams, SizeOf(DrawParams));
+ DrawParams.cbSize:= SizeOf(DrawParams);
+ DrawTextEx(Canvas.Handle, PChar(S), -1, DrawRect, DrawFlags, @DrawParams);
+ Result:= DrawParams.uiLengthDrawn;
+end;
+
+
+function CreatePNG(Dll:Cardinal; ID:string):TPngImage;
+begin
+ Result:=TPngImage.Create;
+ try
+  Result.LoadFromResourceName(DLL, ID);
+ except
+  begin
+   Result:=TPngImage.CreateBlank(COLOR_RGBALPHA, 16, 32, 32);
+   MessageBox(0, 'Ошибка', PChar('Файл отсутствует: '+ID), MB_ICONSTOP or MB_OK);
+  end;
+ end;
+end;
+
+function CreatePNG(FName:string):TPngImage;
+begin
+ Result:=TPngImage.Create;
+ try
+  Result.LoadFromFile(FName)
+ except
+  begin
+   Result:=TPngImage.CreateBlank(COLOR_RGBALPHA, 16, 32, 32);
+   MessageBox(0, 'Ошибка', PChar('Файл отсутствует: '+FName), MB_ICONSTOP or MB_OK);
+  end;
+ end;
+end;
+
+function CreateFrom(X, Y, W, H:Word; Src:TPngImage):TPngImage;
+begin
+ Result:=TPngImage.CreateBlank(COLOR_RGBALPHA, 16, W, H);
+ CopyFrom(Point(X, Y), Point(0, 0), Point(W, H), Src, Result);
+end;
+
+//Автор: Я
+procedure CopyFrom(SrcPt, DestPt, Size:TPoint; Src:TPngImage; var Dest:TPngImage);
+var X, Y:Integer;
+    DAS, SAS:pByteArray;
+begin
+ Size.X:=Size.X - 1;
+ Size.Y:=Size.Y - 1;
+ if DestPt.X + Size.X > Dest.Width  then Size.X:=Dest.Width  - DestPt.X;
+ if DestPt.Y + Size.Y > Dest.Height then Size.Y:=Dest.Height - DestPt.Y;
+ for Y:=0 to Size.Y - 1 do
+  begin
+   DAS:=Dest.AlphaScanline[Y + DestPt.Y];
+   SAS:=Src.AlphaScanline[Y + SrcPt.Y];
+   for X:=0 to Size.X - 1 do
+    begin
+     Dest.Canvas.Pixels[X + DestPt.X, Y + DestPt.Y]:=Src.Canvas.Pixels[X + SrcPt.X, Y + SrcPt.Y];
+     DAS^[X + DestPt.X]:=SAS^[X + SrcPt.X];
+    end;
+  end;
+end;
+
+//Автор: http://www.swissdelphicenter.ch
+function MixBytes(FG, BG, TRANS:Byte):Byte;
+asm
+ push bx       // Push some regs
+ push cx
+ push dx
+ mov DH, TRANS // Remembering Transparency value (or Opacity - as you like)
+ mov BL, FG    // Filling registers with our values
+ mov AL, DH    // BL = ForeGround (FG)
+ mov CL, BG    // CL = BackGround (BG)
+ xor AH, AH    // Clear High-order parts of regs
+ xor BH, BH
+ xor CH, CH
+ mul BL        // AL=AL*BL
+ mov BX, AX    // BX=AX
+ xor AH, AH
+ mov AL, DH
+ xor AL, $FF   // AX=(255-TRANS)
+ mul CL        // AL=AL*CL
+ add AX, BX    // AX=AX+BX
+ shr AX, 8     // Fine! Here we have mixed value in AL
+ pop dx        // Hm... No rubbish after us, ok?
+ pop cx
+ pop bx        //Get out
+end;
+
+//Автор: Я (очень медленная процедура ~300 мсек. для ср. рисунка)
+procedure DrawTo(X, Y:Integer; Src, Dest:TPngImage);
+var dX, dY:Integer;
+    DAS, SAS:pByteArray;
+begin
+ for dY:=0 to Src.Height - 1 do
+  begin
+   DAS:=Dest.AlphaScanline[dY + Y];
+   SAS:=Src.AlphaScanline[dY];
+   for dX:=0 to Src.Width - 1 do
+    begin
+     if SAS^[dX] <= 0 then Continue;
+     DAS[dX + X]:=SAS^[dX] + DAS^[dX + X];
+     Dest.Canvas.Pixels[dX + X, dY + Y]:=MixColors(Src.Canvas.Pixels[dX, dY], Dest.Canvas.Pixels[dX + X, dY + Y], DAS^[dX + X]);
+    end;
+  end;
+end;
+
+procedure PNGColored(X, Y:Integer; Src, Dest:TPngImage; MColor:TColor);
+var dX, dY:Integer;
+    DAS, SAS:pByteArray;
+begin
+ for dY:=0 to Src.Height - 1 do
+  begin
+   DAS:=Dest.AlphaScanline[dY + Y];
+   SAS:=Src.AlphaScanline[dY];
+   for dX:=0 to Src.Width - 1 do
+    begin
+     if SAS^[dX] <= 0 then Continue;
+     DAS[dX + X]:=SAS^[dX];// + DAS^[dX + X];
+     Dest.Canvas.Pixels[dX + X, dY + Y]:=MColor;//, Dest.Canvas.Pixels[dX + X, dY + Y], DAS^[dX + X]);
+    end;
+  end;
 end;
 
 end.
