@@ -38,7 +38,8 @@ requires
   IndySystem,
   IndyProtocols,
   IndyCore,
-  VclSmp;
+  VclSmp,
+  PngComponents;
 
 contains
   HGM.Autorun in 'HGM.Autorun.pas',
