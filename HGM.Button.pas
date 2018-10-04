@@ -56,6 +56,7 @@ type
     FFontDown: TFont;
     FFromColor: TColor;
     FTransparent: Boolean;
+    FShowFocusRect: Boolean;
     procedure SetLabel(const Value: string);
     procedure SetFont(const Value: TFont);
     procedure SetStyledColor(const Value: TColor);
@@ -93,6 +94,7 @@ type
     procedure SetFontOver(const Value: TFont);
     procedure SetFlat(const Value: Boolean);
     procedure SetTransparent(const Value: Boolean);
+    procedure SetShowFocusRect(const Value: Boolean);
     property ButtonState:TButtonFlatState read FButtonState write SetButtonState;
     property StyledColor:TColor read FStyledColor write SetStyledColor;
     property FromColor:TColor read FFromColor write FFromColor;
@@ -157,6 +159,7 @@ type
     property RoundRectParam:Integer read FRoundRectParam write SetRoundRectParam;
     property Shape: TShapeType read FShape write SetShape default stRectangle;
     property ShowHint;
+    property ShowFocusRect:Boolean read FShowFocusRect write SetShowFocusRect default True;
     property TabOrder;
     property TabStop;
     property TextFormat:TTextFormat read FTextFormat write SetTextFormat;
@@ -193,6 +196,12 @@ begin
    FShape:=Value;
    Invalidate;
   end;
+end;
+
+procedure TButtonFlat.SetShowFocusRect(const Value: Boolean);
+begin
+ FShowFocusRect:=Value;
+ Repaint;
 end;
 
 procedure TButtonFlat.CMMouseEnter(var Message: TMessage);
@@ -488,6 +497,10 @@ begin
   else
    DrawTextCentered(Canvas, FRect, FLabel, DF);
   if Assigned(FOnPaint) then FOnPaint(Self);
+  if FShowFocusRect and Focused then
+   begin
+    DrawFocusRect(Canvas.Handle, ClientRect);
+   end;
  finally
   Canvas.Unlock;
  end;

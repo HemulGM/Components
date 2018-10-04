@@ -8,6 +8,8 @@ uses
   Vcl.ExtCtrls, System.UITypes, Vcl.Grids, Vcl.Mask, Direct2D, D2D1, HGM.Common, HGM.Common.Utils;
 
 type
+  TOnTablePaint = procedure(Sender:TObject; Canvas:TCanvas) of object;
+
   TTableEx = class;
 
   TTableData<T> = class(TList<T>)
@@ -101,6 +103,7 @@ type
     FOnEdit:TOnEdit;
     FOnEditCancel:TOnEditCancel;
     FOnEditOk:TOnEditOK;
+    FOnPaint:TOnTablePaint;
     FCordHot:TGridCoord;
     FSetFocusOnEnter:Boolean;
     FGetDataProc:TGetTableDataProc;
@@ -225,6 +228,7 @@ type
     procedure MouseToItem(Position:TPoint; var Index, Column:Integer);
     procedure CloseEdit;
     procedure CancelEdit;
+    procedure Paint; override;
     property Editing:Boolean read FEditing;
     function Edit(AItem, ACol:Integer):Boolean;
     property Col;
@@ -305,6 +309,7 @@ type
     property OnEdit:TOnEdit read FOnEdit write FOnEdit;
     property OnEditCancel:TOnEditCancel read FOnEditCancel write FOnEditCancel;
     property OnEditOk:TOnEditOk read FOnEditOk write FOnEditOk;
+    property OnPaint:TOnTablePaint read FOnPaint write FOnPaint;
 
     property ProcEmpty:Boolean read FProcEmpty write SetProcEmpty default False;
     property Columns:TTableColumns read FColumns write FColumns;
@@ -1522,6 +1527,12 @@ procedure TTableEx.MouseToItem(Position: TPoint; var Index, Column: Integer);
 begin
  MouseToCell(Position.X, Position.Y, Column, Index);
  if FShowColumns then Index:=Index-1;
+end;
+
+procedure TTableEx.Paint;
+begin
+ inherited Paint;
+ if Assigned(FOnPaint) then FOnPaint(Self, Canvas);
 end;
 
 function TTableEx.GetItemUnderMouse:Integer;
