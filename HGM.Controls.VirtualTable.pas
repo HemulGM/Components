@@ -4,13 +4,15 @@ interface
 
 uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Classes, Vcl.Graphics,
-  Vcl.Controls, Vcl.Forms, Vcl.StdCtrls, System.Generics.Collections,
+  Vcl.Controls, Vcl.Forms, Vcl.StdCtrls, System.Generics.Collections, Vcl.ComCtrls, Winapi.CommCtrl,
   Vcl.ExtCtrls, System.UITypes, Vcl.Grids, Vcl.Mask, Direct2D, D2D1, HGM.Common, HGM.Common.Utils;
 
 type
   TOnTablePaint = procedure(Sender:TObject; Canvas:TCanvas) of object;
 
   TTableEx = class;
+  TTableColumn = class;
+  TTableColumnClass = class of TTableColumn;
 
   TTableData<T> = class(TList<T>)
    type TTables = TList<TTableEx>;
@@ -62,39 +64,57 @@ type
   TOnEditOK = procedure(Sender:TObject; Value:string; ItemValue:Integer; ACol, ARow:Integer) of object;
   TOnEditCancel = procedure(Sender:TObject; ACol, ARow:Integer) of object;
 
-  TTableColumn = class
+  TTableColumn = class(TCollectionItem)
    private
     FIndex:Cardinal;
-    FOwner:TTableEx;
     FAsButton:Boolean;
     FCaption:string;
     FShowButtonOnlySelect: Boolean;
     FMinWidth: Cardinal;
     FTextFormat: TTextFormat;
     FFormatColumns: TTextFormat;
-    function GetWidth:Cardinal; virtual;
+    FWidth: Cardinal;
     procedure SetWidth(const Value:Cardinal); virtual;
     function GetIndex:Cardinal; virtual;
     procedure SetCaption(const Value:string); virtual;
     procedure SetIndex(const Value: Cardinal);
     procedure SetTextFormat(const Value: TTextFormat);
     procedure SetFormatColumns(const Value: TTextFormat);
+   protected
+    function GetDisplayName: string; override;
    public
+    constructor Create(Collection: TCollection); override;
+    procedure Assign(Source: TPersistent); override;
     property Index:Cardinal read GetIndex write SetIndex;
-    constructor Create(AOwner:TTableEx); virtual;
+   published
     property Caption:string read FCaption write SetCaption;
-    property Width:Cardinal read GetWidth write SetWidth;
-    property Format:TTextFormat read FTextFormat write SetTextFormat;
-    property FormatColumns:TTextFormat read FFormatColumns write SetFormatColumns;
-    property MinWidth:Cardinal read FMinWidth write FMinWidth;
-    property AsButton:Boolean read FAsButton write FAsButton;
-    property ShowButtonOnlySelect:Boolean read FShowButtonOnlySelect write FShowButtonOnlySelect;
+    property Width:Cardinal read FWidth write SetWidth default 100;
+    property Format:TTextFormat read FTextFormat write SetTextFormat default [tfVerticalCenter, tfLeft, tfSingleLine];
+    property FormatColumns:TTextFormat read FFormatColumns write SetFormatColumns default [tfVerticalCenter, tfCenter, tfSingleLine];
+    property MinWidth:Cardinal read FMinWidth write FMinWidth default 60;
+    property AsButton:Boolean read FAsButton write FAsButton default False;
+    property ShowButtonOnlySelect:Boolean read FShowButtonOnlySelect write FShowButtonOnlySelect default False;
   end;
 
-  TTableColumns = TList<TTableColumn>;
+  TTableColumns = class(TCollection)
+   private
+    FTableEx: TTableEx;
+    function GetItem(Index: Integer): TTableColumn;
+    procedure SetItem(Index: Integer; Value: TTableColumn);
+   protected
+    function GetOwner: TPersistent; override;
+   public
+    procedure Update(Item: TCollectionItem); override;
+    constructor Create(TableEx: TTableEx);
+    function Add: TTableColumn;
+    function AddItem(Item: TTableColumn; Index: Integer): TTableColumn;
+    function Insert(Index: Integer): TTableColumn;
+    property Items[Index: Integer]: TTableColumn read GetItem write SetItem; default;
+  end;
 
   TTableEx = class(TCustomDrawGrid)
    private
+    FColumnsStream:TMemoryStream;
     FUpdatesCount:Integer;
     FItemDowned:Boolean;
     FEditData:TTableEditStruct;
@@ -202,18 +222,24 @@ type
     procedure SetLineColor(const Value: TColor);
     procedure SetDrawColumnSections(const Value: Boolean);
     function GetItemUnderMouse: Integer;
+    procedure UpdateColumn(Index: Integer);
     property ItemDowned:Boolean read FItemDowned write SetItemDowned;
     procedure UpdateColumnIndex;
     procedure FUpdateColumnsHeight;
     procedure WMReSize(var Msg:TWMSize); message WM_SIZE;
-    property RowHeights;
-    property ColWidths;
    protected
+    procedure CreateWnd; override;
     procedure ColWidthsChanged; override;
     procedure LastFocus(var Msg:TMessage); message WM_ACTIVATE;
     procedure FOnDblClick;
     procedure SetEditing(Value:Boolean);
+    procedure UpdateColumns;
+    property RowHeights;
+    property ColWidths;
+    procedure DefineProperties(Filer: TFiler); override;
    public
+    function CreateColumn: TTableColumn;
+    function CreateColumns: TTableColumns;
     function AddColumn:Integer; overload;
     function FirstColumn(aCaption:string; aWidth:Integer; aButton:Boolean = False):Integer; deprecated;
     function AddColumn(aCaption:string; aWidth:Integer; aButton:Boolean = False):Integer; overload;
@@ -222,6 +248,7 @@ type
     function DoMouseWheelDown(Shift: TShiftState; MousePos: TPoint): Boolean; override;
     function DoMouseWheelUp(Shift: TShiftState; MousePos: TPoint): Boolean; override;
     constructor Create(AOwner: TComponent); override;
+    destructor Destroy; override;
     procedure DoItemClick;
     procedure SetMaxColumn(ColumnID:Integer);
     procedure Repaint; override;
@@ -433,6 +460,65 @@ end;
 
 { TTableEx }
 
+[UIPermission(SecurityAction.LinkDemand, Window=UIPermissionWindow.AllWindows)]
+procedure TTableEx.CreateWnd;
+
+  procedure ReadSections;
+  var
+    Reader: TReader;
+  begin
+    if FColumnsStream = nil then Exit;
+    FColumns.Free;
+    FColumns := CreateColumns; // Ensure ID's start at zero
+    Reader := TReader.Create(FColumnsStream, 1024);
+    try
+      Reader.ReadValue;
+      Reader.ReadCollection(Columns);
+    finally
+      Reader.Free;
+    end;
+    FColumnsStream.Free;
+    FColumnsStream := nil;
+  end;
+
+begin
+ inherited CreateWnd;
+ if FColumnsStream <> nil then ReadSections else UpdateColumns;
+end;
+
+procedure TTableEx.UpdateColumns;
+var i:Integer;
+begin
+ if HandleAllocated then
+  begin
+   //for I := 0 to SendMessage(Handle, HDM_GETITEMCOUNT, 0, 0) - 1 do SendMessage(Handle, HDM_DELETEITEM, 0, 0);
+   ColCount:=Columns.Count;
+   for i:= 0 to Columns.Count - 1 do ColWidths[i]:=Columns[i].Width;
+  end;
+end;
+
+procedure TTableEx.UpdateColumn(Index: Integer);
+begin
+ //if HandleAllocated then UpdateItem(_HDM_SETITEM, Index);
+ if not IndexInList(Index, ColCount) then UpdateColumns
+ else ColWidths[index]:=Columns[Index].Width;
+ Repaint;
+end;
+
+function TTableEx.CreateColumn: TTableColumn;
+var
+  LClass: TTableColumnClass;
+begin
+  LClass := TTableColumn;
+  //if Assigned(FOnCreateSectionClass) then FOnCreateSectionClass(Self, LClass);
+  Result := LClass.Create(FColumns);
+end;
+
+function TTableEx.CreateColumns: TTableColumns;
+begin
+  Result := TTableColumns.Create(Self);
+end;
+
 procedure TTableEx.SetRoundLineRect(const Value: Integer);
 begin
  FRoundLineRect:=Value;
@@ -488,8 +574,8 @@ end;
 procedure TTableEx.UpdateColumnIndex;
 var i:Integer;
 begin
- if FColumns.Count > 0 then
-  for i:= 0 to FColumns.Count - 1 do FColumns[i].Index:=i;
+ //if FColumns.Count > 0 then
+ // for i:= 0 to FColumns.Count - 1 do FColumns[i].Index:=i;
 end;
 
 procedure TTableEx.UpdateItemCount;
@@ -672,7 +758,8 @@ end;
 
 function TTableEx.AddColumn:Integer;
 begin
- Result:=FColumns.Add(TTableColumn.Create(Self));
+ FColumns.Add;
+ Result:=FColumns.Count-1;
  ColCount:=Max(FColumns.Count, 1);
  UpdateColumnIndex;
 end;
@@ -720,10 +807,7 @@ begin
  inherited DefaultDrawing:=False;
  inherited DrawingStyle:=gdsGradient;
  inherited OnMouseWheel:=FOnComboMouseWheel;
- //inherited BevelInner:=bvNone;
- //inherited BevelKind:=bkFlat;
- //inherited BorderStyle:=bsNone;
- //FButtonOnItem:=-1;
+ FColumnsStream := nil;
  FUpdatesCount:=0;
  FDrawColumnBorded:=True;
  FDrawColumnSections:=True;
@@ -800,7 +884,7 @@ begin
  FColumnsFont.Assign(Font);
  FColumnsFont.Color:=$00282828;
 
- FColumns:=TTableColumns.Create;
+ FColumns:=CreateColumns;
  //FColumns.Add(TTableColumn.Create(Self));
  UpdateColumnIndex;
 
@@ -822,10 +906,22 @@ begin
  Result:=ItemIndex + Ord(FShowColumns);
 end;
 
+procedure TTableEx.DefineProperties(Filer: TFiler);
+begin
+ //inherited DefineProperties(Filer);
+end;
+
 procedure TTableEx.DeleteColumn(Index: Integer);
 begin
  FColumns.Delete(Index);
  UpdateColumnIndex;
+end;
+
+destructor TTableEx.Destroy;
+begin
+ FColumns.Free;
+ if Assigned(FColumnsStream) then FColumnsStream.Free;
+ inherited;
 end;
 
 procedure TTableEx.DoEditCancel;
@@ -1120,13 +1216,13 @@ begin
        MoveTo(Rect.Left, Rect.Top+1);
        LineTo(Rect.Left, Rect.Bottom-1);
       end;
-     if csDesigning in ComponentState then
+    { if csDesigning in ComponentState then
       if FDrawColumnSections then
        begin
         Pen.Color:=ColorDarker(FColumnsColor, 10);
         MoveTo(Rect.Left + Rect.Width div 2, Rect.Top+1);
         LineTo(Rect.Left + Rect.Width div 2, Rect.Bottom-1);
-       end;
+       end; }
     end;
    if FDefDrawing and IndexInList(ACol, Columns.Count) then
     begin
@@ -1134,13 +1230,9 @@ begin
      if (ARow = 0) and (FShowColumns) then
       begin
        Brush.Style:=bsClear;
-       if not (csDesigning in ComponentState) then
-        TextValue:=Columns[ACol].Caption
-       else TextValue:='Заголовок';
+       TextValue:=Columns[ACol].Caption;
        Font.Assign(FColumnsFont);
-       if not (csDesigning in ComponentState) then
-        DrawText(TextValue, Columns[ACol].FormatColumns)
-       else DrawText(TextValue, [tfVerticalCenter, tfSingleLine]);
+       DrawText(TextValue, Columns[ACol].FormatColumns);
        if Assigned(FOnDrawColumn) then FOnDrawColumn(Sender, ACol, -1, Rect, State);
        //TextOut(Rect.Left, Rect.Top, IntToStr(ARow)+' '+IntToStr(RowCount));
        Unlock;
@@ -1149,34 +1241,23 @@ begin
      if (ItemCount > 0) or ProcEmpty then
       begin
        if Assigned(FAfterDrawText) then FAfterDrawText(Sender, ACol, DataARow, Rect, State);
-       if not (csDesigning in ComponentState) then
+
+       if IndexInList(ACol, Columns.Count) and Columns[ACol].AsButton then
         begin
-         if IndexInList(ACol, Columns.Count) and Columns[ACol].AsButton then
+         if not (Columns[ACol].ShowButtonOnlySelect and (ARow <> DataRow)) then
           begin
-           if not (Columns[ACol].ShowButtonOnlySelect and (ARow <> DataRow)) then
-            begin
-             if Assigned(FGetDataProc) then FGetDataProc(ACol, DataARow, TextValue);
-             if (FCordHot.X = ACol) and (FCordHot.Y = ARow) then
-              begin
-               //if ItemDowned then Brush.Color:=clBtnHighlight else Brush.Color:=clBtnFace;
-               if ItemDowned then Brush.Color:=ColorDarker(Brush.Color) else Brush.Color:=ColorDarker(Brush.Color, 20);
-              end;
-             Brush.Style:=bsSolid;
-             Pen.Color:=Brush.Color;
-             FillCell(Rect);
-             if TextValue <> '' then
-              begin
-               Brush.Style:=bsClear;
-               DrawText(TextValue, Columns[ACol].Format);
-              end;
-            end;
-          end
-         else
-          begin
-           Brush.Style:=bsClear;
            if Assigned(FGetDataProc) then FGetDataProc(ACol, DataARow, TextValue);
-           if (TextValue <> '') and IndexInList(ACol, Columns.Count) then
+           if (FCordHot.X = ACol) and (FCordHot.Y = ARow) then
             begin
+             //if ItemDowned then Brush.Color:=clBtnHighlight else Brush.Color:=clBtnFace;
+             if ItemDowned then Brush.Color:=ColorDarker(Brush.Color) else Brush.Color:=ColorDarker(Brush.Color, 20);
+            end;
+           Brush.Style:=bsSolid;
+           Pen.Color:=Brush.Color;
+           FillCell(Rect);
+           if TextValue <> '' then
+            begin
+             Brush.Style:=bsClear;
              DrawText(TextValue, Columns[ACol].Format);
             end;
           end;
@@ -1184,7 +1265,11 @@ begin
        else
         begin
          Brush.Style:=bsClear;
-         DrawText('Значение', [tfVerticalCenter, tfSingleLine]);
+         if Assigned(FGetDataProc) then FGetDataProc(ACol, DataARow, TextValue);
+         if (TextValue <> '') and IndexInList(ACol, Columns.Count) then
+          begin
+           DrawText(TextValue, Columns[ACol].Format);
+          end;
         end;
       end;
      //Inc(FUpdatesCount);
@@ -1458,7 +1543,7 @@ end;
 
 function TTableEx.GetColumnCount: Integer;
 begin
- Result:=ColCount;
+ Result:=FColumns.Count;
 end;
 
 function TTableEx.GetColumnsHeight: Integer;
@@ -1643,14 +1728,39 @@ end;
 
 { TTableColumn }
 
-constructor TTableColumn.Create(AOwner: TTableEx);
+procedure TTableColumn.Assign(Source: TPersistent);
 begin
- FOwner:=AOwner;
- FShowButtonOnlySelect:=False;
+ if Source is TTableColumn then
+  begin
+    Index := TTableColumn(Source).Index;
+    Caption := TTableColumn(Source).Caption;
+    Width := TTableColumn(Source).Width;
+    Format := TTableColumn(Source).Format;
+    FormatColumns := TTableColumn(Source).FormatColumns;
+    MinWidth := TTableColumn(Source).MinWidth;
+    AsButton := TTableColumn(Source).AsButton;
+    ShowButtonOnlySelect := TTableColumn(Source).ShowButtonOnlySelect;
+  end
+  else inherited Assign(Source);
+end;
+
+constructor TTableColumn.Create(Collection: TCollection);
+begin
+ inherited Create(Collection);
+ FCaption:='Столбец '+(Index+1).ToString;
+ FWidth:=100;
+ FTextFormat:=[tfVerticalCenter, tfLeft, tfSingleLine];
+ FFormatColumns:=[tfVerticalCenter, tfCenter, tfSingleLine];
+ FMinWidth:=60;
  FAsButton:=False;
- Format:=[tfVerticalCenter, tfLeft];
- FormatColumns:=[tfVerticalCenter, tfCenter];
- if not Assigned(FOwner) then Exit;
+ FShowButtonOnlySelect:=False;
+ Changed(False);
+end;
+
+function TTableColumn.GetDisplayName: string;
+begin
+ Result := Caption;
+  if Result = '' then Result := inherited GetDisplayName;
 end;
 
 function TTableColumn.GetIndex:Cardinal;
@@ -1658,37 +1768,35 @@ begin
  Result:=FIndex;
 end;
 
-function TTableColumn.GetWidth:Cardinal;
-begin
- Result:=FOwner.ColWidths[FIndex];
-end;
-
 procedure TTableColumn.SetCaption(const Value:string);
 begin
  FCaption:=Value;
- FOwner.Repaint;
+ Changed(False);
 end;
 
 procedure TTableColumn.SetFormatColumns(const Value: TTextFormat);
 begin
  FFormatColumns:= Value;
- FOwner.Repaint;
+ Changed(False);
 end;
 
 procedure TTableColumn.SetIndex(const Value:Cardinal);
 begin
  FIndex:=Value;
+ Changed(False);
 end;
 
 procedure TTableColumn.SetTextFormat(const Value: TTextFormat);
 begin
  FTextFormat:=Value;
- FOwner.Repaint;
+ Changed(False);
 end;
 
 procedure TTableColumn.SetWidth(const Value:Cardinal);
 begin
- FOwner.ColWidths[Index]:=Value;
+ //FOwner.ColWidths[Index]:=Value;
+ FWidth:=Value;
+ Changed(False);
 end;
 
 { TFieldMaskEdit }
@@ -1703,6 +1811,63 @@ procedure TFieldMaskEdit.ValidateError;
 begin
  //inherited;
 
+end;
+
+{ TTableColumns }
+
+function TTableColumns.Add: TTableColumn;
+begin
+ Result := AddItem(nil, -1);
+end;
+
+function TTableColumns.AddItem(Item: TTableColumn; Index: Integer): TTableColumn;
+begin
+ if Item = nil then
+    Result := FTableEx.CreateColumn
+  else
+  begin
+    Result := Item;
+    if Assigned(Item) then
+    begin
+      Result.Collection := Self;
+      if Index < Count then
+        Index := Count - 1;
+      Result.Index := Index;
+    end;
+  end;
+end;
+
+constructor TTableColumns.Create(TableEx: TTableEx);
+begin
+ inherited Create(TTableColumn);
+ FTableEx:= TableEx;
+end;
+
+function TTableColumns.GetItem(Index: Integer): TTableColumn;
+begin
+ Result := TTableColumn(inherited GetItem(Index));
+end;
+
+function TTableColumns.GetOwner: TPersistent;
+begin
+ Result := FTableEx;
+end;
+
+function TTableColumns.Insert(Index: Integer): TTableColumn;
+begin
+ Result := AddItem(nil, Index);
+end;
+
+procedure TTableColumns.SetItem(Index: Integer; Value: TTableColumn);
+begin
+ inherited SetItem(Index, Value);
+end;
+
+procedure TTableColumns.Update(Item: TCollectionItem);
+begin
+ if Item <> nil then
+    FTableEx.UpdateColumn(Item.Index) else
+    FTableEx.UpdateColumns;
 end;
 
 end.
