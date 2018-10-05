@@ -1747,7 +1747,7 @@ end;
 constructor TTableColumn.Create(Collection: TCollection);
 begin
  inherited Create(Collection);
- FCaption:='Столбец '+(Index+1).ToString;
+ //FCaption:='Столбец '+(Index+1).ToString;
  FWidth:=100;
  FTextFormat:=[tfVerticalCenter, tfLeft, tfSingleLine];
  FFormatColumns:=[tfVerticalCenter, tfCenter, tfSingleLine];
