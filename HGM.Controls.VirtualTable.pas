@@ -171,6 +171,8 @@ type
     FProcEmpty: Boolean;
     FDrawColumnSections:Boolean;
     FMouseRightClickTooClick:Boolean;
+    FPaintGrid: Boolean;
+    FLastColumnAutoSize: Boolean;
     function DataRow:Integer;
     procedure CloseControl(Sender:TObject);
     procedure DoEditCancel;
@@ -223,6 +225,9 @@ type
     procedure SetDrawColumnSections(const Value: Boolean);
     function GetItemUnderMouse: Integer;
     procedure UpdateColumn(Index: Integer);
+    procedure SetPaintGrid(const Value: Boolean);
+    procedure SetLastColumnAutoSize(const Value: Boolean);
+    procedure UpdateMaxColumn;
     property ItemDowned:Boolean read FItemDowned write SetItemDowned;
     procedure UpdateColumnIndex;
     procedure FUpdateColumnsHeight;
@@ -362,6 +367,8 @@ type
     property DrawColumnSections:Boolean read FDrawColumnSections write SetDrawColumnSections default True;
     property FlashSelectedCol:Boolean read FFlashSelectedCol write SetFlashSelectedCol default False;
     property MouseRightClickTooClick:Boolean read FMouseRightClickTooClick write FMouseRightClickTooClick default False;
+    property PaintGrid:Boolean read FPaintGrid write SetPaintGrid default False;
+    property LastColumnAutoSize:Boolean read FLastColumnAutoSize write SetLastColumnAutoSize default True;
   end;
 
   function IndexInList(const Index:Integer; ListCount:Integer):Boolean;
@@ -616,9 +623,17 @@ end;
 
 procedure TTableEx.WMReSize(var Msg: TWMSize);
 begin
- if not Assigned(Parent) then Exit;
- if ColumnCount <= 0 then Exit;
- SetMaxColumn(ColumnCount-1);
+ UpdateMaxColumn;
+end;
+
+procedure TTableEx.UpdateMaxColumn;
+begin
+ if FLastColumnAutoSize then
+  begin
+   if not Assigned(Parent) then Exit;
+   if ColumnCount <= 0 then Exit;
+   SetMaxColumn(ColumnCount-1);
+  end;
 end;
 
 procedure TTableEx.SetColumnsColor(const Value: TColor);
@@ -714,6 +729,13 @@ begin
  Repaint;
 end;
 
+procedure TTableEx.SetLastColumnAutoSize(const Value: Boolean);
+begin
+ FLastColumnAutoSize:=Value;
+ UpdateMaxColumn;
+ Repaint;
+end;
+
 procedure TTableEx.SetLineColor(const Value: TColor);
 begin
  FLineColor := Value;
@@ -750,9 +772,15 @@ begin
  Columns[ColumnID].Width:=Max(Columns[ColumnID].MinWidth, ClientWidth - Sz - 1);
 end;
 
+procedure TTableEx.SetPaintGrid(const Value: Boolean);
+begin
+ FPaintGrid:=Value;
+ Repaint;
+end;
+
 procedure TTableEx.SetProcEmpty(const Value: Boolean);
 begin
- FProcEmpty := Value;
+ FProcEmpty:=Value;
  Repaint;
 end;
 
@@ -807,11 +835,12 @@ begin
  inherited DefaultDrawing:=False;
  inherited DrawingStyle:=gdsGradient;
  inherited OnMouseWheel:=FOnComboMouseWheel;
- FColumnsStream := nil;
+ FColumnsStream:= nil;
  FUpdatesCount:=0;
  FDrawColumnBorded:=True;
  FDrawColumnSections:=True;
  FFlashSelectedCol:=False;
+ FLastColumnAutoSize:=True;
 
  FFieldEdit:=TFieldMaskEdit.Create(Self);
  with FFieldEdit do
@@ -1241,7 +1270,7 @@ begin
      if (ItemCount > 0) or ProcEmpty then
       begin
        if Assigned(FAfterDrawText) then FAfterDrawText(Sender, ACol, DataARow, Rect, State);
-
+       //Кнопка
        if IndexInList(ACol, Columns.Count) and Columns[ACol].AsButton then
         begin
          if not (Columns[ACol].ShowButtonOnlySelect and (ARow <> DataRow)) then
@@ -1269,6 +1298,18 @@ begin
          if (TextValue <> '') and IndexInList(ACol, Columns.Count) then
           begin
            DrawText(TextValue, Columns[ACol].Format);
+          end;
+        end;
+       if FPaintGrid then
+        begin
+         Pen.Color:=FColumnsColor;
+         MoveTo(Rect.Left, Rect.Top);
+         LineTo(Rect.Left, Rect.Bottom-1);
+         LineTo(Rect.Right, Rect.Bottom-1);
+         if ACol = Columns.Count-1 then
+          begin
+           MoveTo(Rect.Right-1, Rect.Bottom-1);
+           LineTo(Rect.Right-1, Rect.Top-1);
           end;
         end;
       end;
