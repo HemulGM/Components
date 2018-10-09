@@ -623,9 +623,6 @@ end;
 
 procedure TTableEx.WMReSize(var Msg: TWMSize);
 begin
-<<<<<<< HEAD
- ColWidthsChanged;
-=======
  UpdateMaxColumn;
 end;
 
@@ -637,7 +634,6 @@ begin
    if ColumnCount <= 0 then Exit;
    SetMaxColumn(ColumnCount-1);
   end;
->>>>>>> e55887f5dc6d928a63a276e2d2e6ac7ed57e1adb
 end;
 
 procedure TTableEx.SetColumnsColor(const Value: TColor);
@@ -825,10 +821,7 @@ procedure TTableEx.ColWidthsChanged;
 begin
  inherited;
  if FEditing then DoEditCancel;
- if not Assigned(Parent) then Exit;
- if ColumnCount <= 0 then Exit;
-
- SetMaxColumn(ColumnCount-1);
+ UpdateMaxColumn;
 end;
 
 constructor TTableEx.Create(AOwner: TComponent);
