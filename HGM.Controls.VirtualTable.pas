@@ -885,12 +885,14 @@ begin
    FFieldCombo.AutoComplete:=False;
   end;
 
+ ShowScrollBar:=True;
  DefaultDataDrawing:=False;
  FVisibleEdit:=True;
  FDefDrawing:=True;
  FSetFocusOnEnter:=False;
  FItemIndex:=-1;
  FItemDowned:=False;
+ FCanNoSelect:=True;
  FCordHot.X:=-1;
  FCordHot.Y:=-1;
  FLineColorXor:=$00E7E8E8;
