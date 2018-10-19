@@ -60,6 +60,7 @@ type
   TGetTableDataProc = procedure(FCol, FRow:Integer; var Value:string) of object;
   TItemClick = procedure(Sender:TObject; MouseButton:TMouseButton; const Index:Integer) of object;
   TColumnClick = procedure(Sender:TObject; MouseButton:TMouseButton; const Index:Integer) of object;
+  TOnChangeItem = procedure(Sender:TObject; const Old:Integer; var New:Integer) of object;
   TOnEdit = procedure(Sender:TObject; var Data:TTableEditStruct; ACol, ARow:Integer; var Allow:Boolean) of object;
   TOnEditOK = procedure(Sender:TObject; Value:string; ItemValue:Integer; ACol, ARow:Integer) of object;
   TOnEditCancel = procedure(Sender:TObject; ACol, ARow:Integer) of object;
@@ -135,6 +136,7 @@ type
     FOnItemClick:TItemClick;
     FOnItemColClick:TItemClick;
     FOnColumnClick:TColumnClick;
+    FOnChangeItem:TOnChangeItem;
     FOnDrawCell:TDrawCellEvent;
     FAfterDrawText:TDrawCellEvent;
     FOnDrawColumn:TDrawCellEvent;
@@ -173,6 +175,7 @@ type
     FMouseRightClickTooClick:Boolean;
     FPaintGrid: Boolean;
     FLastColumnAutoSize: Boolean;
+    FEditOnDblClick: Boolean;
     function DataRow:Integer;
     procedure CloseControl(Sender:TObject);
     procedure DoEditCancel;
@@ -228,6 +231,7 @@ type
     procedure SetPaintGrid(const Value: Boolean);
     procedure SetLastColumnAutoSize(const Value: Boolean);
     procedure UpdateMaxColumn;
+    procedure SetEditOnDblClick(const Value: Boolean);
     property ItemDowned:Boolean read FItemDowned write SetItemDowned;
     procedure UpdateColumnIndex;
     procedure FUpdateColumnsHeight;
@@ -335,6 +339,7 @@ type
 
     property ItemIndex:Integer read FItemIndex write SetItemIndex;
     property OnColumnClick:TColumnClick read FOnColumnClick write FOnColumnClick;
+    property OnChangeItem:TOnChangeItem read FOnChangeItem write FOnChangeItem;
     property OnItemClick:TItemClick read FOnItemClick write FOnItemClick;
     property OnItemColClick:TItemClick read FOnItemColClick write FOnItemColClick;
     property GetData:TGetTableDataProc read FGetDataProc write FGetDataProc;
@@ -369,6 +374,7 @@ type
     property MouseRightClickTooClick:Boolean read FMouseRightClickTooClick write FMouseRightClickTooClick default False;
     property PaintGrid:Boolean read FPaintGrid write SetPaintGrid default False;
     property LastColumnAutoSize:Boolean read FLastColumnAutoSize write SetLastColumnAutoSize default True;
+    property EditOnDblClick:Boolean read FEditOnDblClick write SetEditOnDblClick default True;
   end;
 
   function IndexInList(const Index:Integer; ListCount:Integer):Boolean;
@@ -683,6 +689,11 @@ begin
  FEditing:=Value;
 end;
 
+procedure TTableEx.SetEditOnDblClick(const Value: Boolean);
+begin
+ FEditOnDblClick := Value;
+end;
+
 procedure TTableEx.SetFlashSelectedCol(const Value: Boolean);
 begin
  FFlashSelectedCol:=Value;
@@ -714,16 +725,22 @@ begin
 end;
 
 procedure TTableEx.SetItemIndex(const Value: Integer);
+var NewValue:Integer;
 begin
- FItemIndex:= Value;
- if FItemIndex >= 0 then
-  Row:=Max(0, Min(ItemCount, FItemIndex + Ord(FShowColumns)))
- else
+ NewValue:=Value;
+ if Assigned(FOnChangeItem) then FOnChangeItem(Self, FItemIndex, NewValue);
+ if FItemIndex <> NewValue then
   begin
-   Col:=0;
-   Row:=0;
-   if not (csLoading in ComponentState) then
-    SendMessage(Handle, WM_VSCROLL, SB_THUMBPOSITION, 0);
+   FItemIndex:=NewValue;
+   if FItemIndex >= 0 then
+    Row:=Max(0, Min(ItemCount, FItemIndex + Ord(FShowColumns)))
+   else
+    begin
+     Col:=0;
+     Row:=0;
+     if not (csLoading in ComponentState) then
+      SendMessage(Handle, WM_VSCROLL, SB_THUMBPOSITION, 0);
+    end;
   end;
  UpdateMouse(FCordHot, True);
  Repaint;
@@ -839,6 +856,7 @@ begin
  inherited OnMouseWheel:=FOnComboMouseWheel;
  FColumnsStream:= nil;
  FUpdatesCount:=0;
+ FEditOnDblClick:=True;
  FDrawColumnBorded:=True;
  FDrawColumnSections:=True;
  FFlashSelectedCol:=False;
@@ -1488,9 +1506,10 @@ end;
 procedure TTableEx.FMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 begin
  if ((Button = mbLeft) or (FMouseRightClickTooClick and (Button = mbRight))) and (ssDouble in Shift) then
-  begin
-   if (FCordHot.X = Col) and (FCordHot.Y = Row) then FOnDblClick;
-  end;
+  if FEditOnDblClick then
+   begin
+    if (FCordHot.X = Col) and (FCordHot.Y = Row) then FOnDblClick;
+   end;
  ItemDowned:=True;
  if Assigned(FOnMouseDown) then FOnMouseDown(Sender, Button, Shift, X, Y);
 end;
@@ -1566,7 +1585,7 @@ begin
  if Assigned(FOnMouseMove) then FOnMouseMove(Sender, Shift, X, Y);
 end;
 
-procedure TTableEx.UpdateMouse; 
+procedure TTableEx.UpdateMouse;
 var Last:TGridCoord;
 begin
  if not MouseInClient then Exit;
@@ -1723,6 +1742,7 @@ begin
       FFieldEdit.Font.Color:=clWhite;
       FFieldEdit.Color:=LineSelColor;
      end;
+    FFieldEdit.StyleElements:=StyleElements;
     FFieldEdit.Parent:=Self;
     FFieldEdit.ParentColor:=False;
     FFieldEdit.ParentBackground:=False;

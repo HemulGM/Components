@@ -18,6 +18,7 @@ type
    private
     FColors:array[TButtonFlatState] of TColor;
     FShape: TShapeType;
+    FSubText:string;
     FButtonState:TButtonFlatState;
     FDowned:Boolean;
     FMouseOver:Boolean;
@@ -57,6 +58,7 @@ type
     FFromColor: TColor;
     FTransparent: Boolean;
     FShowFocusRect: Boolean;
+    FVisibleSubText: Boolean;
     procedure SetLabel(const Value: string);
     procedure SetFont(const Value: TFont);
     procedure SetStyledColor(const Value: TColor);
@@ -95,6 +97,8 @@ type
     procedure SetFlat(const Value: Boolean);
     procedure SetTransparent(const Value: Boolean);
     procedure SetShowFocusRect(const Value: Boolean);
+    procedure SetSubText(const Value: string);
+    procedure SetVisibleSubText(const Value: Boolean);
     property ButtonState:TButtonFlatState read FButtonState write SetButtonState;
     property StyledColor:TColor read FStyledColor write SetStyledColor;
     property FromColor:TColor read FFromColor write FFromColor;
@@ -163,6 +167,8 @@ type
     property TabOrder;
     property TabStop;
     property TextFormat:TTextFormat read FTextFormat write SetTextFormat;
+    property SubText:string read FSubText write SetSubText;
+    property VisibleSubText:Boolean read FVisibleSubText write SetVisibleSubText default False;
     property Touch;
     property Visible;
   end;
@@ -233,6 +239,8 @@ begin
  FTimerTT.OnTimer:=OnTimerTTTime;
  FDrawTimedText:=False;
  FAnimPerc:=0;
+ FSubText:='';
+ FVisibleSubText:=False;
  FFlat:=True;
  FTimedText:='';
  FImageIndex:=-1;
@@ -341,12 +349,13 @@ procedure TButtonFlat.Paint;
 
 var X, Y, W, H, S, Rx:Integer;
     DF:TDrawTextFlags;
-    FRect:TRect;
+    FRect, FSubRect:TRect;
     d:Double;
     FDrawImg:Integer;
 begin
  Canvas.Lock;
  try
+  if Assigned(FFont) then Canvas.Font.Assign(FFont);
   with TDirect2DCanvas.Create(Canvas, ClientRect) do
    begin
     RenderTarget.BeginDraw;
@@ -430,6 +439,18 @@ begin
       Ellipse(FRect);
      end;
     //
+    //Доп. текст
+    if FVisibleSubText then
+     begin
+      FSubRect:=ClientRect;
+      FSubRect.Inflate(0, -(FSubRect.Height - (Canvas.TextHeight(FSubText)+4)) div 2);
+      FSubRect.Width:=Max(FSubRect.Height, Canvas.TextWidth(FSubText)+10);
+      FSubRect.Offset(ClientRect.Right-FSubRect.Width-10, 0);
+      Brush.Color:=clGrayText;
+      Pen.Color:=clGrayText;
+      RoundRect(FSubRect, FSubRect.Height, FSubRect.Height);
+     end;
+    //
     RenderTarget.EndDraw;
     Free;
    end;
@@ -483,15 +504,22 @@ begin
       end;
     end;
    end;
-  // Текст
-  if Assigned(FFont) then Canvas.Font.Assign(FFont);
   case FButtonState of
    bfsOver: if Assigned(FFontOver) then Canvas.Font.Assign(FFontOver);
    bfsPressed: if Assigned(FFontDown) then Canvas.Font.Assign(FFontDown);
   end;
+  // Текст
   Canvas.Brush.Color:=clWhite;
   Canvas.Brush.Style:=bsClear;
   DF:=TTextFormatFlags(FTextFormat);
+  //Уменьшим размер для доп текста
+  if FVisibleSubText then
+   begin
+    Brush.Style:=bsSolid;
+    Font.Color:=clWhite;
+    Canvas.TextRect(FSubRect, FSubText, [tfSingleLine, tfCenter, tfVerticalCenter]);
+    FRect.Right:=Min(FRect.Right, FSubRect.Left);
+   end;
   if FDrawTimedText then
    DrawTextCentered(Canvas, FRect, FTimedText, DF)
   else
@@ -662,6 +690,12 @@ begin
  Repaint;
 end;
 
+procedure TButtonFlat.SetSubText(const Value: string);
+begin
+ FSubText := Value;
+ Repaint;
+end;
+
 procedure TButtonFlat.SetTextFormat(const Value: TTextFormat);
 begin
  FTextFormat:=Value;
@@ -671,6 +705,12 @@ end;
 procedure TButtonFlat.SetTransparent(const Value: Boolean);
 begin
  FTransparent:=Value;
+ Repaint;
+end;
+
+procedure TButtonFlat.SetVisibleSubText(const Value: Boolean);
+begin
+ FVisibleSubText := Value;
  Repaint;
 end;
 
