@@ -1165,7 +1165,7 @@ begin
       Pen.Color:=FLineSelColor;
       Rectangle(Rect);
       if FFieldEdit.Visible then
-       FFieldEdit.PaintTo(Canvas.Handle, FFieldEdit.Left+FFieldEdit.BevelWidth, FFieldEdit.Top+FFieldEdit.BevelWidth);
+       FFieldEdit.PaintTo(Canvas, FFieldEdit.Left+FFieldEdit.BevelWidth, FFieldEdit.Top+FFieldEdit.BevelWidth);
      // if FFieldCombo.Visible then
       // FFieldCombo.PaintTo(Canvas.Handle, FFieldCombo.Left, FFieldCombo.Top);
       Unlock;
