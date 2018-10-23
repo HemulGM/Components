@@ -20,7 +20,7 @@ interface
   function GetMachineName:string;
   function GetSeconds(Time:TTime):Cardinal;
   function GetUserName:string;
-  function HumanDateTime(Value:TDateTime):string;
+  function HumanDateTime(Value:TDateTime; ShowTime:Boolean = True):string;
   function PercentRound(Value:Extended):Extended;
   function PngToIco(PNGObj: TPngImage):TIcon;
   function SecondsToStr(Value:Cardinal):string;
@@ -68,16 +68,25 @@ begin
  preKrnlTime:=krnl;
 end;
 
-function HumanDateTime(Value:TDateTime):string;
+function HumanDateTime(Value:TDateTime; ShowTime:Boolean):string;
 begin
+ if IsSameDay(Value, Today+2) then Result:='Послезавтра'
+ else
+ if IsSameDay(Value, Today+1) then Result:='Завтра'
+ else
  if IsSameDay(Value, Today) then Result:='Сегодня'
  else
-  if IsSameDay(Value, Yesterday) then Result:='Вчера'
-  else
-   if IsSameDay(Value, Yesterday-1) then Result:='Позавчера'
-   else Result:=DateToStr(Value);
+ if IsSameDay(Value, Yesterday) then Result:='Вчера'
+ else
+ if IsSameDay(Value, Yesterday-1) then Result:='Позавчера'
+ else
+  begin
+   if YearOf(Value) = YearOf(Now) then Result:=FormatDateTime('DD mmm, ddd', Value)
+   else Result:=FormatDateTime('DD mmm YYYY, ddd', Value);
+  end;
 
- Result:=Result+FormatDateTime(' в HH:NN:SS', Value);
+ if ShowTime then
+  Result:=Result+FormatDateTime(' в HH:NN:SS', Value);
 end;
 
 function SimpleStrCompare(const Str1, Str2:string):Double;

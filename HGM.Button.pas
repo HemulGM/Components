@@ -18,6 +18,8 @@ type
    private
     FColors:array[TButtonFlatState] of TColor;
     FShape: TShapeType;
+    FGettingTextWidth:Boolean;
+    FTextWidth:Integer;
     FSubText:string;
     FButtonState:TButtonFlatState;
     FDowned:Boolean;
@@ -59,6 +61,7 @@ type
     FTransparent: Boolean;
     FShowFocusRect: Boolean;
     FVisibleSubText: Boolean;
+    function FGetTextWidth: Integer;
     procedure SetLabel(const Value: string);
     procedure SetFont(const Value: TFont);
     procedure SetStyledColor(const Value: TColor);
@@ -171,6 +174,7 @@ type
     property VisibleSubText:Boolean read FVisibleSubText write SetVisibleSubText default False;
     property Touch;
     property Visible;
+    property GetTextWidth:Integer read FGetTextWidth;
   end;
 
 
@@ -239,6 +243,7 @@ begin
  FTimerTT.OnTimer:=OnTimerTTTime;
  FDrawTimedText:=False;
  FAnimPerc:=0;
+ FGettingTextWidth:=False;
  FSubText:='';
  FVisibleSubText:=False;
  FFlat:=True;
@@ -306,6 +311,13 @@ begin
  if Assigned(FOnMouseUp) then FOnMouseUp(Sender, Button, Shift, X, Y);
 end;
 
+function TButtonFlat.FGetTextWidth: Integer;
+begin
+ FGettingTextWidth:=True;
+ Paint;
+ Result:=FTextWidth;
+end;
+
 function TButtonFlat.GetColorNormal: TColor;
 begin
  Result:=FColors[bfsNormal];
@@ -352,6 +364,7 @@ var X, Y, W, H, S, Rx:Integer;
     FRect, FSubRect:TRect;
     d:Double;
     FDrawImg:Integer;
+    FText:string;
 begin
  Canvas.Lock;
  try
@@ -520,11 +533,16 @@ begin
     Canvas.TextRect(FSubRect, FSubText, [tfSingleLine, tfCenter, tfVerticalCenter]);
     FRect.Right:=Min(FRect.Right, FSubRect.Left);
    end;
-  if FDrawTimedText then
-   DrawTextCentered(Canvas, FRect, FTimedText, DF)
-  else
-   DrawTextCentered(Canvas, FRect, FLabel, DF);
+
+  if FDrawTimedText then FText:=FTimedText else FText:=FLabel;
+  Canvas.TextRect(FRect, FText, FTextFormat);
+  if FGettingTextWidth then
+   begin
+    FGettingTextWidth:=False;
+    FTextWidth:=Canvas.TextWidth(FText);
+   end;
   if Assigned(FOnPaint) then FOnPaint(Self);
+
   if FShowFocusRect and Focused then
    begin
     DrawFocusRect(Canvas.Handle, ClientRect);

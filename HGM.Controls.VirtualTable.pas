@@ -1528,8 +1528,8 @@ begin
         begin
          if ARow = 0 then
           begin
-           if Assigned(FOnColumnClick) then FOnColumnClick(Sender, Button, ACol);
            ItemDowned:=False;
+           if Assigned(FOnColumnClick) then FOnColumnClick(Sender, Button, ACol);
            if Assigned(FOnMouseUp) then FOnMouseUp(Sender, Button, Shift, X, Y);
            Exit;
           end;
