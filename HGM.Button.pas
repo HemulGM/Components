@@ -8,8 +8,6 @@ uses
   HGM.Controls.VirtualTable, Vcl.Direct2D, Winapi.D2D1, HGM.Common, HGM.Common.Utils;
 
 type
-  //TTextAligns = (taLeft, taTop, taRight, taBottom, taVCenter, taCenter, taWordBrake, taSingleLine);
-  //TextAling = set of TTextAligns;
   TButtonFlatState = (bfsNormal, bfsOver, bfsPressed);
 
   TButtonFlatGroupItem = (giNone, giLeft, giCenter, giRight);
@@ -51,6 +49,7 @@ type
     FNotifyWidth: Integer;
     FTimedText:string;
     FTimerTT:TTimer;
+    FTimerAutoClick:TTimer;
     FDrawTimedText:Boolean;
     FGroupItemKind: TButtonFlatGroupItem;
     FImagesOver: TImageList;
@@ -61,6 +60,9 @@ type
     FTransparent: Boolean;
     FShowFocusRect: Boolean;
     FVisibleSubText: Boolean;
+    FDblClickTooClick: Boolean;
+    FAutoClick: Cardinal;
+    procedure FOnDblClick(Sender:TObject);
     function FGetTextWidth: Integer;
     procedure SetLabel(const Value: string);
     procedure SetFont(const Value: TFont);
@@ -76,6 +78,7 @@ type
     procedure SetButtonState(const Value: TButtonFlatState);
     procedure OnTimerAnimateTime(Sender:TObject);
     procedure OnTimerTTTime(Sender:TObject);
+    procedure OnTimerAutoClickTime(Sender:TObject);
     procedure StopAnimate;
     procedure SetNeedColor(const Value: TColor);
     procedure SetShape(Value: TShapeType);
@@ -102,6 +105,8 @@ type
     procedure SetShowFocusRect(const Value: Boolean);
     procedure SetSubText(const Value: string);
     procedure SetVisibleSubText(const Value: Boolean);
+    procedure SetDblClickTooClick(const Value: Boolean);
+    procedure SetAutoClick(const Value: Cardinal);
     property ButtonState:TButtonFlatState read FButtonState write SetButtonState;
     property StyledColor:TColor read FStyledColor write SetStyledColor;
     property FromColor:TColor read FFromColor write FFromColor;
@@ -175,6 +180,8 @@ type
     property Touch;
     property Visible;
     property GetTextWidth:Integer read FGetTextWidth;
+    property AutoClick:Cardinal read FAutoClick write SetAutoClick default 0;
+    property DblClickTooClick:Boolean read FDblClickTooClick write SetDblClickTooClick default False;
   end;
 
 
@@ -233,6 +240,9 @@ begin
  inherited Create(AOwner);
  inherited Cursor:=crHandPoint;
  ControlStyle:=ControlStyle + [csReplicatable, csOpaque];
+ OnDblClick:=FOnDblClick;
+ FDblClickTooClick:=False;
+ FAutoClick:=0;
  FTimerAnimate:=TTimer.Create(nil);
  FTimerAnimate.Interval:=10;
  FTimerAnimate.Enabled:=False;
@@ -241,6 +251,10 @@ begin
  FTimerTT.Interval:=100;
  FTimerTT.Enabled:=False;
  FTimerTT.OnTimer:=OnTimerTTTime;
+ FTimerAutoClick:=TTimer.Create(nil);
+ FTimerAutoClick.Interval:=FAutoClick;
+ FTimerAutoClick.Enabled:=False;
+ FTimerAutoClick.OnTimer:=OnTimerAutoClickTime;
  FDrawTimedText:=False;
  FAnimPerc:=0;
  FGettingTextWidth:=False;
@@ -293,6 +307,7 @@ destructor TButtonFlat.Destroy;
 begin
  FTimerAnimate.Free;
  FTimerTT.Free;
+ FTimerAutoClick.Free;
  inherited;
 end;
 
@@ -301,6 +316,11 @@ begin
  SetFocus;
  ButtonState:=bfsPressed;
  FDowned:=True;
+ if FAutoClick > 0 then
+  begin
+   FTimerAutoClick.Interval:=1000;
+   FTimerAutoClick.Enabled:=True;
+  end;
  if Assigned(FOnMouseDown) then FOnMouseDown(Sender, Button, Shift, X, Y);
 end;
 
@@ -316,6 +336,11 @@ begin
  FGettingTextWidth:=True;
  Paint;
  Result:=FTextWidth;
+end;
+
+procedure TButtonFlat.FOnDblClick(Sender: TObject);
+begin
+ if DblClickTooClick then Click;
 end;
 
 function TButtonFlat.GetColorNormal: TColor;
@@ -342,6 +367,17 @@ begin
    StyledColor:=NeedColor;
   end
  else StyledColor:=MixColors(NeedColor, FromColor, FAnimPerc);
+end;
+
+procedure TButtonFlat.OnTimerAutoClickTime(Sender: TObject);
+begin
+ if FDowned then
+  begin
+   FTimerAutoClick.Interval:=FAutoClick;
+   Click;
+  end
+ else FTimerAutoClick.Enabled:=False;
+
 end;
 
 procedure TButtonFlat.OnTimerTTTime(Sender: TObject);
@@ -552,6 +588,12 @@ begin
  end;
 end;
 
+procedure TButtonFlat.SetAutoClick(const Value: Cardinal);
+begin
+ FAutoClick := Value;
+ FTimerAutoClick.Interval:=FAutoClick;
+end;
+
 procedure TButtonFlat.SetButtonState(const Value: TButtonFlatState);
 begin
  FButtonState:=Value;
@@ -574,6 +616,11 @@ procedure TButtonFlat.SetColorPressed(const Value: TColor);
 begin
  FColors[bfsPressed]:=Value;
  ButtonState:=ButtonState;
+end;
+
+procedure TButtonFlat.SetDblClickTooClick(const Value: Boolean);
+begin
+ FDblClickTooClick := Value;
 end;
 
 procedure TButtonFlat.SetEllipseRectVertical(const Value: Boolean);
