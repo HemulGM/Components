@@ -5,7 +5,8 @@ interface
 uses
   Winapi.Windows, Winapi.Messages, System.Classes, Vcl.Graphics, Vcl.Controls,
   Vcl.StdCtrls, System.Generics.Collections, Vcl.ExtCtrls, System.UITypes,
-  HGM.Controls.VirtualTable, Vcl.Direct2D, Winapi.D2D1, HGM.Common, HGM.Common.Utils;
+  HGM.Controls.VirtualTable, Vcl.Direct2D, Winapi.D2D1, HGM.Common, HGM.Common.Utils,
+  Vcl.Menus;
 
 type
   TButtonFlatState = (bfsNormal, bfsOver, bfsPressed);
@@ -62,6 +63,7 @@ type
     FVisibleSubText: Boolean;
     FDblClickTooClick: Boolean;
     FAutoClick: Cardinal;
+    FPopup: TPopupMenu;
     procedure FOnDblClick(Sender:TObject);
     function FGetTextWidth: Integer;
     procedure SetLabel(const Value: string);
@@ -107,6 +109,7 @@ type
     procedure SetVisibleSubText(const Value: Boolean);
     procedure SetDblClickTooClick(const Value: Boolean);
     procedure SetAutoClick(const Value: Cardinal);
+    procedure SetPopup(const Value: TPopupMenu);
     property ButtonState:TButtonFlatState read FButtonState write SetButtonState;
     property StyledColor:TColor read FStyledColor write SetStyledColor;
     property FromColor:TColor read FFromColor write FFromColor;
@@ -118,6 +121,7 @@ type
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
     procedure TimedText(Text:string; Delay:Cardinal);
+    procedure ShowPopup;
    published
     property Align;
     property Anchors;
@@ -182,6 +186,7 @@ type
     property GetTextWidth:Integer read FGetTextWidth;
     property AutoClick:Cardinal read FAutoClick write SetAutoClick default 0;
     property DblClickTooClick:Boolean read FDblClickTooClick write SetDblClickTooClick default False;
+    property Popup:TPopupMenu read FPopup write SetPopup;
   end;
 
 
@@ -393,6 +398,16 @@ type
    property Color;
  end;
 
+function GetColor(Control:TControl):TColor;
+begin
+ if Assigned(Control) and (Control is TControl) then
+  begin
+   if (Control.HasParent) and TColorControl(Control).ParentColor then
+    Result:=GetColor(Control.Parent)
+   else Result:=TColorControl(Control).Color;
+  end
+end;
+
 procedure TButtonFlat.Paint;
 
 var X, Y, W, H, S, Rx:Integer;
@@ -412,7 +427,8 @@ begin
     Brush.Style:=bsSolid;
     if Assigned(Parent) and (Parent is TControl) then
      begin
-      Brush.Color:=TColorControl(Parent).Color;
+      //TColorControl(Parent).ParentColor
+      Brush.Color:=GetColor(Parent);
      end
     else Brush.Color:=ColorNormal;
     FillRect(ClientRect);
@@ -566,6 +582,7 @@ begin
    begin
     Brush.Style:=bsSolid;
     Font.Color:=clWhite;
+    FSubRect.Offset(0, -1);
     Canvas.TextRect(FSubRect, FSubText, [tfSingleLine, tfCenter, tfVerticalCenter]);
     FRect.Right:=Min(FRect.Right, FSubRect.Left);
    end;
@@ -586,6 +603,16 @@ begin
  finally
   Canvas.Unlock;
  end;
+end;
+
+procedure TButtonFlat.ShowPopup;
+var MP:TPoint;
+begin
+ if Assigned(FPopup) then
+  begin
+   MP:=ClientToScreen(Point(0, 0));
+   FPopup.Popup(MP.X, MP.Y+Height);
+  end;
 end;
 
 procedure TButtonFlat.SetAutoClick(const Value: Cardinal);
@@ -735,6 +762,11 @@ procedure TButtonFlat.SetNotifyWidth(const Value: Integer);
 begin
  FNotifyWidth := Value;
  Repaint;
+end;
+
+procedure TButtonFlat.SetPopup(const Value: TPopupMenu);
+begin
+ FPopup:= Value;
 end;
 
 procedure TButtonFlat.StopAnimate;

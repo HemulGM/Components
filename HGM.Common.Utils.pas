@@ -45,9 +45,17 @@ interface
   function MixColors(Color1, Color2:TColor; Alpha:Byte):TColor;
   function IndexInList(const Index:Integer; ListCount:Integer):Boolean;
   function FlashControl(Control:TControl):Boolean;
+  function CutString(Value:string; Count:Word):string;
 
 implementation
  uses ShlObj, ActiveX, System.Win.ComObj, PNGFunctions, PNGImageList;
+
+function CutString(Value:string; Count:Word):string;
+begin
+ if Value.Length > Count then
+      Result:=Copy(Value, 1, Count)+'...'
+ else Result:=Value;
+end;
 
 function Centred(V1, V2:Integer):Integer;
 begin
