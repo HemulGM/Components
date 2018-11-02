@@ -420,6 +420,7 @@ begin
  Canvas.Lock;
  try
   if Assigned(FFont) then Canvas.Font.Assign(FFont);
+  if FDrawTimedText then FText:=FTimedText else FText:=FLabel;
   with TDirect2DCanvas.Create(Canvas, ClientRect) do
    begin
     RenderTarget.BeginDraw;
@@ -497,6 +498,8 @@ begin
       if Assigned(Images) then
        FRect.SetLocation(Min(ImageIndentLeft+Images.Width-4, ClientWidth-FNotifyWidth-2), (Height div 2 - Images.Height div 2)-4)
       else FRect.SetLocation(FNotifyWidth div 2, FNotifyWidth div 2);
+      //if FText <> '' then FRect.Offset(Canvas.TextWidth(FText), 0);
+
       Brush.Style:=bsSolid;
       Pen.Style:=psSolid;
       Pen.Color:=FNotifyColor;
@@ -587,12 +590,15 @@ begin
     FRect.Right:=Min(FRect.Right, FSubRect.Left);
    end;
 
-  if FDrawTimedText then FText:=FTimedText else FText:=FLabel;
   Canvas.TextRect(FRect, FText, FTextFormat);
   if FGettingTextWidth then
    begin
     FGettingTextWidth:=False;
     FTextWidth:=Canvas.TextWidth(FText);
+    if Assigned(FImages) and (FImageIndex >= 0) then
+     begin
+      FTextWidth:=FTextWidth + FImages.Width + FImageIndentLeft + FImageIndentRight;
+     end;
    end;
   if Assigned(FOnPaint) then FOnPaint(Self);
 
