@@ -14,18 +14,25 @@ type
   TTableColumn = class;
   TTableColumnClass = class of TTableColumn;
 
+  TCheckList = array of Boolean;
+
   TTableData<T> = class(TList<T>)
    type TTables = TList<TTableEx>;
    private
     FTables:TTables;
+    FCheck:TCheckList;
     FUpdate:Integer;
     function GetTable(Index:Integer):TTableEx;
     procedure InitNotif(Sender:TObject; const Item:T; Action:TCollectionNotification);
+    function GetChecked(Index: Integer): Boolean;
+    procedure SetChecked(Index: Integer; const Value: Boolean);
+    function GetCheckedCount: Integer;
    public
     procedure BeginUpdate;
     procedure EndUpdate;
     constructor Create(AOwner: TTableEx); overload; virtual;
     constructor Create; overload; virtual;
+    destructor Destroy; override;
     function Add(Value:T):Integer; virtual;
 
     procedure Clear; virtual;
@@ -34,7 +41,11 @@ type
     procedure AddTable(pTable:TTableEx);
     procedure UnAssignTables;
     procedure UpdateTable; virtual;
+    procedure CheckAll; virtual;
+    procedure UnCheckAll; virtual;
+    property CheckedCount:Integer read GetCheckedCount;
     property Tables[Index:Integer]:TTableEx read GetTable;
+    property Checked[Index:Integer]:Boolean read GetChecked write SetChecked;
   end;
 
   TEditMode = (teText, teList, teDate, teMask, teTime, teInt, teFloat);
@@ -176,7 +187,11 @@ type
     FPaintGrid: Boolean;
     FLastColumnAutoSize: Boolean;
     FEditOnDblClick: Boolean;
+<<<<<<< HEAD
     FAddingColumns:Boolean;
+=======
+    FCanClickToUnfocused: Boolean;
+>>>>>>> 1afc54f8c3eb0329bac69d9a32586b7707c421e6
     function DataRow:Integer;
     procedure CloseControl(Sender:TObject);
     procedure DoEditCancel;
@@ -233,7 +248,11 @@ type
     procedure SetLastColumnAutoSize(const Value: Boolean);
     procedure UpdateMaxColumn;
     procedure SetEditOnDblClick(const Value: Boolean);
+<<<<<<< HEAD
     procedure UpdateColumnList;
+=======
+    procedure SetCanClickToUnfocused(const Value: Boolean);
+>>>>>>> 1afc54f8c3eb0329bac69d9a32586b7707c421e6
     property ItemDowned:Boolean read FItemDowned write SetItemDowned;
     procedure UpdateColumnIndex;
     procedure FUpdateColumnsHeight;
@@ -379,6 +398,7 @@ type
     property PaintGrid:Boolean read FPaintGrid write SetPaintGrid default False;
     property LastColumnAutoSize:Boolean read FLastColumnAutoSize write SetLastColumnAutoSize default True;
     property EditOnDblClick:Boolean read FEditOnDblClick write SetEditOnDblClick default True;
+    property CanClickToUnfocused:Boolean read FCanClickToUnfocused write SetCanClickToUnfocused default False;
   end;
 
   function IndexInList(const Index:Integer; ListCount:Integer):Boolean;
@@ -421,14 +441,27 @@ procedure TTableData<T>.InitNotif(Sender:TObject; const Item:T; Action:TCollecti
 begin
  UpdateTable;
 end;
+                   //0,1,2,3,4,5   3
+procedure TTableData<T>.SetChecked(Index: Integer; const Value: Boolean);
+begin
+ if Length(FCheck)-1 < Index  then SetLength(FCheck, Index+1);
+ FCheck[Index]:=Value;
+end;
 
 procedure TTableData<T>.BeginUpdate;
 begin
  Inc(FUpdate);
 end;
 
+procedure TTableData<T>.CheckAll;
+var i: Integer;
+begin
+ for i:= Low(FCheck) to High(FCheck) do FCheck[i]:=True;
+end;
+
 procedure TTableData<T>.Clear;
 begin
+ SetLength(FCheck, 0);
  inherited Clear;
 end;
 
@@ -442,7 +475,15 @@ end;
 
 procedure TTableData<T>.Delete(Index: Integer);
 begin
+ if Length(FCheck)-1 < Index then SetLength(FCheck, Index+1);
+ System.Delete(FCheck, Index, 1);
  inherited Delete(Index);
+end;
+
+destructor TTableData<T>.Destroy;
+begin
+ SetLength(FCheck, 0);
+ inherited;
 end;
 
 procedure TTableData<T>.EndUpdate;
@@ -450,6 +491,23 @@ begin
  //FUpdate:=Max(0, FUpdate-1);
  FUpdate:=0;
  if FUpdate = 0 then UpdateTable;
+end;
+
+function TTableData<T>.GetChecked(Index: Integer): Boolean;
+begin
+ if Length(FCheck)-1 < Index then
+  begin
+   SetLength(FCheck, Index+1);
+   Exit(False);
+  end
+ else Result:=FCheck[Index];
+end;
+
+function TTableData<T>.GetCheckedCount: Integer;
+var i: Integer;
+begin
+ Result:=0;
+ for i:= Low(FCheck) to High(FCheck) do if FCheck[i] then Inc(Result);
 end;
 
 function TTableData<T>.GetTable(Index:Integer):TTableEx;
@@ -461,6 +519,12 @@ end;
 procedure TTableData<T>.UnAssignTables;
 begin
  FTables.Clear;
+end;
+
+procedure TTableData<T>.UnCheckAll;
+var i: Integer;
+begin
+ for i:= Low(FCheck) to High(FCheck) do FCheck[i]:=False;
 end;
 
 procedure TTableData<T>.UpdateTable;
@@ -653,6 +717,11 @@ begin
    if ColumnCount <= 0 then Exit;
    SetMaxColumn(ColumnCount-1);
   end;
+end;
+
+procedure TTableEx.SetCanClickToUnfocused(const Value: Boolean);
+begin
+ FCanClickToUnfocused := Value;
 end;
 
 procedure TTableEx.SetColumnsColor(const Value: TColor);
@@ -875,7 +944,11 @@ begin
  inherited OnMouseWheel:=FOnComboMouseWheel;
  FColumnsStream:= nil;
  FUpdatesCount:=0;
+<<<<<<< HEAD
  FAddingColumns:=False;
+=======
+ FCanClickToUnfocused:=False;
+>>>>>>> 1afc54f8c3eb0329bac69d9a32586b7707c421e6
  FEditOnDblClick:=True;
  FDrawColumnBorded:=True;
  FDrawColumnSections:=True;
@@ -1540,7 +1613,7 @@ begin
 end;
 
 procedure TTableEx.FMouseUp(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
-var ACol, ARow, NewRow:Integer;
+var ACol, ARow, NewRow, OldRow:Integer;
 begin
  if (Button = mbLeft) or (FMouseRightClickTooClick and (Button = mbRight)) then
   begin
@@ -1564,13 +1637,11 @@ begin
         begin
          NewRow:=ARow;
         end;
-       if ItemIndex = NewRow then
+       OldRow:=ItemIndex;
+       ItemIndex:=NewRow;
+       if (OldRow = NewRow) or FCanClickToUnfocused then
         begin
          if Assigned(FOnItemColClick) then FOnItemColClick(Sender, Button, ACol);
-        end
-       else
-        begin
-         ItemIndex:=NewRow;
         end;
        DoItemClick;
       end;
