@@ -176,6 +176,7 @@ type
     FPaintGrid: Boolean;
     FLastColumnAutoSize: Boolean;
     FEditOnDblClick: Boolean;
+    FAddingColumns:Boolean;
     function DataRow:Integer;
     procedure CloseControl(Sender:TObject);
     procedure DoEditCancel;
@@ -232,6 +233,7 @@ type
     procedure SetLastColumnAutoSize(const Value: Boolean);
     procedure UpdateMaxColumn;
     procedure SetEditOnDblClick(const Value: Boolean);
+    procedure UpdateColumnList;
     property ItemDowned:Boolean read FItemDowned write SetItemDowned;
     procedure UpdateColumnIndex;
     procedure FUpdateColumnsHeight;
@@ -271,6 +273,8 @@ type
     property CordHot:TGridCoord read FCordHot;
     property FocusedColumn:Integer read GetFocusedColumn;
     property ItemUnderMouse:Integer read GetItemUnderMouse;
+    procedure BeginAddColumns;
+    procedure EndAddColumns;
    published
     property OnActivate:TNotifyEvent read FOnActivate write FOnActivate;
     property OnDeactivate:TNotifyEvent read FOnDeactivate write FOnDeactivate;
@@ -510,6 +514,15 @@ begin
   end;
 end;
 
+procedure TTableEx.UpdateColumnList;
+var i:Integer;
+begin
+ if HandleAllocated then
+  begin
+   for i:= 0 to Columns.Count - 1 do Columns[i].Width:=ColWidths[i];
+  end;
+end;
+
 procedure TTableEx.UpdateColumn(Index: Integer);
 begin
  //if HandleAllocated then UpdateItem(_HDM_SETITEM, Index);
@@ -634,7 +647,7 @@ end;
 
 procedure TTableEx.UpdateMaxColumn;
 begin
- if FLastColumnAutoSize then
+ if FLastColumnAutoSize and (not FAddingColumns) then
   begin
    if not Assigned(Parent) then Exit;
    if ColumnCount <= 0 then Exit;
@@ -819,6 +832,11 @@ begin
  Columns[Result].AsButton:=aButton;
 end;
 
+procedure TTableEx.BeginAddColumns;
+begin
+ FAddingColumns:=True;
+end;
+
 procedure TTableEx.CancelEdit;
 begin
  DoEditCancel;
@@ -838,6 +856,7 @@ procedure TTableEx.ColWidthsChanged;
 begin
  inherited;
  if FEditing then DoEditCancel;
+ UpdateColumnList;
  UpdateMaxColumn;
 end;
 
@@ -856,6 +875,7 @@ begin
  inherited OnMouseWheel:=FOnComboMouseWheel;
  FColumnsStream:= nil;
  FUpdatesCount:=0;
+ FAddingColumns:=False;
  FEditOnDblClick:=True;
  FDrawColumnBorded:=True;
  FDrawColumnSections:=True;
@@ -1089,6 +1109,11 @@ begin
  DoEditOk;
  FOnDblClick;
  Result:=True;
+end;
+
+procedure TTableEx.EndAddColumns;
+begin
+ FAddingColumns:=False;
 end;
 
 procedure TTableEx.FDrawCell(Sender: TObject; ACol, ARow: Integer; Rect: TRect; State: TGridDrawState);
@@ -1859,6 +1884,7 @@ end;
 
 procedure TTableColumn.SetWidth(const Value:Cardinal);
 begin
+ if FWidth = Value then Exit;
  //FOwner.ColWidths[Index]:=Value;
  FWidth:=Value;
  Changed(False);
