@@ -187,11 +187,8 @@ type
     FPaintGrid: Boolean;
     FLastColumnAutoSize: Boolean;
     FEditOnDblClick: Boolean;
-<<<<<<< HEAD
     FAddingColumns:Boolean;
-=======
     FCanClickToUnfocused: Boolean;
->>>>>>> 1afc54f8c3eb0329bac69d9a32586b7707c421e6
     function DataRow:Integer;
     procedure CloseControl(Sender:TObject);
     procedure DoEditCancel;
@@ -248,11 +245,8 @@ type
     procedure SetLastColumnAutoSize(const Value: Boolean);
     procedure UpdateMaxColumn;
     procedure SetEditOnDblClick(const Value: Boolean);
-<<<<<<< HEAD
     procedure UpdateColumnList;
-=======
     procedure SetCanClickToUnfocused(const Value: Boolean);
->>>>>>> 1afc54f8c3eb0329bac69d9a32586b7707c421e6
     property ItemDowned:Boolean read FItemDowned write SetItemDowned;
     procedure UpdateColumnIndex;
     procedure FUpdateColumnsHeight;
@@ -944,11 +938,8 @@ begin
  inherited OnMouseWheel:=FOnComboMouseWheel;
  FColumnsStream:= nil;
  FUpdatesCount:=0;
-<<<<<<< HEAD
  FAddingColumns:=False;
-=======
  FCanClickToUnfocused:=False;
->>>>>>> 1afc54f8c3eb0329bac69d9a32586b7707c421e6
  FEditOnDblClick:=True;
  FDrawColumnBorded:=True;
  FDrawColumnSections:=True;
