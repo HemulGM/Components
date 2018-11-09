@@ -12,7 +12,6 @@ type
     AOnPanel:Boolean;
     FDefaultPaint: Boolean;
     procedure SetDefaultPaint(const Value: Boolean);
-   protected
    public
     FOnMouseEnter:TNotifyEvent;
     FOnMouseLeave:TNotifyEvent;
@@ -113,6 +112,87 @@ type
    property OnKeyUp;
   end;
 
+  TDragPanel = class(TCustomPanel)
+   private
+    FOnMouseDown:TMouseEvent;
+    procedure SetOnMouseDown(const Value: TMouseEvent);
+    procedure MouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+   public
+    property DockManager;
+    constructor Create(AOwner: TComponent); override;
+   published
+    property Align;
+    property Alignment;
+    property Anchors;
+    property AutoSize;
+    property BevelEdges;
+    property BevelInner;
+    property BevelKind;
+    property BevelOuter;
+    property BevelWidth;
+    property BiDiMode;
+    property BorderWidth;
+    property BorderStyle;
+    property Caption;
+    property Color;
+    property Constraints;
+    property Ctl3D;
+    property UseDockManager default True;
+    property DockSite;
+    property DoubleBuffered;
+    property DragCursor;
+    property DragKind;
+    property DragMode;
+    property Enabled;
+    property FullRepaint;
+    property Font;
+    property Locked;
+    property Padding;
+    property ParentBiDiMode;
+    property ParentBackground;
+    property ParentColor;
+    property ParentCtl3D;
+    property ParentDoubleBuffered;
+    property ParentFont;
+    property ParentShowHint;
+    property PopupMenu;
+    property ShowCaption;
+    property ShowHint;
+    property TabOrder;
+    property TabStop;
+    property Touch;
+    property VerticalAlignment;
+    property Visible;
+    property StyleElements;
+    property OnAlignInsertBefore;
+    property OnAlignPosition;
+    property OnCanResize;
+    property OnClick;
+    property OnConstrainedResize;
+    property OnContextPopup;
+    property OnDockDrop;
+    property OnDockOver;
+    property OnDblClick;
+    property OnDragDrop;
+    property OnDragOver;
+    property OnEndDock;
+    property OnEndDrag;
+    property OnEnter;
+    property OnExit;
+    property OnGesture;
+    property OnGetSiteInfo;
+    property OnMouseActivate;
+    property OnMouseDown:TMouseEvent read FOnMouseDown write SetOnMouseDown;
+    property OnMouseEnter;
+    property OnMouseLeave;
+    property OnMouseMove;
+    property OnMouseUp;
+    property OnResize;
+    property OnStartDock;
+    property OnStartDrag;
+    property OnUnDock;
+  end;
+
 procedure Register;
 
 implementation
@@ -121,6 +201,7 @@ procedure Register;
 begin
  RegisterComponents(PackageName, [TPanelExt]);
  RegisterComponents(PackageName, [TDrawPanel]);
+ RegisterComponents(PackageName, [TDragPanel]);
 end;
 
 constructor TDrawPanel.Create(AOwner: TComponent);
@@ -164,6 +245,24 @@ begin
  if Assigned(FOnMouseLeave) then FOnMouseLeave(Self);
 end;
 
+{ TDragPanel }
 
+constructor TDragPanel.Create(AOwner: TComponent);
+begin
+ inherited;
+ inherited OnMouseDown:=MouseDown;
+end;
+
+procedure TDragPanel.MouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+begin
+ ReleaseCapture;
+ SendMessage(Self.Parent.Handle, WM_SYSCOMMAND, 61458, 0);
+ if Assigned(FOnMouseDown) then FOnMouseDown(Sender, Button, Shift, X, Y);
+end;
+
+procedure TDragPanel.SetOnMouseDown(const Value: TMouseEvent);
+begin
+ FOnMouseDown:=Value;
+end;
 
 end.
