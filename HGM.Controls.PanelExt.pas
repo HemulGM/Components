@@ -118,6 +118,7 @@ type
     procedure SetOnMouseDown(const Value: TMouseEvent);
     procedure MouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
    public
+    procedure DoDrag;
     property DockManager;
     constructor Create(AOwner: TComponent); override;
    published
@@ -253,10 +254,15 @@ begin
  inherited OnMouseDown:=MouseDown;
 end;
 
-procedure TDragPanel.MouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+procedure TDragPanel.DoDrag;
 begin
  ReleaseCapture;
  SendMessage(Self.Parent.Handle, WM_SYSCOMMAND, 61458, 0);
+end;
+
+procedure TDragPanel.MouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+begin
+
  if Assigned(FOnMouseDown) then FOnMouseDown(Sender, Button, Shift, X, Y);
 end;
 

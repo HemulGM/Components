@@ -27,7 +27,6 @@ type
     FTextFormat:TTextFormat;
     FEllipseRectVertical:Boolean;
     FIgnorBounds:Boolean;
-    FFont:TFont;
     FNeedColor:TColor;
     FAnimPerc:Integer;
     FStyledColor:TColor;
@@ -64,10 +63,10 @@ type
     FDblClickTooClick: Boolean;
     FAutoClick: Cardinal;
     FPopup: TPopupMenu;
+    FBorderColor: TColor;
     procedure FOnDblClick(Sender:TObject);
     function FGetTextWidth: Integer;
     procedure SetLabel(const Value: string);
-    procedure SetFont(const Value: TFont);
     procedure SetStyledColor(const Value: TColor);
     procedure SetTextFormat(const Value: TTextFormat);
     procedure SetEllipseRectVertical(const Value: Boolean);
@@ -110,6 +109,7 @@ type
     procedure SetDblClickTooClick(const Value: Boolean);
     procedure SetAutoClick(const Value: Cardinal);
     procedure SetPopup(const Value: TPopupMenu);
+    procedure SetBorderColor(const Value: TColor);
     property ButtonState:TButtonFlatState read FButtonState write SetButtonState;
     property StyledColor:TColor read FStyledColor write SetStyledColor;
     property FromColor:TColor read FFromColor write FFromColor;
@@ -137,8 +137,9 @@ type
     property DragMode;
     property Enabled;
     property EllipseRectVertical:Boolean read FEllipseRectVertical write SetEllipseRectVertical default False;
+    property Font;
     property Flat:Boolean read FFlat write SetFlat default True;
-    property Font:TFont read FFont write SetFont;
+    property BorderColor:TColor read FBorderColor write SetBorderColor default clNone;
     property FontOver:TFont read FFontOver write SetFontOver;
     property FontDown:TFont read FFontDown write SetFontDown;
     property GroupItemKind:TButtonFlatGroupItem read FGroupItemKind write SetGroupItemKind default giNone;
@@ -276,6 +277,7 @@ begin
  FNotifyColor:=$0042A4FF;
  FNotifyWidth:=8;
  FNotifyVisible:=False;
+ FBorderColor:=clNone;
  ParentColor:=False;
  TabStop:=True;
  ParentBackground:=False;
@@ -285,10 +287,7 @@ begin
  FColors[bfsPressed]:=$009F7949;
  FDowned:=False;
  FMouseOver:=False;
-
- FFont:=TFont.Create;
- FFont.Color:=clWhite;
- FFont.Size:=10;
+ Font.Size:=10;
 
  FFontOver:=TFont.Create;
  FFontOver.Color:=clWhite;
@@ -409,22 +408,22 @@ begin
 end;
 
 procedure TButtonFlat.Paint;
-
 var X, Y, W, H, S, Rx:Integer;
-    DF:TDrawTextFlags;
     FRect, FSubRect:TRect;
     d:Double;
     FDrawImg:Integer;
     FText:string;
 begin
- Canvas.Lock;
  try
-  if Assigned(FFont) then Canvas.Font.Assign(FFont);
   if FDrawTimedText then FText:=FTimedText else FText:=FLabel;
+  case FButtonState of
+   bfsOver: if Assigned(FontOver) then Canvas.Font.Assign(FontOver);
+   bfsPressed: if Assigned(FontDown) then Canvas.Font.Assign(FontDown);
+   bfsNormal: if Assigned(Font) then Canvas.Font.Assign(Font);
+  end;
   with TDirect2DCanvas.Create(Canvas, ClientRect) do
    begin
-    RenderTarget.BeginDraw;
-    RenderTarget.SetTransform(TD2DMatrix3x2F.Identity);
+    BeginDraw;
     Brush.Style:=bsSolid;
     if Assigned(Parent) and (Parent is TControl) then
      begin
@@ -436,7 +435,12 @@ begin
     Brush.Color:=StyledColor;
     // Плоский стиль
     if Flat then Pen.Color:=Brush.Color
-    else Pen.Color:=ColorDarker(StyledColor);
+    else
+     begin
+      if FBorderColor = clNone then
+       Pen.Color:=ColorDarker(StyledColor)
+      else Pen.Color:=FBorderColor;
+     end;
     // Фигура
     X:=Pen.Width div 2;
     Y:=X;
@@ -519,7 +523,7 @@ begin
       RoundRect(FSubRect, FSubRect.Height, FSubRect.Height);
      end;
     //
-    RenderTarget.EndDraw;
+    EndDraw;
     Free;
    end;
   //Прямоугольник для текста
@@ -572,14 +576,9 @@ begin
       end;
     end;
    end;
-  case FButtonState of
-   bfsOver: if Assigned(FFontOver) then Canvas.Font.Assign(FFontOver);
-   bfsPressed: if Assigned(FFontDown) then Canvas.Font.Assign(FFontDown);
-  end;
   // Текст
   Canvas.Brush.Color:=clWhite;
   Canvas.Brush.Style:=bsClear;
-  DF:=TTextFormatFlags(FTextFormat);
   //Уменьшим размер для доп текста
   if FVisibleSubText then
    begin
@@ -607,7 +606,7 @@ begin
     DrawFocusRect(Canvas.Handle, ClientRect);
    end;
  finally
-  Canvas.Unlock;
+
  end;
 end;
 
@@ -625,6 +624,12 @@ procedure TButtonFlat.SetAutoClick(const Value: Cardinal);
 begin
  FAutoClick := Value;
  FTimerAutoClick.Interval:=FAutoClick;
+end;
+
+procedure TButtonFlat.SetBorderColor(const Value: TColor);
+begin
+ FBorderColor := Value;
+ Repaint;
 end;
 
 procedure TButtonFlat.SetButtonState(const Value: TButtonFlatState);
@@ -665,12 +670,6 @@ end;
 procedure TButtonFlat.SetFlat(const Value: Boolean);
 begin
  FFlat:=Value;
- Repaint;
-end;
-
-procedure TButtonFlat.SetFont(const Value: TFont);
-begin
- FFont:=Value;
  Repaint;
 end;
 

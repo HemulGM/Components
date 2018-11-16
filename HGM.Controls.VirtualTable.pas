@@ -656,7 +656,7 @@ begin
 end;
 
 procedure TTableEx.UpdateColumnIndex;
-var i:Integer;
+//var i:Integer;
 begin
  //if FColumns.Count > 0 then
  // for i:= 0 to FColumns.Count - 1 do FColumns[i].Index:=i;
@@ -803,6 +803,7 @@ end;
 procedure TTableEx.SetItemIndex(const Value: Integer);
 var NewValue:Integer;
 begin
+ if (csDestroying in ComponentState) then Exit;
  NewValue:=Value;
  if Assigned(FOnChangeItem) then FOnChangeItem(Self, FItemIndex, NewValue);
  if FItemIndex <> NewValue then
@@ -1029,7 +1030,7 @@ begin
  FixedCols:=0;
  FixedRows:=1;
  Width:=400;
- DefaultColWidth:=200;
+ //DefaultColWidth:=200;
  DefaultRowHeight:=25;
  Options:=[goThumbTracking, goColSizing];
  ColumnsHeight:=30;
