@@ -33,7 +33,7 @@ interface
   procedure SetImageListColor(ImgList:TImageList; Color:TColor);
   function Centred(V1, V2:Integer):Integer;
 
-  procedure DrawTo(X, Y:Integer; Src, Dest:TPngImage);
+  procedure DrawTo(X, Y:Integer; Src, Dest:TPngImage); overload;
   procedure CopyFrom(SrcPt, DestPt, Size:TPoint; Src:TPngImage; var Dest:TPngImage);
   function MixBytes(FG, BG, TRANS:Byte):Byte;
   function CreateFrom(X, Y, W, H:Word; Src:TPngImage):TPngImage;
@@ -655,17 +655,13 @@ begin
  Result:= DrawParams.uiLengthDrawn;
 end;
 
-
 function CreatePNG(Dll:Cardinal; ID:string):TPngImage;
 begin
  Result:=TPngImage.Create;
  try
   Result.LoadFromResourceName(DLL, ID);
  except
-  begin
-   Result:=TPngImage.CreateBlank(COLOR_RGBALPHA, 16, 32, 32);
-   MessageBox(0, 'Ошибка', PChar('Файл отсутствует: '+ID), MB_ICONSTOP or MB_OK);
-  end;
+  Result:=TPngImage.CreateBlank(COLOR_RGBALPHA, 16, 32, 32);
  end;
 end;
 
@@ -675,10 +671,7 @@ begin
  try
   Result.LoadFromFile(FName)
  except
-  begin
-   Result:=TPngImage.CreateBlank(COLOR_RGBALPHA, 16, 32, 32);
-   MessageBox(0, 'Ошибка', PChar('Файл отсутствует: '+FName), MB_ICONSTOP or MB_OK);
-  end;
+  Result:=TPngImage.CreateBlank(COLOR_RGBALPHA, 16, 32, 32);
  end;
 end;
 

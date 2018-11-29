@@ -18,6 +18,7 @@ type
     FOnPaint:TNotifyEvent;
     procedure CMMouseEnter(var message: TMessage); message CM_MOUSEENTER;
     procedure CMMouseLeave(var message: TMessage); message CM_MOUSELEAVE;
+    procedure CMMouseWheel(var Message: TCMMouseWheel); message WM_MOUSEWHEEL;
     procedure WMNCPaint(var Message: TMessage); message WM_NCPAINT;
     procedure Paint; override;
     property Canvas;
@@ -95,6 +96,9 @@ type
     property OnStartDock;
     property OnStartDrag;
     property OnUnDock;
+    property OnMouseWheel;
+    property OnMouseWheelDown;
+    property OnMouseWheelUp;
   end;
 
   TDrawPanel = class(TPanelExt)
@@ -244,6 +248,19 @@ procedure TPanelExt.CMMouseLeave(var message: TMessage);
 begin
  AOnPanel:=False;
  if Assigned(FOnMouseLeave) then FOnMouseLeave(Self);
+end;
+
+procedure TPanelExt.CMMouseWheel(var Message: TCMMouseWheel);
+begin
+ with Message do
+  begin
+    Result := 0;
+    if DoMouseWheel(ShiftState, WheelDelta, SmallPointToPoint(Pos)) then
+      Message.Result := 1
+    else if Parent <> nil then
+      with TMessage(Message) do
+        Result := Parent.Perform(CM_MOUSEWHEEL, WParam, LParam);
+  end;
 end;
 
 { TDragPanel }
