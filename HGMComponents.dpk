@@ -62,7 +62,8 @@ contains
   HGM.Tools.Hint in 'HGM.Tools.Hint.pas',
   HGM.WinAPI in 'HGM.WinAPI.pas',
   HGM.WinAPI.ShellDlg in 'HGM.WinAPI.ShellDlg.pas',
-  HGM.BlurGaussian in 'HGM.BlurGaussian.pas';
+  HGM.BlurGaussian in 'HGM.BlurGaussian.pas',
+  HGM.AutoTextType in 'HGM.AutoTextType.pas';
 
 end.
 
