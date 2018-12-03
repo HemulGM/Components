@@ -1,6 +1,8 @@
 package HGMComponents;
 
 {$R *.res}
+{$R *.otares}
+{$R 'hIcons.dcr'}
 {$IFDEF IMPLICITBUILDING This IFDEF should not be used by users}
 {$ALIGN 8}
 {$ASSERTIONS ON}
@@ -31,15 +33,10 @@ package HGMComponents;
 requires
   rtl,
   vcl,
-  vclactnband,
-  vclx,
   xmlrtl,
   vclimg,
-  IndySystem,
   IndyProtocols,
-  IndyCore,
-  VclSmp,
-  PngComponents;
+  VclSmp;
 
 contains
   HGM.Autorun in 'HGM.Autorun.pas',

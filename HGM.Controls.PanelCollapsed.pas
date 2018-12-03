@@ -61,7 +61,7 @@ procedure Register;
 
 implementation
 
-{$R CollPanel.res}
+{$R hCollPanel.res}
 
 procedure Register;
 begin

@@ -208,7 +208,7 @@ procedure Register;
 
 implementation
 
-{$R lkspin.res}
+{$R hSpin.res}
 
 uses Vcl.Themes, Vcl.GraphUtil;
 
