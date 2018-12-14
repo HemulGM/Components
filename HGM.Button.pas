@@ -6,7 +6,7 @@ uses
   Winapi.Windows, Winapi.Messages, System.Classes, Vcl.Graphics, Vcl.Controls,
   Vcl.StdCtrls, System.Generics.Collections, Vcl.ExtCtrls, System.UITypes, System.Types,
   HGM.Controls.VirtualTable, Vcl.Direct2D, Winapi.D2D1, HGM.Common, HGM.Common.Utils,
-  Vcl.Menus;
+  Vcl.Menus, System.Types;
 
 type
   TButtonFlatState = (bfsNormal, bfsOver, bfsPressed);
