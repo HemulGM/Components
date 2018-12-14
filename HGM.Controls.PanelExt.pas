@@ -3,8 +3,9 @@ unit HGM.Controls.PanelExt;
 interface
 
 uses
-  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
-  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, Vcl.ExtCtrls, HGM.Common;
+  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants,
+  System.Classes, Vcl.Graphics, System.Types,  Vcl.Controls, Vcl.Forms,
+  Vcl.Dialogs, Vcl.StdCtrls, Vcl.ExtCtrls, HGM.Common;
 
 type
   TPanelExt = class(TCustomPanel)
@@ -120,7 +121,7 @@ type
    private
     FOnMouseDown:TMouseEvent;
     procedure SetOnMouseDown(const Value: TMouseEvent);
-    procedure MouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+    procedure MouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer); overload;
    public
     procedure DoDrag;
     property DockManager;
@@ -279,7 +280,7 @@ end;
 
 procedure TDragPanel.MouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 begin
-
+ DoDrag;
  if Assigned(FOnMouseDown) then FOnMouseDown(Sender, Button, Shift, X, Y);
 end;
 

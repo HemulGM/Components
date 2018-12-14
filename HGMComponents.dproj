@@ -159,6 +159,7 @@
         <DCCReference Include="HGM.WinAPI.ShellDlg.pas"/>
         <DCCReference Include="HGM.BlurGaussian.pas"/>
         <DCCReference Include="HGM.AutoTextType.pas"/>
+        <DCCReference Include="HGM.Common.DateUtils.pas"/>
         <BuildConfiguration Include="Debug">
             <Key>Cfg_2</Key>
             <CfgParent>Base</CfgParent>
