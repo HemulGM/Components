@@ -35,8 +35,7 @@ requires
   xmlrtl,
   vclimg,
   IndyProtocols,
-  VclSmp,
-  PngComponents;
+  VclSmp;
 
 contains
   HGM.Autorun in 'HGM.Autorun.pas',
