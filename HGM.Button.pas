@@ -4,7 +4,7 @@ interface
 
 uses
   Winapi.Windows, Winapi.Messages, System.Classes, Vcl.Graphics, Vcl.Controls,
-  Vcl.StdCtrls, System.Generics.Collections, Vcl.ExtCtrls, System.UITypes,
+  Vcl.StdCtrls, System.Generics.Collections, Vcl.ExtCtrls, System.UITypes, System.Types,
   HGM.Controls.VirtualTable, Vcl.Direct2D, Winapi.D2D1, HGM.Common, HGM.Common.Utils,
   Vcl.Menus;
 
@@ -21,6 +21,7 @@ type
     FTextWidth:Integer;
     FSubText:string;
     FButtonState:TButtonFlatState;
+    FPrevState:TButtonFlatState;
     FDowned:Boolean;
     FMouseOver:Boolean;
     FLabel:string;
@@ -64,6 +65,7 @@ type
     FAutoClick: Cardinal;
     FPopup: TPopupMenu;
     FBorderColor: TColor;
+    FEllipseAnimate: Boolean;
     procedure FOnDblClick(Sender:TObject);
     function FGetTextWidth: Integer;
     procedure SetLabel(const Value: string);
@@ -110,6 +112,7 @@ type
     procedure SetAutoClick(const Value: Cardinal);
     procedure SetPopup(const Value: TPopupMenu);
     procedure SetBorderColor(const Value: TColor);
+    procedure SetEllipseAnimate(const Value: Boolean);
     property ButtonState:TButtonFlatState read FButtonState write SetButtonState;
     property StyledColor:TColor read FStyledColor write SetStyledColor;
     property FromColor:TColor read FFromColor write FFromColor;
@@ -188,6 +191,7 @@ type
     property AutoClick:Cardinal read FAutoClick write SetAutoClick default 0;
     property DblClickTooClick:Boolean read FDblClickTooClick write SetDblClickTooClick default False;
     property Popup:TPopupMenu read FPopup write SetPopup;
+    property EllipseAnimate:Boolean read FEllipseAnimate write SetEllipseAnimate default True;
   end;
 
 
@@ -267,6 +271,7 @@ begin
  FSubText:='';
  FVisibleSubText:=False;
  FFlat:=True;
+ FEllipseAnimate:=True;
  FTimedText:='';
  FImageIndex:=-1;
  FImagePress:=-1;
@@ -405,6 +410,7 @@ begin
     Result:=GetColor(Control.Parent)
    else Result:=TColorControl(Control).Color;
   end
+ else Result:=clDefault;
 end;
 
 procedure TButtonFlat.Paint;
@@ -448,7 +454,7 @@ begin
     H:=Height - Pen.Width + 1;
     if Pen.Width = 0 then begin Dec(W); Dec(H); end;
     if W < H then S:=W else S:=H;
-    if Self.Shape in [stSquare, stRoundSquare, stCircle] then
+    if Shape in [stSquare, stRoundSquare, stCircle] then
      begin
       if W < H then S:=W else S:=H;
       Inc(X, (W - S) div 2); W:=S;
@@ -457,7 +463,7 @@ begin
     //Если не прозрачная кнопка, то рисуем фигуру
     if not FTransparent then
      begin
-      case Self.Shape of
+      case Shape of
        stRectangle,
        stSquare: Rectangle(X, Y, X + W, Y + H);
        stRoundRect,
@@ -492,7 +498,16 @@ begin
            end;
          end;
         end;
-       stCircle, stEllipse: Ellipse(X, Y, X + W, Y + H);
+       stCircle, stEllipse:
+        begin
+         FSubRect:=Rect(X, Y, X + W, Y + H);
+         if FEllipseAnimate then
+          begin
+           if (FButtonState <> bfsPressed) and (FPrevState <> bfsPressed) then
+            FSubRect.Inflate(-Round(W / 100 * FAnimPerc), -Round(H / 100 * FAnimPerc));
+          end;
+         Ellipse(FSubRect);
+        end;
       end;
      end;
     // Уведомление
@@ -634,6 +649,7 @@ end;
 
 procedure TButtonFlat.SetButtonState(const Value: TButtonFlatState);
 begin
+ FPrevState:=FButtonState;
  FButtonState:=Value;
  NeedColor:=FColors[FButtonState];
 end;
@@ -659,6 +675,11 @@ end;
 procedure TButtonFlat.SetDblClickTooClick(const Value: Boolean);
 begin
  FDblClickTooClick := Value;
+end;
+
+procedure TButtonFlat.SetEllipseAnimate(const Value: Boolean);
+begin
+ FEllipseAnimate := Value;
 end;
 
 procedure TButtonFlat.SetEllipseRectVertical(const Value: Boolean);
