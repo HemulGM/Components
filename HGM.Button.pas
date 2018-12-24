@@ -66,6 +66,8 @@ type
     FPopup: TPopupMenu;
     FBorderColor: TColor;
     FEllipseAnimate: Boolean;
+    FSubTextColor: TColor;
+    FSubTextFont: TFont;
     procedure FOnDblClick(Sender:TObject);
     function FGetTextWidth: Integer;
     procedure SetLabel(const Value: string);
@@ -113,6 +115,8 @@ type
     procedure SetPopup(const Value: TPopupMenu);
     procedure SetBorderColor(const Value: TColor);
     procedure SetEllipseAnimate(const Value: Boolean);
+    procedure SetSubTextColor(const Value: TColor);
+    procedure SetSubTextFont(const Value: TFont);
     property ButtonState:TButtonFlatState read FButtonState write SetButtonState;
     property StyledColor:TColor read FStyledColor write SetStyledColor;
     property FromColor:TColor read FFromColor write FFromColor;
@@ -184,6 +188,8 @@ type
     property TabStop;
     property TextFormat:TTextFormat read FTextFormat write SetTextFormat;
     property SubText:string read FSubText write SetSubText;
+    property SubTextFont:TFont read FSubTextFont write SetSubTextFont;
+    property SubTextColor:TColor read FSubTextColor write SetSubTextColor default clGrayText;
     property VisibleSubText:Boolean read FVisibleSubText write SetVisibleSubText default False;
     property Touch;
     property Visible;
@@ -295,12 +301,18 @@ begin
  Font.Size:=10;
 
  FFontOver:=TFont.Create;
- FFontOver.Color:=clWhite;
- FFontOver.Size:=10;
+ FFontOver.Color:=Font.Color;
+ FFontOver.Size:=Font.Size;
 
  FFontDown:=TFont.Create;
- FFontDown.Color:=clWhite;
- FFontDown.Size:=10;
+ FFontDown.Color:=Font.Color;
+ FFontDown.Size:=Font.Size;
+
+ FSubTextFont:=TFont.Create;
+ FSubTextFont.Color:=clWhite;
+ FSubTextFont.Size:=Font.Size;
+
+ FSubTextColor:=clGrayText;
 
  Width:=90;
  Height:=30;
@@ -533,8 +545,8 @@ begin
       FSubRect.Inflate(0, -(FSubRect.Height - (Canvas.TextHeight(FSubText)+4)) div 2);
       FSubRect.Width:=Max(FSubRect.Height, Canvas.TextWidth(FSubText)+10);
       FSubRect.Offset(ClientRect.Right-FSubRect.Width-10, 0);
-      Brush.Color:=clGrayText;
-      Pen.Color:=clGrayText;
+      Brush.Color:=FSubTextColor;
+      Pen.Color:=FSubTextColor;
       RoundRect(FSubRect, FSubRect.Height, FSubRect.Height);
      end;
     //
@@ -816,6 +828,18 @@ end;
 procedure TButtonFlat.SetSubText(const Value: string);
 begin
  FSubText := Value;
+ Repaint;
+end;
+
+procedure TButtonFlat.SetSubTextColor(const Value: TColor);
+begin
+ FSubTextColor := Value;
+ Repaint;
+end;
+
+procedure TButtonFlat.SetSubTextFont(const Value: TFont);
+begin
+ FSubTextFont := Value;
  Repaint;
 end;
 

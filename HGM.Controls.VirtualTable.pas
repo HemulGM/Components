@@ -189,6 +189,7 @@ type
     FEditOnDblClick: Boolean;
     FAddingColumns:Boolean;
     FCanClickToUnfocused: Boolean;
+    FOnHotOver: TNotifyEvent;
     function DataRow:Integer;
     procedure CloseControl(Sender:TObject);
     procedure DoEditCancel;
@@ -247,6 +248,7 @@ type
     procedure SetEditOnDblClick(const Value: Boolean);
     procedure UpdateColumnList;
     procedure SetCanClickToUnfocused(const Value: Boolean);
+    procedure SetOnHotOver(const Value: TNotifyEvent);
     property ItemDowned:Boolean read FItemDowned write SetItemDowned;
     procedure UpdateColumnIndex;
     procedure FUpdateColumnsHeight;
@@ -364,6 +366,7 @@ type
     property OnEditCancel:TOnEditCancel read FOnEditCancel write FOnEditCancel;
     property OnEditOk:TOnEditOk read FOnEditOk write FOnEditOk;
     property OnPaint:TOnTablePaint read FOnPaint write FOnPaint;
+    property OnHotOver:TNotifyEvent read FOnHotOver write SetOnHotOver;
 
     property ProcEmpty:Boolean read FProcEmpty write SetProcEmpty default False;
     property Columns:TTableColumns read FColumns write FColumns;
@@ -568,14 +571,16 @@ begin
   begin
    //for I := 0 to SendMessage(Handle, HDM_GETITEMCOUNT, 0, 0) - 1 do SendMessage(Handle, HDM_DELETEITEM, 0, 0);
    ColCount:=Columns.Count;
+   BeginAddColumns;
    for i:= 0 to Columns.Count - 1 do ColWidths[i]:=Columns[i].Width;
+   EndAddColumns;
   end;
 end;
 
 procedure TTableEx.UpdateColumnList;
 var i:Integer;
 begin
- if HandleAllocated then
+ if HandleAllocated and (not FAddingColumns) then
   begin
    for i:= 0 to Columns.Count - 1 do Columns[i].Width:=ColWidths[i];
   end;
@@ -700,6 +705,7 @@ end;
 
 procedure TTableEx.WMReSize(var Msg: TWMSize);
 begin
+ if csReading in ComponentState then Exit;
  UpdateMaxColumn;
 end;
 
@@ -867,6 +873,11 @@ begin
  Columns[ColumnID].Width:=Max(Columns[ColumnID].MinWidth, ClientWidth - Sz);
 end;
 
+procedure TTableEx.SetOnHotOver(const Value: TNotifyEvent);
+begin
+ FOnHotOver := Value;
+end;
+
 procedure TTableEx.SetPaintGrid(const Value: Boolean);
 begin
  FPaintGrid:=Value;
@@ -919,6 +930,7 @@ end;
 procedure TTableEx.ColWidthsChanged;
 begin
  inherited;
+ if ComponentState <> [] then Exit;
  if FEditing then DoEditCancel;
  UpdateColumnList;
  UpdateMaxColumn;
@@ -1023,6 +1035,8 @@ begin
  FColumns:=CreateColumns;
  //FColumns.Add(TTableColumn.Create(Self));
  UpdateColumnIndex;
+ UpdateColumns;
+ UpdateMaxColumn;
 
  ColCount:=1;
  RowCount:=2;
@@ -1683,6 +1697,8 @@ begin
  if not Force then if (FCordHot.Y = Last.Y) and (FCordHot.X = Last.X) then Exit;
  if IndexInList(FCordHot.Y, RowCount) then
   begin
+   if FCordHot.Y <> Last.Y then
+    if Assigned(FOnHotOver) then FOnHotOver(Self);
    if FShowColumns and (FCordHot.Y = 0) then
     begin
      if Assigned(FOnColumnClick) then Cursor:=crHandPoint else Cursor:=crDefault;

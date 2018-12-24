@@ -1,0 +1,25 @@
+object FormPopup: TFormPopup
+  Left = 0
+  Top = 0
+  BorderStyle = bsNone
+  Caption = 'FormPopup'
+  ClientHeight = 532
+  ClientWidth = 506
+  Color = clBtnFace
+  DoubleBuffered = True
+  Font.Charset = DEFAULT_CHARSET
+  Font.Color = clWindowText
+  Font.Height = -11
+  Font.Name = 'Tahoma'
+  Font.Style = []
+  KeyPreview = True
+  OldCreateOrder = False
+  Visible = True
+  OnActivate = FormActivate
+  OnClick = FormClick
+  OnCreate = FormCreate
+  OnHide = FormHide
+  OnShow = FormShow
+  PixelsPerInch = 96
+  TextHeight = 13
+end

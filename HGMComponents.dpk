@@ -60,7 +60,8 @@ contains
   HGM.WinAPI.ShellDlg in 'HGM.WinAPI.ShellDlg.pas',
   HGM.BlurGaussian in 'HGM.BlurGaussian.pas',
   HGM.AutoTextType in 'HGM.AutoTextType.pas',
-  HGM.Common.DateUtils in 'HGM.Common.DateUtils.pas';
+  HGM.Common.DateUtils in 'HGM.Common.DateUtils.pas',
+  HGM.Popup in 'HGM.Popup.pas' {FormPopup};
 
 end.
 
