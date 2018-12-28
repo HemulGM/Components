@@ -329,6 +329,9 @@ begin
  FTimerAnimate.Free;
  FTimerTT.Free;
  FTimerAutoClick.Free;
+ FFontOver.Free;
+ FFontDown.Free;
+ FSubTextFont.Free;
  inherited;
 end;
 
@@ -381,6 +384,7 @@ end;
 
 procedure TButtonFlat.OnTimerAnimateTime(Sender: TObject);
 begin
+ //if csFreeNotification in ComponentState then Exit;
  Inc(FAnimPerc, 8);
  if FAnimPerc >= 100 then
   begin
@@ -392,17 +396,18 @@ end;
 
 procedure TButtonFlat.OnTimerAutoClickTime(Sender: TObject);
 begin
+ //if csFreeNotification in ComponentState then Exit;
  if FDowned then
   begin
    FTimerAutoClick.Interval:=FAutoClick;
    Click;
   end
  else FTimerAutoClick.Enabled:=False;
-
 end;
 
 procedure TButtonFlat.OnTimerTTTime(Sender: TObject);
 begin
+ //if csFreeNotification in ComponentState then Exit;
  FDrawTimedText:=False;
  FTimerTT.Enabled:=False;
  Repaint;
