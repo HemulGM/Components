@@ -1351,6 +1351,12 @@ begin
      Pen.Color:=Brush.Color;
 
      Rectangle(Rect);
+     if FDrawColumnSections and (ACol <> 0) then
+      begin
+       Pen.Color:=ColorDarker(FColumnsColor, 3);
+       MoveTo(Rect.Left, Rect.Top);
+       LineTo(Rect.Left, Rect.Bottom);
+      end;
      if FDrawColumnBorded then
       begin
        Pen.Color:=ColorDarker(FColumnsColor, 40);
@@ -1364,12 +1370,6 @@ begin
        Pen.Color:=ColorDarker(FColumnsColor, 20);
        MoveTo(Rect.Left, Rect.Bottom-1);
        LineTo(Rect.Right, Rect.Bottom-1);
-      end;
-     if FDrawColumnSections and (ACol <> 0) then
-      begin
-       Pen.Color:=ColorDarker(FColumnsColor, 10);
-       MoveTo(Rect.Left, Rect.Top+1);
-       LineTo(Rect.Left, Rect.Bottom-1);
       end;
     { if csDesigning in ComponentState then
       if FDrawColumnSections then
