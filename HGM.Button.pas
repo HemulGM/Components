@@ -200,6 +200,88 @@ type
     property EllipseAnimate:Boolean read FEllipseAnimate write SetEllipseAnimate default True;
   end;
 
+  TCheckBoxFlat = class(TButtonFlat)
+   private
+    FChecked:Boolean;
+    FImageCheck: Integer;
+    FImageUncheck: Integer;
+    procedure SetChecked(const Value: Boolean);
+    procedure UpdateChecked;
+    procedure SetImageCheck(const Value: Integer);
+    procedure SetImageUncheck(const Value: Integer);
+   public
+    property Canvas;
+    constructor Create(AOwner: TComponent); override;
+    procedure Click; override;
+   published
+    property Align;
+    property Anchors;
+    property Caption;
+    property ColorNormal;
+    property ColorOver;
+    property ColorPressed;
+    property Constraints;
+    property Cursor;
+    property DoubleBuffered;
+    property DragCursor;
+    property DragKind;
+    property DragMode;
+    property Enabled;
+    property EllipseRectVertical;
+    property Font;
+    property Flat;
+    property BorderColor;
+    property FontOver;
+    property FontDown;
+    property GroupItemKind;
+    property IgnorBounds;
+    property ImageIndentLeft;
+    property ImageIndentRight;
+    property Images;
+    property NotifyColor;
+    property NotifyVisible;
+    property NotifyWidth;
+    property Transparent;
+    property OnClick;
+    property OnContextPopup;
+    property OnDragDrop;
+    property OnDragOver;
+    property OnEndDock;
+    property OnEndDrag;
+    property OnGesture;
+    property OnMouseActivate;
+    property OnMouseDown;
+    property OnMouseEnter;
+    property OnMouseLeave;
+    property OnMouseMove;
+    property OnMouseUp;
+    property OnPaint;
+    property OnStartDock;
+    property OnStartDrag;
+    property ParentShowHint;
+    property RoundRectParam;
+    property Shape;
+    property ShowHint;
+    property ShowFocusRect;
+    property TabOrder;
+    property TabStop;
+    property TextFormat;
+    property SubText;
+    property SubTextFont;
+    property SubTextColor;
+    property VisibleSubText;
+    property Touch;
+    property Visible;
+    property GetTextWidth;
+    property AutoClick;
+    property DblClickTooClick default True;
+    property Popup;
+    property EllipseAnimate;
+    property Checked:Boolean read FChecked write SetChecked default False;
+    property ImageCheck:Integer read FImageCheck write SetImageCheck default -1;
+    property ImageUncheck:Integer read FImageUncheck write SetImageUncheck default -1;
+  end;
+
 
 procedure Register;
 
@@ -209,6 +291,7 @@ implementation
 procedure Register;
 begin
  RegisterComponents(PackageName, [TButtonFlat]);
+ RegisterComponents(PackageName, [TCheckBoxFlat]);
 end;
 
 { TLabelEx }
@@ -864,6 +947,48 @@ procedure TButtonFlat.SetVisibleSubText(const Value: Boolean);
 begin
  FVisibleSubText := Value;
  Repaint;
+end;
+
+{ TCheckBoxFlat }
+
+procedure TCheckBoxFlat.SetImageCheck(const Value: Integer);
+begin
+ FImageCheck := Value;
+ UpdateChecked;
+end;
+
+procedure TCheckBoxFlat.SetImageUncheck(const Value: Integer);
+begin
+ FImageUncheck := Value;
+ UpdateChecked;
+end;
+
+procedure TCheckBoxFlat.UpdateChecked;
+begin
+ if FChecked then ImageIndex:=FImageCheck
+ else ImageIndex:=FImageUncheck;
+ Repaint;
+end;
+
+procedure TCheckBoxFlat.Click;
+begin
+ Checked:=not Checked;
+ inherited;
+end;
+
+constructor TCheckBoxFlat.Create(AOwner: TComponent);
+begin
+ inherited;
+ DblClickTooClick:=True;
+ FChecked:=False;
+ FImageCheck:=-1;
+ FImageUncheck:=-1;
+end;
+
+procedure TCheckBoxFlat.SetChecked(const Value: Boolean);
+begin
+ FChecked:=Value;
+ UpdateChecked;
 end;
 
 end.

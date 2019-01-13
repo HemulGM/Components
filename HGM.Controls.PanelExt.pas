@@ -120,8 +120,8 @@ type
   TDragPanel = class(TCustomPanel)
    private
     FOnMouseDown:TMouseEvent;
+    procedure FMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer); overload;
     procedure SetOnMouseDown(const Value: TMouseEvent);
-    procedure MouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer); overload;
    public
     procedure DoDrag;
     property DockManager;
@@ -269,7 +269,7 @@ end;
 constructor TDragPanel.Create(AOwner: TComponent);
 begin
  inherited;
- inherited OnMouseDown:=MouseDown;
+ inherited OnMouseDown:=FMouseDown;
 end;
 
 procedure TDragPanel.DoDrag;
@@ -278,7 +278,7 @@ begin
  SendMessage(Self.Parent.Handle, WM_SYSCOMMAND, 61458, 0);
 end;
 
-procedure TDragPanel.MouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+procedure TDragPanel.FMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 begin
  DoDrag;
  if Assigned(FOnMouseDown) then FOnMouseDown(Sender, Button, Shift, X, Y);

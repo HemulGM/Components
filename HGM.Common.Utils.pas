@@ -5,7 +5,7 @@ interface
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
   Vcl.Controls, Vcl.Forms, Vcl.Dialogs, System.Generics.Collections, Winapi.Dwmapi, Vcl.ValEdit, System.DateUtils,
   System.Math, System.Rtti, System.TypInfo, Vcl.ComCtrls, Vcl.Imaging.jpeg, Vcl.Grids, Vcl.Imaging.pngimage,
-  Vcl.StdCtrls, Vcl.Mask, Vcl.ExtCtrls;
+  Vcl.StdCtrls, Vcl.Mask, Vcl.ExtCtrls, System.Types;
 
  // function SendTelegram(BotToken, Chat_ID, SendText:string):Boolean;
   function AdvSelectDirectory(const Caption: string; const Root: WideString; var Directory: string; EditBox: Boolean = False; ShowFiles: Boolean = False; AllowCreateDirs: Boolean = True): Boolean;
@@ -256,17 +256,26 @@ var Icon:TIcon;
 begin
  if (ID < 0) or (ID > IList.Count - 1) then Exit;
  Icon:=TIcon.Create;
- Icon.Width:=IList.Width;
- Icon.Height:=IList.Height;
- IList.GetIcon(ID, Icon);
- PNG:=TPngImage.CreateBlank(COLOR_RGBALPHA, 16, Icon.Width, Icon.Height);
- ConvertToPNG(Icon, PNG);
- Icon.Free;
+ try
+  Icon.Width:=IList.Width;
+  Icon.Height:=IList.Height;
+  IList.GetIcon(ID, Icon);
+  PNG:=TPngImage.CreateBlank(COLOR_RGBALPHA, 16, Icon.Width, Icon.Height);
+  ConvertToPNG(Icon, PNG);
+ finally
+  Icon.Free;
+ end;
  PNGNew:=TPngImage.CreateBlank(COLOR_RGBALPHA, 16, Icon.Width, Icon.Height);
- PNGColored(0, 0, PNG, PNGNew, Color);
- PNG.Free;
- IList.ReplaceIcon(ID, PngToIco(PNGNew));
- PNGNew.Free;
+ try
+  PNGColored(0, 0, PNG, PNGNew, Color);
+ finally
+  PNG.Free;
+ end;
+ try
+  IList.ReplaceIcon(ID, PngToIco(PNGNew));
+ finally
+  PNGNew.Free;
+ end;
 end;
 
 procedure AddToValueEdit(VE:TValueListEditor; Key, Value, ValueBU:string);

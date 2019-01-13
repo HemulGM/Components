@@ -20,7 +20,7 @@ type
    FControl:TWinControl;
    procedure DoRelease;
   public
-   constructor Create(AOwner:TForm; AControl:TWinControl; X, Y:Integer);
+   constructor Create(AOwner:TForm; AControl:TWinControl; X, Y:Integer); overload;
   end;
 
 implementation

@@ -87,9 +87,9 @@ type
     FFormatColumns: TTextFormat;
     FWidth: Cardinal;
     procedure SetWidth(const Value:Cardinal); virtual;
-    function GetIndex:Cardinal; virtual;
+    function GetColumnIndex:Cardinal; virtual;
     procedure SetCaption(const Value:string); virtual;
-    procedure SetIndex(const Value: Cardinal);
+    procedure SetColumnIndex(const Value: Cardinal);
     procedure SetTextFormat(const Value: TTextFormat);
     procedure SetFormatColumns(const Value: TTextFormat);
    protected
@@ -97,7 +97,7 @@ type
    public
     constructor Create(Collection: TCollection); override;
     procedure Assign(Source: TPersistent); override;
-    property Index:Cardinal read GetIndex write SetIndex;
+    property Index:Cardinal read GetColumnIndex write SetColumnIndex;
    published
     property Caption:string read FCaption write SetCaption;
     property Width:Cardinal read FWidth write SetWidth default 100;
@@ -538,7 +538,6 @@ end;
 
 { TTableEx }
 
-[UIPermission(SecurityAction.LinkDemand, Window=UIPermissionWindow.AllWindows)]
 procedure TTableEx.CreateWnd;
 
   procedure ReadSections;
@@ -1932,7 +1931,7 @@ begin
   if Result = '' then Result := inherited GetDisplayName;
 end;
 
-function TTableColumn.GetIndex:Cardinal;
+function TTableColumn.GetColumnIndex:Cardinal;
 begin
  Result:=FIndex;
 end;
@@ -1949,7 +1948,7 @@ begin
  Changed(False);
 end;
 
-procedure TTableColumn.SetIndex(const Value:Cardinal);
+procedure TTableColumn.SetColumnIndex(const Value:Cardinal);
 begin
  FIndex:=Value;
  Changed(False);
