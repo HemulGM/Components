@@ -46,9 +46,75 @@ interface
   function IndexInList(const Index:Integer; ListCount:Integer):Boolean;
   function FlashControl(Control:TControl):Boolean;
   function CutString(Value:string; Count:Word):string;
+  procedure RichEditPopupMenu(Target: TRichEdit);
 
 implementation
- uses ShlObj, ActiveX, System.Win.ComObj, PNGFunctions, PNGImageList;
+ uses ShlObj, ActiveX, System.Win.ComObj, PNGFunctions, PNGImageList, ClipBrd;
+
+procedure RichEditPopupMenu(Target: TRichEdit);
+const
+  IDM_UNDO   = WM_UNDO;
+  IDM_CUT    = WM_CUT;
+  IDM_COPY   = WM_COPY;
+  IDM_PASTE  = WM_PASTE;
+  IDM_DELETE = WM_CLEAR;
+  IDM_SELALL = EM_SETSEL;
+  IDM_RTL    = $8000; // WM_APP ?
+
+  Enables: array[Boolean] of DWORD = (MF_DISABLED or MF_GRAYED, MF_ENABLED);
+  Checks: array[Boolean] of DWORD = (MF_UNCHECKED, MF_CHECKED);
+var
+  hUser32: HMODULE;
+  hmnu, hmenuTrackPopup: HMENU;
+  Cmd: DWORD;
+  Flags: Cardinal;
+  HasSelText: Boolean;
+  FormHandle: HWND;
+  // IsRTL: Boolean;
+begin
+  hUser32 := LoadLibraryEx(user32, 0, LOAD_LIBRARY_AS_DATAFILE);
+  if (hUser32 <> 0) then
+  try
+    hmnu := LoadMenu(hUser32, MAKEINTRESOURCE(1));
+    if (hmnu <> 0) then
+    try
+      hmenuTrackPopup := GetSubMenu(hmnu, 0);
+
+      HasSelText := Length(Target.SelText) <> 0;
+      EnableMenuItem(hmnu, IDM_UNDO,   Enables[Target.CanUndo]);
+      EnableMenuItem(hmnu, IDM_CUT,    Enables[HasSelText]);
+      EnableMenuItem(hmnu, IDM_COPY,   Enables[HasSelText]);
+      EnableMenuItem(hmnu, IDM_PASTE,  Enables[Clipboard.HasFormat(CF_TEXT)]);
+      EnableMenuItem(hmnu, IDM_DELETE, Enables[HasSelText]);
+      EnableMenuItem(hmnu, IDM_SELALL, Enables[Length(Target.Text) <> 0]);
+
+      // IsRTL := GetWindowLong(re.Handle, GWL_EXSTYLE) and WS_EX_RTLREADING <> 0;
+      // EnableMenuItem(hmnu, IDM_RTL, Enables[True]);
+      // CheckMenuItem(hmnu, IDM_RTL, Checks[IsRTL]);
+
+      FormHandle := GetParentForm(Target).Handle;
+      Flags := TPM_LEFTALIGN or TPM_RIGHTBUTTON or TPM_NONOTIFY or TPM_RETURNCMD;
+      Cmd := DWORD(TrackPopupMenu(hmenuTrackPopup, Flags,
+        Mouse.CursorPos.X, Mouse.CursorPos.Y, 0, FormHandle, nil));
+      if Cmd <> 0 then
+      begin
+        case Cmd of
+          IDM_UNDO:   Target.Undo;
+          IDM_CUT:    Target.CutToClipboard;
+          IDM_COPY:   Target.CopyToClipboard;
+          IDM_PASTE:  Target.PasteFromClipboard;
+          IDM_DELETE: Target.ClearSelection;
+          IDM_SELALL: Target.SelectAll;
+          IDM_RTL:; // ?
+        end;
+      end;
+    finally
+      DestroyMenu(hmnu);
+    end;
+  finally
+    FreeLibrary(hUser32);
+  end;
+end;
 
 function CutString(Value:string; Count:Word):string;
 begin
