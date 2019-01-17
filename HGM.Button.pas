@@ -6,7 +6,7 @@ uses
   Winapi.Windows, Winapi.Messages, System.Classes, Vcl.Graphics, Vcl.Controls,
   Vcl.StdCtrls, System.Generics.Collections, Vcl.ExtCtrls, System.UITypes, System.Types,
   HGM.Controls.VirtualTable, Vcl.Direct2D, Winapi.D2D1, HGM.Common, HGM.Common.Utils,
-  Vcl.Menus;
+  Vcl.Menus, System.SysUtils;
 
 type
   TButtonFlatState = (bfsNormal, bfsOver, bfsPressed);
@@ -68,6 +68,7 @@ type
     FEllipseAnimate: Boolean;
     FSubTextColor: TColor;
     FSubTextFont: TFont;
+    FBorderWidth: Integer;
     procedure FOnDblClick(Sender:TObject);
     function FGetTextWidth: Integer;
     procedure SetLabel(const Value: string);
@@ -117,6 +118,7 @@ type
     procedure SetEllipseAnimate(const Value: Boolean);
     procedure SetSubTextColor(const Value: TColor);
     procedure SetSubTextFont(const Value: TFont);
+    procedure SetBorderWidth(const Value: Integer);
     property ButtonState:TButtonFlatState read FButtonState write SetButtonState;
     property StyledColor:TColor read FStyledColor write SetStyledColor;
     property FromColor:TColor read FFromColor write FFromColor;
@@ -147,6 +149,7 @@ type
     property Font;
     property Flat:Boolean read FFlat write SetFlat default True;
     property BorderColor:TColor read FBorderColor write SetBorderColor default clNone;
+    property BorderWidth:Integer read FBorderWidth write SetBorderWidth default 1;
     property FontOver:TFont read FFontOver write SetFontOver;
     property FontDown:TFont read FFontDown write SetFontDown;
     property GroupItemKind:TButtonFlatGroupItem read FGroupItemKind write SetGroupItemKind default giNone;
@@ -372,6 +375,7 @@ begin
  FNotifyWidth:=8;
  FNotifyVisible:=False;
  FBorderColor:=clNone;
+ FBorderWidth:=1;
  ParentColor:=False;
  TabStop:=True;
  ParentBackground:=False;
@@ -471,6 +475,7 @@ begin
  Inc(FAnimPerc, 8);
  if FAnimPerc >= 100 then
   begin
+   FAnimPerc:=100;
    StopAnimate;
    StyledColor:=NeedColor;
   end
@@ -546,6 +551,7 @@ begin
       if FBorderColor = clNone then
        Pen.Color:=ColorDarker(StyledColor)
       else Pen.Color:=FBorderColor;
+      Pen.Width:=FBorderWidth;
      end;
     // Фигура
     X:=Pen.Width div 2;
@@ -744,6 +750,15 @@ end;
 procedure TButtonFlat.SetBorderColor(const Value: TColor);
 begin
  FBorderColor := Value;
+ Repaint;
+end;
+
+procedure TButtonFlat.SetBorderWidth(const Value: Integer);
+begin
+ if Value < 1 then
+  raise Exception.Create('Значение должно быть больше 1');
+
+ FBorderWidth := Value;
  Repaint;
 end;
 
