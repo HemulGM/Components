@@ -235,7 +235,7 @@ end;
 
 procedure TPanelExt.WMNCPaint(var Message: TMessage);
 begin
- if FDefaultPaint then inherited; 
+ if FDefaultPaint then inherited;
  if Assigned(FOnPaint) then FOnPaint(Self);
 end;
 
