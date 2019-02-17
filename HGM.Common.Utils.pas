@@ -181,7 +181,6 @@ end;
 function RichEditGetBGCOlor(Target:TRichEdit; IfNone:TColor):TColor;
 var CF:TCharFormat2;
 begin
- Result:=IfNone;
  FillChar(CF, SizeOf(CF), 0);
  CF.cbSize:=SizeOf(CF);
  Target.Perform(EM_GETCHARFORMAT, SCF_SELECTION, Integer(@CF));
