@@ -1,5 +1,7 @@
 # HGM Components for Delphi [![Coverage Status](https://coveralls.io/repos/github/HemulGM/Components/badge.svg?branch=master)](https://coveralls.io/github/HemulGM/Components?branch=master)
 
+![HGMComponents](https://hemulgm.ru/images/preview/hgm_comp.png)
+
 1. TButtonFlat - button (Numbers, Notification, Animate)
 2. TTableEx - virtual table data
 
