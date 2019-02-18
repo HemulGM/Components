@@ -4,7 +4,8 @@
 2. TTableEx - virtual table data
 
 ![HGMComponents](https://hemulgm.ru/images/preview/hgm_comp1.png)
-![HGMComponents](https://hemulgm.ru/images/preview/hcolorgrid.png)
 
 ThColorGrid - color grids like MS WordPad
+
+![HGMComponents](https://hemulgm.ru/images/preview/hcolorgrid.png)
 ![HGMComponents](https://hemulgm.ru/images/preview/hcolorgrid_w.png)
