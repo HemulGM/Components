@@ -1,0 +1,48 @@
+﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <ProjectGuid>{62FC1F75-6FFF-4D0E-BFA6-74B96046BAD1}</ProjectGuid>
+    </PropertyGroup>
+    <ItemGroup>
+        <Projects Include="HGMComponents.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="Samples\Samples.dproj">
+            <Dependencies/>
+        </Projects>
+    </ItemGroup>
+    <ProjectExtensions>
+        <Borland.Personality>Default.Personality.12</Borland.Personality>
+        <Borland.ProjectType/>
+        <BorlandProject>
+            <Default.Personality/>
+        </BorlandProject>
+    </ProjectExtensions>
+    <Target Name="HGMComponents">
+        <MSBuild Projects="HGMComponents.dproj"/>
+    </Target>
+    <Target Name="HGMComponents:Clean">
+        <MSBuild Projects="HGMComponents.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="HGMComponents:Make">
+        <MSBuild Projects="HGMComponents.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="Samples">
+        <MSBuild Projects="Samples\Samples.dproj"/>
+    </Target>
+    <Target Name="Samples:Clean">
+        <MSBuild Projects="Samples\Samples.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="Samples:Make">
+        <MSBuild Projects="Samples\Samples.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="Build">
+        <CallTarget Targets="HGMComponents;Samples"/>
+    </Target>
+    <Target Name="Clean">
+        <CallTarget Targets="HGMComponents:Clean;Samples:Clean"/>
+    </Target>
+    <Target Name="Make">
+        <CallTarget Targets="HGMComponents:Make;Samples:Make"/>
+    </Target>
+    <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
+</Project>
