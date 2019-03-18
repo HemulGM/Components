@@ -12,17 +12,24 @@ interface
   TlkHint = class(TComponent)
    private
     FText:string;
-    FTitle:string;
     FTimerHide:TTimer;
-    FRect, FRectAnimate:TRect;
+    FTimerRepaint:TTimer;
+    FRect:TRect;
     FHeight, FWidth:Integer;
     FPanel:TPanelExt;
     FAutoHide: Cardinal;
+    FColor: TColor;
+    FFont: TFont;
+    FMaxWidth: Integer;
     procedure FHide;
     procedure FShow;
     procedure SetHintSize;
     procedure OnTimerHideTimer(Sender:TObject);
+    procedure OnTimerRepaintTime(Sender:TObject);
     procedure OnPanelPaint(Sender:TObject);
+    procedure SetColor(const Value: TColor);
+    procedure SetFont(const Value: TFont);
+    procedure SetMaxWidth(const Value: Integer);
    public
     procedure Show(Control:TControl); overload;
     procedure Show(PosPoint:TPoint); overload;
@@ -30,8 +37,10 @@ interface
     constructor Create(AOwner: TComponent); override;
    published
     property Text:string read FText write FText;
-    property Title:string read FTitle write FTitle;
-    property AutoHide:Cardinal read FAutoHide write FAutoHide;
+    property AutoHide:Cardinal read FAutoHide write FAutoHide default 5000;
+    property Color:TColor read FColor write SetColor default clWhite;
+    property Font:TFont read FFont write SetFont;
+    property MaxWidth:Integer read FMaxWidth write SetMaxWidth default 200;
   end;
 
 procedure Register;
@@ -46,94 +55,102 @@ end;
 
 { TlkHint }
 
-function DrawTextCentered(Canvas: TCanvas; const R: TRect; S: String; FDrawFlags:Cardinal = DT_CENTER): Integer;
-var DrawRect: TRect;
-    DrawFlags: Cardinal;
-    DrawParams: TDrawTextParams;
-begin
- DrawRect:= R;
- DrawFlags:= DT_END_ELLIPSIS or DT_NOPREFIX or DT_WORDBREAK or DT_EDITCONTROL or FDrawFlags;
- DrawText(Canvas.Handle, PChar(S), -1, DrawRect, DrawFlags or DT_CALCRECT);
- DrawRect.Right:= R.Right;
- if DrawRect.Bottom < R.Bottom then
-      OffsetRect(DrawRect, 0, (R.Bottom - DrawRect.Bottom) div 2)
- else DrawRect.Bottom:= R.Bottom;
- ZeroMemory(@DrawParams, SizeOf(DrawParams));
- DrawParams.cbSize:= SizeOf(DrawParams);
- DrawTextEx(Canvas.Handle, PChar(S), -1, DrawRect, DrawFlags, @DrawParams);
- Result:= DrawParams.uiLengthDrawn;
-end;
-
 constructor TlkHint.Create(AOwner: TComponent);
 begin
  inherited;
+ FFont := TFont.Create;
+ FFont.Color := clBlack;
+ FFont.Size := 10;
+ FFont.Name := 'Segoe UI';
+ FText := '';
+ FColor := clWhite;
  FTimerHide:=TTimer.Create(Self);
  FTimerHide.Enabled:=False;
  FTimerHide.OnTimer:=OnTimerHideTimer;
- FPanel:=TPanelExt.Create(Self);
- FPanel.DoubleBuffered:=True;
- FPanel.Visible:=False;
- FPanel.OnPaint:=OnPanelPaint;
- FPanel.ParentWindow:=GetDesktopWindow;
- AutoHide:=5000;
+ FTimerRepaint:=TTimer.Create(Self);
+ FTimerRepaint.Enabled:=False;
+ FTimerRepaint.Interval := 50;
+ FTimerRepaint.OnTimer:=OnTimerRepaintTime;
+ FAutoHide := 5000;
+ FMaxWidth := 200;
 end;
 
 procedure TlkHint.FHide;
 begin
+ if Assigned(FPanel) then FreeAndNil(FPanel);
  FTimerHide.Enabled:=False;
- FPanel.Hide;
+ FTimerRepaint.Enabled := False;
 end;
 
 procedure TlkHint.FShow;
+var RGN:HRGN;
 begin
- FPanel.Left:=FRectAnimate.Left;
- FPanel.Width:=FRectAnimate.Right;
- //while FRect.Left <  do
+ if not Assigned(FPanel) then
+ begin
+   FPanel:=TPanelExt.Create(nil);
+   FPanel.DoubleBuffered:=True;
+   FPanel.Visible:=False;
+   FPanel.OnPaint:=OnPanelPaint;
+   FPanel.ParentWindow:=GetDesktopWindow;
+ end;
 
+ FPanel.Left:=FRect.Left;
+ FPanel.Top:=FRect.Top;
+ FPanel.Width := FWidth;
+ FPanel.Height := FHeight;
+
+ FTimerRepaint.Enabled:=True;
  FTimerHide.Enabled:=True;
  FTimerHide.Interval:=FAutoHide;
- FPanel.Caption:=FText;
+ RGN:=CreateRoundRectRgn(0, 0, FWidth, FHeight, FHeight, FHeight);
+ SetWindowRgn(FPanel.Handle, RGN, True);
+ DeleteObject(RGN);
+ FPanel.Repaint;
  FPanel.Show;
  FPanel.BringToFront;
 end;
 
-procedure TlkHint.SetHintSize;
-var i:Integer;
-    TxtH, TxtW:Integer;
-    AText:string;
+procedure TlkHint.SetColor(const Value: TColor);
 begin
- //DrawTextCentered
- AText:=FText;
- TxtH:=FPanel.Canvas.TextHeight(AText)+FPanel.Canvas.TextHeight(FTitle);
- TxtW:=FPanel.Canvas.TextWidth(AText);
- i:=0;
- while (TxtW / TxtH) > (5/1) do
-  begin
-   Delete(AText, 1, Length(AText) div 2);
-   TxtW:=FPanel.Canvas.TextWidth(AText);
-   Inc(i);
-  end;
- TxtH:=TxtH+(TxtH*i);
- FHeight:=TxtH+15;
- FWidth:=TxtW+30;
+ FColor := Value;
+ if Assigned(FPanel) then FPanel.Repaint;
+end;
+
+procedure TlkHint.SetFont(const Value: TFont);
+begin
+ FFont := Value;
+ if Assigned(FPanel) then FPanel.Canvas.Font.Assign(Value);
+end;
+
+procedure TlkHint.SetHintSize;
+begin
+ if not Assigned(FPanel) then Exit;
+ FHeight:=Max(FPanel.Canvas.TextHeight(FText), 10);
+ FWidth:=Min(Max(FPanel.Canvas.TextWidth(FText), 10), FMaxWidth)+10;
+end;
+
+procedure TlkHint.SetMaxWidth(const Value: Integer);
+begin
+ FMaxWidth := Value;
 end;
 
 procedure TlkHint.Show(Control: TControl);
 begin
  SetHintSize;
  FRect.Left:=(Control.Left+Control.Width div 2) - (FWidth div 2);
- FRect.Right:=FRect.Left+FWidth;
  FRect.Top:=Control.Top-FHeight;
+ FRect.Right:=FRect.Left+FWidth;
  FRect.Bottom:=FRect.Top+FHeight;
- FRectAnimate:=FRect;
- FRectAnimate.Left:=(Control.Left+Control.Width div 2);
- FRectAnimate.Right:=FRectAnimate.Left;
  FShow;
 end;
 
 procedure TlkHint.Show(PosPoint: TPoint);
 begin
  SetHintSize;
+ FRect.Left:=Min(Max(PosPoint.X - (FWidth div 2), 0), Screen.DesktopWidth - FWidth);
+ FRect.Top:=PosPoint.Y - FHeight;
+ FRect.Right:=FRect.Left+FWidth;
+ FRect.Bottom:=FRect.Top+FHeight;
  FShow;
 end;
 
@@ -143,15 +160,31 @@ begin
 end;
 
 procedure TlkHint.OnPanelPaint(Sender: TObject);
+var R:TRect;
+    S:String;
 begin
- FPanel.Canvas.FillRect(FPanel.ClientRect);
- FPanel.Canvas.TextOut(0, 0, FTitle);
- DrawTextCentered(FPanel.Canvas, Rect(0, FPanel.Canvas.TextHeight(FTitle)+5, FPanel.Width, FPanel.Height), FText, DT_LEFT);
+ if not Assigned(FPanel) then Exit;
+ with FPanel.Canvas do
+  begin
+   Brush.Color := FColor;
+   Brush.Style := bsSolid;
+   FillRect(FPanel.ClientRect);
+   R := FPanel.ClientRect;
+   R.Offset(-1, -1);
+   S := FText;
+   Font.Assign(FFont);
+   TextRect(R, S, [tfSingleLine, tfVerticalCenter, tfCenter]);
+  end;
 end;
 
 procedure TlkHint.OnTimerHideTimer(Sender: TObject);
 begin
  FHide;
+end;
+
+procedure TlkHint.OnTimerRepaintTime(Sender: TObject);
+begin
+ if Assigned(FPanel) then FPanel.Repaint;
 end;
 
 end.

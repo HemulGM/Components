@@ -32,7 +32,6 @@ interface
   procedure ColorImages(IList:TImageList; ID:Integer; Color:TColor);
   procedure SetImageListColor(ImgList:TImageList; Color:TColor);
   function Centred(V1, V2:Integer):Integer;
-  procedure DrawIconColorLine(IList:TImageList; ID:Integer; Color:TColor);
 
   procedure DrawTo(X, Y:Integer; Src, Dest:TPngImage); overload;
   procedure CopyFrom(SrcPt, DestPt, Size:TPoint; Src:TPngImage; var Dest:TPngImage);
@@ -40,7 +39,6 @@ interface
   function CreatePNG(FName:string):TPngImage; overload;
   function CreatePNG(Dll:Cardinal; ID:string):TPngImage; overload;
   procedure PNGColored(X, Y:Integer; Src, Dest:TPngImage; MColor:TColor);
-  procedure PNGColoredLine(X, Y:Integer; Src, Dest:TPngImage; MColor:TColor);
   function DrawTextCentered(Canvas: TCanvas; const R: TRect; S: String; FDrawFlags:Cardinal): Integer;
   function ScaledRect(const Src:TRect; Delta:Integer):TRect;
   function MixColors(Color1, Color2:TColor; Alpha:Byte):TColor;
@@ -48,16 +46,28 @@ interface
   function FlashControl(Control:TControl):Boolean;
   function CutString(Value:string; Count:Word):string;
   procedure RichEditPopupMenu(Target: TRichEdit);
-  procedure RichEditSetTopLineText(Target:TRichEdit);
-  procedure RichEditSetBottomLineText(Target:TRichEdit);
-  function RichEditGetBottomLineText(Target:TRichEdit):Boolean;
-  function RichEditGetTopLineText(Target:TRichEdit):Boolean;
-  procedure RichEditSetResetText(Target:TRichEdit);
-  function RichEditGetBGCOlor(Target:TRichEdit; IfNone:TColor):TColor;
-  procedure RichEditSetBGCOlor(Target:TRichEdit; Color:TColor);
+  function DownloadURL(URL:string):TMemoryStream;
 
 implementation
- uses ShlObj, ActiveX, System.Win.ComObj, PNGFunctions, PNGImageList, ClipBrd, Winapi.RichEdit;
+ uses ShlObj, ActiveX, System.Win.ComObj, PNGFunctions, PNGImageList, ClipBrd, IdHTTP;
+
+
+function DownloadURL(URL:string):TMemoryStream;
+var HTTP:TIdHTTP;
+begin
+ Result:=TMemoryStream.Create;
+ HTTP:=TIdHTTP.Create(nil);
+ try
+  try
+   HTTP.HandleRedirects:=True;
+   HTTP.Get(URL, Result);
+  except
+
+  end;
+ finally
+  HTTP.Free;
+ end;
+end;
 
 procedure RichEditPopupMenu(Target: TRichEdit);
 const
@@ -87,14 +97,14 @@ begin
     if (hmnu <> 0) then
     try
       hmenuTrackPopup := GetSubMenu(hmnu, 0);
+
       HasSelText := Length(Target.SelText) <> 0;
       EnableMenuItem(hmnu, IDM_UNDO,   Enables[Target.CanUndo]);
       EnableMenuItem(hmnu, IDM_CUT,    Enables[HasSelText]);
       EnableMenuItem(hmnu, IDM_COPY,   Enables[HasSelText]);
-      EnableMenuItem(hmnu, IDM_PASTE,  Enables[not Clipboard.HasFormat(0)]);
+      EnableMenuItem(hmnu, IDM_PASTE,  Enables[Clipboard.HasFormat(CF_TEXT)]);
       EnableMenuItem(hmnu, IDM_DELETE, Enables[HasSelText]);
       EnableMenuItem(hmnu, IDM_SELALL, Enables[Length(Target.Text) <> 0]);
-
 
       // IsRTL := GetWindowLong(re.Handle, GWL_EXSTYLE) and WS_EX_RTLREADING <> 0;
       // EnableMenuItem(hmnu, IDM_RTL, Enables[True]);
@@ -122,81 +132,6 @@ begin
   finally
     FreeLibrary(hUser32);
   end;
-end;
-
-function RichEditGetTopLineText(Target:TRichEdit):Boolean;
-var CF:TCharFormat2;
-    Mask:integer;
-begin
- Result:=False;
- CF.cbSize:=SizeOf(CF);
- Mask:=Target.Perform(EM_GETCHARFORMAT, SCF_SELECTION, Integer(@CF));
-  if (Mask and CFM_OFFSET) = CFM_OFFSET then
-   begin
-    Result:=CF.yOffset > 0;
-   end;
-end;
-
-function RichEditGetBottomLineText(Target:TRichEdit):Boolean;
-var CF:TCharFormat;
-    Mask:integer;
-begin
- Result:=False;
- CF.cbSize:=SizeOf(CF);
- Mask:=Target.Perform(EM_GETCHARFORMAT, SCF_SELECTION, Integer(@CF));
-  if (Mask and CFM_OFFSET) = CFM_OFFSET then
-   begin
-    Result:=CF.yOffset < 0;
-   end;
-end;
-
-procedure RichEditSetResetText(Target:TRichEdit);
-var CF:TCharFormat;
-begin
- CF.cbSize:= SizeOf(CF);
- CF.dwMask:= CFM_OFFSET;
- CF.yOffset:= 0;
- Target.Perform(EM_SETCHARFORMAT, SCF_SELECTION, Integer(@CF));
-end;
-
-procedure RichEditSetBottomLineText(Target:TRichEdit);
-var CF:TCharFormat;
-begin
- CF.cbSize:= SizeOf(CF);
- CF.dwMask:= CFM_OFFSET;
- CF.yOffset:= -70;
- Target.Perform(EM_SETCHARFORMAT, SCF_SELECTION, Integer(@CF));
-end;
-
-procedure RichEditSetTopLineText(Target:TRichEdit);
-var CF:TCharFormat;
-begin
- CF.cbSize:= SizeOf(CF);
- CF.dwMask:= CFM_OFFSET;
- CF.yOffset:= 70;
- Target.Perform(EM_SETCHARFORMAT, SCF_SELECTION, Integer(@CF));
-end;
-
-function RichEditGetBGCOlor(Target:TRichEdit; IfNone:TColor):TColor;
-var CF:TCharFormat2;
-begin
- FillChar(CF, SizeOf(CF), 0);
- CF.cbSize:=SizeOf(CF);
- Target.Perform(EM_GETCHARFORMAT, SCF_SELECTION, Integer(@CF));
- Result:=CF.crBackColor;
- if Result = 0 then Result:=IfNone;
-end;
-
-procedure RichEditSetBGCOlor(Target:TRichEdit; Color:TColor);
-var CF:TCharFormat2;
-begin
- CF.cbSize:= SizeOf(CF);
- CF.dwMask:= CFM_BACKCOLOR;
- if Color = clNone then
-  CF.dwEffects := CFE_AUTOBACKCOLOR
- else
-  CF.crBackColor:= Color;
- Target.Perform(EM_SETCHARFORMAT, SCF_SELECTION, Integer(@CF));
 end;
 
 function CutString(Value:string; Count:Word):string;
@@ -397,34 +332,6 @@ begin
  Result:= TIcon.Create;
  PngImageList.GetIcon(0, Result);
  PngImageList.Free;
-end;
-
-procedure DrawIconColorLine(IList:TImageList; ID:Integer; Color:TColor);
-var Icon:TIcon;
-    PNG, PNGNew:TPngImage;
-begin
- if (ID < 0) or (ID > IList.Count - 1) then Exit;
- Icon:=TIcon.Create;
- try
-  Icon.Width:=IList.Width;
-  Icon.Height:=IList.Height;
-  IList.GetIcon(ID, Icon);
-  PNG:=TPngImage.CreateBlank(COLOR_RGBALPHA, 16, Icon.Width, Icon.Height);
-  ConvertToPNG(Icon, PNG);
- finally
-  Icon.Free;
- end;
- PNGNew:=TPngImage.CreateBlank(COLOR_RGBALPHA, 16, Icon.Width, Icon.Height);
- try
-  PNGColoredLine(0, 0, PNG, PNGNew, Color);
- finally
-  PNG.Free;
- end;
- try
-  IList.ReplaceIcon(ID, PngToIco(PNGNew));
- finally
-  PNGNew.Free;
- end;
 end;
 
 procedure ColorImages(IList:TImageList; ID:Integer; Color:TColor);
@@ -919,31 +826,6 @@ begin
      if SAS^[dX] <= 0 then Continue;
      DAS[dX + X]:=SAS^[dX];// + DAS^[dX + X];
      Dest.Canvas.Pixels[dX + X, dY + Y]:=MColor;//, Dest.Canvas.Pixels[dX + X, dY + Y], DAS^[dX + X]);
-    end;
-  end;
-end;
-
-procedure PNGColoredLine(X, Y:Integer; Src, Dest:TPngImage; MColor:TColor);
-var dX, dY:Integer;
-    DAS, SAS:pByteArray;
-begin
- for dY:=0 to Src.Height - 1 do
-  begin
-   DAS:=Dest.AlphaScanline[dY + Y];
-   SAS:=Src.AlphaScanline[dY];
-   for dX:=0 to Src.Width - 1 do
-    begin
-     if SAS^[dX] <= 0 then Continue;
-     if (dY > Src.Height - 5) then
-      begin
-       DAS[dX + X]:=255;
-       Dest.Canvas.Pixels[dX + X, dY + Y]:=MColor;//, Dest.Canvas.Pixels[dX + X, dY + Y], DAS^[dX + X]);
-      end
-     else
-      begin
-       DAS[dX + X]:=SAS^[dX];// + DAS^[dX + X];
-       Dest.Canvas.Pixels[dX + X, dY + Y]:=Src.Canvas.Pixels[dX + X, dY + Y];//, Dest.Canvas.Pixels[dX + X, dY + Y], DAS^[dX + X]);
-      end;
     end;
   end;
 end;

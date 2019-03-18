@@ -179,8 +179,6 @@ type
     property OnMouseLeave;
     property OnMouseMove;
     property OnMouseUp: TMouseEvent read FOnMouseUp write FOnMouseUp;
-    property OnMouseWheelDown;
-    property OnMouseWheelUp;
     property OnPaint:TNotifyEvent read FOnPaint write FOnPaint;
     property OnStartDock;
     property OnStartDrag;
@@ -190,7 +188,7 @@ type
     property ShowHint;
     property ShowFocusRect:Boolean read FShowFocusRect write SetShowFocusRect default True;
     property TabOrder;
-    property TabStop default True;
+    property TabStop;
     property TextFormat:TTextFormat read FTextFormat write SetTextFormat;
     property SubText:string read FSubText write SetSubText;
     property SubTextFont:TFont read FSubTextFont write SetSubTextFont;

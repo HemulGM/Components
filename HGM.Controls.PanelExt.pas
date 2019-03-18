@@ -10,26 +10,43 @@ uses
 type
   TPanelExt = class(TCustomPanel)
    private
-    AOnPanel:Boolean;
+    FOnPanel:Boolean;
     FDefaultPaint: Boolean;
+    FOnMouseDown: TMouseEvent;
+    FOnMouseMove: TMouseMoveEvent;
+    FOnMouseUp: TMouseEvent;
+    FMouseCoord:TPoint;
+    FMouseState:TShiftState;
+    FRepaintOnMouseMove: Boolean;
     procedure SetDefaultPaint(const Value: Boolean);
+    procedure SetRepaintOnMouseMove(const Value: Boolean);
    public
     FOnMouseEnter:TNotifyEvent;
     FOnMouseLeave:TNotifyEvent;
     FOnPaint:TNotifyEvent;
+    procedure FMouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
+    procedure FMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+    procedure FMouseUp(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
     procedure CMMouseEnter(var message: TMessage); message CM_MOUSEENTER;
     procedure CMMouseLeave(var message: TMessage); message CM_MOUSELEAVE;
     procedure CMMouseWheel(var Message: TCMMouseWheel); message WM_MOUSEWHEEL;
     procedure WMNCPaint(var Message: TMessage); message WM_NCPAINT;
     procedure Paint; override;
     property Canvas;
+    constructor Create(AOwner: TComponent); override;
+    property OnPanel:Boolean read FOnPanel;
+    property MouseCoord:TPoint read FMouseCoord;
+    property MouseState:TShiftState read FMouseState;
    published
     property Caption;
     property DefaultPaint:Boolean read FDefaultPaint write SetDefaultPaint;
     property OnMouseEnter:TNotifyEvent read FOnMouseEnter write FOnMouseEnter;
     property OnMouseLeave:TNotifyEvent read FOnMouseLeave write FOnMouseLeave;
+    property OnMouseDown: TMouseEvent read FOnMouseDown write FOnMouseDown;
+    property OnMouseMove: TMouseMoveEvent read FOnMouseMove write FOnMouseMove;
+    property OnMouseUp: TMouseEvent read FOnMouseUp write FOnMouseUp;
     property OnPaint:TNotifyEvent read FOnPaint write FOnPaint;
-    property OnPanel:Boolean read AOnPanel;
+    property RepaintOnMouseMove:Boolean read FRepaintOnMouseMove write SetRepaintOnMouseMove default False;
     property Align;
     property Alignment;
     property Anchors;
@@ -90,9 +107,6 @@ type
     property OnGesture;
     property OnGetSiteInfo;
     property OnMouseActivate;
-    property OnMouseDown;
-    property OnMouseMove;
-    property OnMouseUp;
     property OnResize;
     property OnStartDock;
     property OnStartDrag;
@@ -109,12 +123,14 @@ type
    constructor Create(AOwner: TComponent); override;
   published
    property OnPaint:TNotifyEvent read FOnPaint write FOnPaint;
+   property RepaintOnMouseMove default True;
    property OnMouseWheel;
    property OnMouseWheelDown;
    property OnMouseWheelUp;
    property OnKeyDown;
    property OnKeyPress;
    property OnKeyUp;
+   property OnPanel;
   end;
 
   TDragPanel = class(TCustomPanel)
@@ -214,6 +230,7 @@ constructor TDrawPanel.Create(AOwner: TComponent);
 begin
  inherited;
  ParentBackground:=False;
+ RepaintOnMouseMove := True;
 end;
 
 procedure TDrawPanel.Paint;
@@ -233,21 +250,26 @@ begin
  Paint;
 end;
 
+procedure TPanelExt.SetRepaintOnMouseMove(const Value: Boolean);
+begin
+  FRepaintOnMouseMove := Value;
+end;
+
 procedure TPanelExt.WMNCPaint(var Message: TMessage);
 begin
- if FDefaultPaint then inherited;
+ if FDefaultPaint then inherited; 
  if Assigned(FOnPaint) then FOnPaint(Self);
 end;
 
 procedure TPanelExt.CMMouseEnter(var message: TMessage);
 begin
- AOnPanel:=True;
+ FOnPanel:=True;
  if Assigned(FOnMouseEnter) then FOnMouseEnter(Self);
 end;
 
 procedure TPanelExt.CMMouseLeave(var message: TMessage);
 begin
- AOnPanel:=False;
+ FOnPanel:=False;
  if Assigned(FOnMouseLeave) then FOnMouseLeave(Self);
 end;
 
@@ -262,6 +284,36 @@ begin
       with TMessage(Message) do
         Result := Parent.Perform(CM_MOUSEWHEEL, WParam, LParam);
   end;
+end;
+
+constructor TPanelExt.Create(AOwner: TComponent);
+begin
+ inherited;
+ inherited OnMouseMove:=FMouseMove;
+ inherited OnMouseDown:=FMouseDown;
+ inherited OnMouseUp:=FMouseUp;
+end;
+
+procedure TPanelExt.FMouseDown(Sender: TObject; Button: TMouseButton;
+  Shift: TShiftState; X, Y: Integer);
+begin
+  FMouseState := Shift;
+  if Assigned(FOnMouseDown) then FOnMouseDown(Sender, Button, Shift, X, Y);
+end;
+
+procedure TPanelExt.FMouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
+begin
+  FMouseState := Shift;
+  FMouseCoord := Point(X, Y);
+  if Assigned(FOnMouseMove) then FOnMouseMove(Sender, Shift, X, Y);
+  if FRepaintOnMouseMove then Repaint;
+end;
+
+procedure TPanelExt.FMouseUp(Sender: TObject; Button: TMouseButton;
+  Shift: TShiftState; X, Y: Integer);
+begin
+  FMouseState := Shift;
+  if Assigned(FOnMouseUp) then FOnMouseUp(Sender, Button, Shift, X, Y);
 end;
 
 { TDragPanel }

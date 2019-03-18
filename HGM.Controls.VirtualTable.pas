@@ -29,7 +29,7 @@ type
     function GetCheckedCount: Integer;
    public
     procedure BeginUpdate;
-    procedure EndUpdate(Force:Boolean = False);
+    procedure EndUpdate;
     constructor Create(AOwner: TTableEx); overload; virtual;
     constructor Create; overload; virtual;
     destructor Destroy; override;
@@ -485,7 +485,8 @@ end;
 
 procedure TTableData<T>.EndUpdate;
 begin
- if Force then FUpdate:=0 else FUpdate:=Max(0, FUpdate-1);
+ //FUpdate:=Max(0, FUpdate-1);
+ FUpdate:=0;
  if FUpdate = 0 then UpdateTable;
 end;
 
@@ -527,11 +528,12 @@ procedure TTableData<T>.UpdateTable;
 var i: Integer;
 begin
  if FUpdate > 0 then Exit;
- for i:= 0 to FTables.Count-1 do
-  if Assigned(FTables[i]) then
-   begin
-    FTables[i].ItemCount:=Count;
-   end;
+ if FTables.Count > 0 then
+  for i:= 0 to FTables.Count-1 do
+   if Assigned(FTables[i]) then
+    begin
+     FTables[i].ItemCount:=Count;
+    end;
 end;
 
 { TTableEx }
@@ -804,11 +806,14 @@ begin
 end;
 
 procedure TTableEx.SetItemIndex(const Value: Integer);
+var NewValue:Integer;
 begin
  if (csDestroying in ComponentState) then Exit;
- if FItemIndex <> Value then
+ NewValue:=Value;
+ if Assigned(FOnChangeItem) then FOnChangeItem(Self, FItemIndex, NewValue);
+ if FItemIndex <> NewValue then
   begin
-   FItemIndex:=Value;
+   FItemIndex:=NewValue;
    if FItemIndex >= 0 then
     Row:=Max(0, Min(ItemCount, FItemIndex + Ord(FShowColumns)))
    else
@@ -1564,28 +1569,17 @@ begin
 end;
 
 procedure TTableEx.FKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
-var NewItem:Integer;
 begin
  Repaint;
  case Key of
   VK_DOWN:
    begin
-    if ItemIndex+1 <= RowCount-1-(Ord(FShowColumns)) then
-     begin
-      NewItem:=ItemIndex + 1;
-      if Assigned(FOnChangeItem) then FOnChangeItem(Self, ItemIndex, NewItem);
-      ItemIndex:=NewItem;
-     end;
+    if ItemIndex+1 <= RowCount-1-(Ord(FShowColumns)) then ItemIndex:=ItemIndex+1;
     ItemDowned:=True;
    end;
   VK_UP:
    begin
-    if ItemIndex-1 >= 0 then
-     begin
-      NewItem:=ItemIndex - 1;
-      if Assigned(FOnChangeItem) then FOnChangeItem(Self, ItemIndex, NewItem);
-      ItemIndex:=NewItem;
-     end;
+    if ItemIndex-1 >= 0 then ItemIndex:=ItemIndex-1;
     ItemDowned:=True;
    end;
  end;
@@ -1649,7 +1643,6 @@ begin
          NewRow:=ARow;
         end;
        OldRow:=ItemIndex;
-       if Assigned(FOnChangeItem) then FOnChangeItem(Self, OldRow, NewRow);
        ItemIndex:=NewRow;
        if (OldRow = NewRow) or FCanClickToUnfocused then
         begin

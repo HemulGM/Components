@@ -61,8 +61,7 @@ contains
   HGM.BlurGaussian in 'HGM.BlurGaussian.pas',
   HGM.AutoTextType in 'HGM.AutoTextType.pas',
   HGM.Common.DateUtils in 'HGM.Common.DateUtils.pas',
-  HGM.Popup in 'HGM.Popup.pas' {FormPopup},
-  HGM.Controls.ColorGrid in 'HGM.Controls.ColorGrid.pas';
+  HGM.Popup in 'HGM.Popup.pas' {FormPopup};
 
 end.
 
