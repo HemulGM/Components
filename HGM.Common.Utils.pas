@@ -36,7 +36,6 @@ interface
 
   procedure DrawTo(X, Y:Integer; Src, Dest:TPngImage); overload;
   procedure CopyFrom(SrcPt, DestPt, Size:TPoint; Src:TPngImage; var Dest:TPngImage);
-  function MixBytes(FG, BG, TRANS:Byte):Byte;
   function CreateFrom(X, Y, W, H:Word; Src:TPngImage):TPngImage;
   function CreatePNG(FName:string):TPngImage; overload;
   function CreatePNG(Dll:Cardinal; ID:string):TPngImage; overload;
@@ -887,32 +886,6 @@ begin
      DAS^[X + DestPt.X]:=SAS^[X + SrcPt.X];
     end;
   end;
-end;
-
-//Автор: http://www.swissdelphicenter.ch
-function MixBytes(FG, BG, TRANS:Byte):Byte;
-asm
- push bx       // Push some regs
- push cx
- push dx
- mov DH, TRANS // Remembering Transparency value (or Opacity - as you like)
- mov BL, FG    // Filling registers with our values
- mov AL, DH    // BL = ForeGround (FG)
- mov CL, BG    // CL = BackGround (BG)
- xor AH, AH    // Clear High-order parts of regs
- xor BH, BH
- xor CH, CH
- mul BL        // AL=AL*BL
- mov BX, AX    // BX=AX
- xor AH, AH
- mov AL, DH
- xor AL, $FF   // AX=(255-TRANS)
- mul CL        // AL=AL*CL
- add AX, BX    // AX=AX+BX
- shr AX, 8     // Fine! Here we have mixed value in AL
- pop dx        // Hm... No rubbish after us, ok?
- pop cx
- pop bx        //Get out
 end;
 
 //Автор: Я (очень медленная процедура ~300 мсек. для ср. рисунка)
