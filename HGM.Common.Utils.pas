@@ -47,9 +47,28 @@ interface
   function FlashControl(Control:TControl):Boolean;
   function CutString(Value:string; Count:Word):string;
   procedure RichEditPopupMenu(Target: TRichEdit);
+  function DownloadURL(URL:string):TMemoryStream;
 
 implementation
- uses ShlObj, ActiveX, System.Win.ComObj, PNGFunctions, PNGImageList, ClipBrd;
+ uses ShlObj, ActiveX, System.Win.ComObj, PNGFunctions, PNGImageList, ClipBrd, IdHTTP;
+
+
+function DownloadURL(URL:string):TMemoryStream;
+var HTTP:TIdHTTP;
+begin
+ Result:=TMemoryStream.Create;
+ HTTP:=TIdHTTP.Create(nil);
+ try
+  try
+   HTTP.HandleRedirects:=True;
+   HTTP.Get(URL, Result);
+  except
+
+  end;
+ finally
+  HTTP.Free;
+ end;
+end;
 
 procedure RichEditPopupMenu(Target: TRichEdit);
 const
