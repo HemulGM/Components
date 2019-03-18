@@ -179,6 +179,8 @@ type
     property OnMouseLeave;
     property OnMouseMove;
     property OnMouseUp: TMouseEvent read FOnMouseUp write FOnMouseUp;
+    property OnMouseWheelDown;
+    property OnMouseWheelUp;
     property OnPaint:TNotifyEvent read FOnPaint write FOnPaint;
     property OnStartDock;
     property OnStartDrag;

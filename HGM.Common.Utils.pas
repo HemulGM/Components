@@ -1,4 +1,4 @@
-unit HGM.Common.Utils;
+п»їunit HGM.Common.Utils;
 
 interface
  uses
@@ -32,6 +32,7 @@ interface
   procedure ColorImages(IList:TImageList; ID:Integer; Color:TColor);
   procedure SetImageListColor(ImgList:TImageList; Color:TColor);
   function Centred(V1, V2:Integer):Integer;
+  procedure DrawIconColorLine(IList:TImageList; ID:Integer; Color:TColor);
 
   procedure DrawTo(X, Y:Integer; Src, Dest:TPngImage); overload;
   procedure CopyFrom(SrcPt, DestPt, Size:TPoint; Src:TPngImage; var Dest:TPngImage);
@@ -40,7 +41,6 @@ interface
   function CreatePNG(Dll:Cardinal; ID:string):TPngImage; overload;
   procedure PNGColored(X, Y:Integer; Src, Dest:TPngImage; MColor:TColor);
   procedure PNGColoredLine(X, Y:Integer; Src, Dest:TPngImage; MColor:TColor);
-  procedure DrawIconColorLine(IList:TImageList; ID:Integer; Color:TColor);
   function DrawTextCentered(Canvas: TCanvas; const R: TRect; S: String; FDrawFlags:Cardinal): Integer;
   function ScaledRect(const Src:TRect; Delta:Integer):TRect;
   function MixColors(Color1, Color2:TColor; Alpha:Byte):TColor;
@@ -62,22 +62,22 @@ implementation
  uses ShlObj, ActiveX, System.Win.ComObj, PNGFunctions, PNGImageList, ClipBrd, IdHTTP, Winapi.RichEdit;
 
 
-function DownloadURL(URL:string):TMemoryStream;
-var HTTP:TIdHTTP;
-begin
- Result:=TMemoryStream.Create;
- HTTP:=TIdHTTP.Create(nil);
- try
+ function DownloadURL(URL:string):TMemoryStream;
+ var HTTP:TIdHTTP;
+ begin
+  Result:=TMemoryStream.Create;
+  HTTP:=TIdHTTP.Create(nil);
   try
-   HTTP.HandleRedirects:=True;
-   HTTP.Get(URL, Result);
-  except
+   try
+    HTTP.HandleRedirects:=True;
+    HTTP.Get(URL, Result);
+   except
 
+   end;
+  finally
+   HTTP.Free;
   end;
- finally
-  HTTP.Free;
  end;
-end;
 
 function RichEditGetTopLineText(Target:TRichEdit):Boolean;
 var CF:TCharFormat2;
@@ -182,14 +182,14 @@ begin
     if (hmnu <> 0) then
     try
       hmenuTrackPopup := GetSubMenu(hmnu, 0);
-
       HasSelText := Length(Target.SelText) <> 0;
       EnableMenuItem(hmnu, IDM_UNDO,   Enables[Target.CanUndo]);
       EnableMenuItem(hmnu, IDM_CUT,    Enables[HasSelText]);
       EnableMenuItem(hmnu, IDM_COPY,   Enables[HasSelText]);
-      EnableMenuItem(hmnu, IDM_PASTE,  Enables[Clipboard.HasFormat(CF_TEXT)]);
+      EnableMenuItem(hmnu, IDM_PASTE,  Enables[not Clipboard.HasFormat(0)]);
       EnableMenuItem(hmnu, IDM_DELETE, Enables[HasSelText]);
       EnableMenuItem(hmnu, IDM_SELALL, Enables[Length(Target.Text) <> 0]);
+
 
       // IsRTL := GetWindowLong(re.Handle, GWL_EXSTYLE) and WS_EX_RTLREADING <> 0;
       // EnableMenuItem(hmnu, IDM_RTL, Enables[True]);
@@ -254,21 +254,21 @@ begin
 end;
 
 begin
- if IsSameDay(Value, Today+2)     then Result:='Послезавтра'+AddWeekDay
+ if IsSameDay(Value, Today+2)     then Result:='РџРѕСЃР»РµР·Р°РІС‚СЂР°'+AddWeekDay
  else
- if IsSameDay(Value, Today+1)     then Result:='Завтра'+AddWeekDay
+ if IsSameDay(Value, Today+1)     then Result:='Р—Р°РІС‚СЂР°'+AddWeekDay
  else
- if IsSameDay(Value, Today)       then Result:='Сегодня'+AddWeekDay
+ if IsSameDay(Value, Today)       then Result:='РЎРµРіРѕРґРЅСЏ'+AddWeekDay
  else
- if IsSameDay(Value, Yesterday)   then Result:='Вчера'+AddWeekDay
+ if IsSameDay(Value, Yesterday)   then Result:='Р’С‡РµСЂР°'+AddWeekDay
  else
- if IsSameDay(Value, Yesterday-1) then Result:='Позавчера'+AddWeekDay
+ if IsSameDay(Value, Yesterday-1) then Result:='РџРѕР·Р°РІС‡РµСЂР°'+AddWeekDay
  else
  if YearOf(Value) = YearOf(Now)   then Result:=FormatDateTime('DD mmm', Value)+AddWeekDay
 
                                   else Result:=FormatDateTime('DD mmm YYYY', Value)+AddWeekDay;
 
- if ShowTime then Result:=Result+FormatDateTime(' в HH:NN:SS', Value);
+ if ShowTime then Result:=Result+FormatDateTime(' РІ HH:NN:SS', Value);
 end;
 
 function SimpleStrCompare(const Str1, Str2:string):Double;
@@ -304,8 +304,8 @@ end;
 
 function TranslitRus2Lat(const Str:string):string;
 const
- RArrayL = 'абвгдеёжзийклмнопрстуфхцчшщьыъэюя';
- RArrayU = 'АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЬЫЪЭЮЯ';
+ RArrayL = 'Р°Р±РІРіРґРµС‘Р¶Р·РёР№РєР»РјРЅРѕРїСЂСЃС‚СѓС„С…С†С‡С€С‰СЊС‹СЉСЌСЋСЏ';
+ RArrayU = 'РђР‘Р’Р“Р”Р•РЃР–Р—РР™РљР›РњРќРћРџР РЎРўРЈР¤РҐР¦Р§РЁР©Р¬Р«РЄР­Р®РЇ';
  colChar = 33;
  arr: array[1..2, 1..ColChar] of string = (
   ('a', 'b', 'v', 'g', 'd', 'e', 'yo', 'zh', 'z', 'i', 'y', 'k', 'l', 'm', 'n', 'o',
@@ -353,16 +353,16 @@ begin
  DC:=0;
  if H > 0 then
   begin
-   Result:=Result+IntToStr(H)+' ч. ';
+   Result:=Result+IntToStr(H)+' С‡. ';
    Inc(DC);
   end;
  if M > 0 then
   begin
-   Result:=Result+IntToStr(M)+' м. ';
+   Result:=Result+IntToStr(M)+' Рј. ';
    Inc(DC);
   end;
  if DC < 2 then
-  if S > 0 then Result:=Result+IntToStr(S)+' с.';
+  if S > 0 then Result:=Result+IntToStr(S)+' СЃ.';
 end;
 
 function Between(FMin, FValue, FMax:Integer):Boolean;
@@ -375,7 +375,7 @@ var Size:Cardinal;
     PRes:PChar;
     BRes:Boolean;
 begin
- Result:='Не определено';
+ Result:='РќРµ РѕРїСЂРµРґРµР»РµРЅРѕ';
  try
   Size:=MAX_COMPUTERNAME_LENGTH + 1;
   PRes:=StrAlloc(Size);
@@ -390,7 +390,7 @@ function GetUserName:string;
 var a:array[0..254] of Char;
     lenBuf:Cardinal;
 begin
- Result:='Не определено';
+ Result:='РќРµ РѕРїСЂРµРґРµР»РµРЅРѕ';
  try
   lenBuf:=255;
   Winapi.Windows.GetUserName(a, lenBuf);
@@ -417,6 +417,34 @@ begin
  Result:= TIcon.Create;
  PngImageList.GetIcon(0, Result);
  PngImageList.Free;
+end;
+
+procedure DrawIconColorLine(IList:TImageList; ID:Integer; Color:TColor);
+var Icon:TIcon;
+    PNG, PNGNew:TPngImage;
+begin
+ if (ID < 0) or (ID > IList.Count - 1) then Exit;
+ Icon:=TIcon.Create;
+ try
+  Icon.Width:=IList.Width;
+  Icon.Height:=IList.Height;
+  IList.GetIcon(ID, Icon);
+  PNG:=TPngImage.CreateBlank(COLOR_RGBALPHA, 16, Icon.Width, Icon.Height);
+  ConvertToPNG(Icon, PNG);
+ finally
+  Icon.Free;
+ end;
+ PNGNew:=TPngImage.CreateBlank(COLOR_RGBALPHA, 16, Icon.Width, Icon.Height);
+ try
+  PNGColoredLine(0, 0, PNG, PNGNew, Color);
+ finally
+  PNG.Free;
+ end;
+ try
+  IList.ReplaceIcon(ID, PngToIco(PNGNew));
+ finally
+  PNGNew.Free;
+ end;
 end;
 
 procedure ColorImages(IList:TImageList; ID:Integer; Color:TColor);
@@ -449,7 +477,7 @@ end;
 
 procedure AddToValueEdit(VE:TValueListEditor; Key, Value, ValueBU:string);
 begin
- if Key = '' then Key:='Неизвестный параметр';
+ if Key = '' then Key:='РќРµРёР·РІРµСЃС‚РЅС‹Р№ РїР°СЂР°РјРµС‚СЂ';
  if Length(Value) < 1 then
   if ValueBU <> '' then Value:=ValueBU;
  if Value <> '' then
@@ -642,7 +670,7 @@ begin
    Result:=ID;
    TitleImage:=0;
    State:=[lgsCollapsible];
-   //Footer:='Количество элементов: 1';
+   //Footer:='РљРѕР»РёС‡РµСЃС‚РІРѕ СЌР»РµРјРµРЅС‚РѕРІ: 1';
    Header:=GrName;
   end;
 end;
@@ -655,7 +683,7 @@ begin
     with LV.Groups[i] do
      begin
       TitleImage:=TitleImage+1;
-      //Footer:='Количество элементов: '+IntToStr(TitleImage);
+      //Footer:='РљРѕР»РёС‡РµСЃС‚РІРѕ СЌР»РµРјРµРЅС‚РѕРІ: '+IntToStr(TitleImage);
      end;
     Exit(i);
    end;
@@ -859,7 +887,7 @@ begin
  CopyFrom(Point(X, Y), Point(0, 0), Point(W, H), Src, Result);
 end;
 
-//Автор: Я
+//РђРІС‚РѕСЂ: РЇ
 procedure CopyFrom(SrcPt, DestPt, Size:TPoint; Src:TPngImage; var Dest:TPngImage);
 var X, Y:Integer;
     DAS, SAS:pByteArray;
@@ -880,7 +908,7 @@ begin
   end;
 end;
 
-//Автор: Я (очень медленная процедура ~300 мсек. для ср. рисунка)
+//РђРІС‚РѕСЂ: РЇ (РѕС‡РµРЅСЊ РјРµРґР»РµРЅРЅР°СЏ РїСЂРѕС†РµРґСѓСЂР° ~300 РјСЃРµРє. РґР»СЏ СЃСЂ. СЂРёСЃСѓРЅРєР°)
 procedure DrawTo(X, Y:Integer; Src, Dest:TPngImage);
 var dX, dY:Integer;
     DAS, SAS:pByteArray;
@@ -938,34 +966,6 @@ begin
       end;
     end;
   end;
-end;
-
-procedure DrawIconColorLine(IList:TImageList; ID:Integer; Color:TColor);
-var Icon:TIcon;
-    PNG, PNGNew:TPngImage;
-begin
- if (ID < 0) or (ID > IList.Count - 1) then Exit;
- Icon:=TIcon.Create;
- try
-  Icon.Width:=IList.Width;
-  Icon.Height:=IList.Height;
-  IList.GetIcon(ID, Icon);
-  PNG:=TPngImage.CreateBlank(COLOR_RGBALPHA, 16, Icon.Width, Icon.Height);
-  ConvertToPNG(Icon, PNG);
- finally
-  Icon.Free;
- end;
- PNGNew:=TPngImage.CreateBlank(COLOR_RGBALPHA, 16, Icon.Width, Icon.Height);
- try
-  PNGColoredLine(0, 0, PNG, PNGNew, Color);
- finally
-  PNG.Free;
- end;
- try
-  IList.ReplaceIcon(ID, PngToIco(PNGNew));
- finally
-  PNGNew.Free;
- end;
 end;
 
 end.
