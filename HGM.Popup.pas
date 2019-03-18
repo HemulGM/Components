@@ -31,8 +31,8 @@ implementation
 
 procedure TFormPopup.DoRelease;
 begin
- Winapi.Windows.SetParent(FControl.Handle, FOwner.Handle);
  FControl.Hide;
+ Winapi.Windows.SetParent(FControl.Handle, FOwner.Handle);
  Release;
 end;
 
@@ -44,7 +44,7 @@ begin
  Winapi.Windows.SetParent(AControl.Handle, Handle);
  Left:=X;
  Top:=Y;
- ClientWidth:=AControl.Width;
+ ClientWidth:=AControl.Width+2;
  ClientHeight:=AControl.Height+2;
  AControl.Left:=1;
  AControl.Top:=1;
@@ -77,6 +77,9 @@ end;
 
 procedure TFormPopup.FormShow(Sender: TObject);
 begin
+ if Left + Width > Screen.DesktopRect.Right then Left:=Screen.DesktopRect.Right - Width;
+ if Top + Height > Screen.DesktopRect.Bottom then Top:=Screen.DesktopRect.Bottom - Height;
+
  AnimateWindow(Handle, 100, AW_BLEND);
 end;
 

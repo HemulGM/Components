@@ -315,6 +315,7 @@ end;
 
 function TSettingsIni.CreateIni:TIniFile;
 begin
+ if not FileExists(FileName) then FileClose(FileCreate(FileName));
  Result:=TIniFile.Create(FileName);
 end;
 
