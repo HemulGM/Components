@@ -416,6 +416,7 @@ begin
  PngImageList.PngImages[0].PngImage:= PNGObj;
  Result:= TIcon.Create;
  PngImageList.GetIcon(0, Result);
+ PngImageList.Clear;
  PngImageList.Free;
 end;
 
@@ -448,30 +449,28 @@ begin
 end;
 
 procedure ColorImages(IList:TImageList; ID:Integer; Color:TColor);
-var Icon:TIcon;
+var Icon, NewIcon:TIcon;
     PNG, PNGNew:TPngImage;
 begin
  if (ID < 0) or (ID > IList.Count - 1) then Exit;
  Icon:=TIcon.Create;
+ PNG:=TPngImage.CreateBlank(COLOR_RGBALPHA, 16, IList.Width, IList.Height);
+ PNGNew:=TPngImage.CreateBlank(COLOR_RGBALPHA, 16, IList.Width, IList.Height);
  try
   Icon.Width:=IList.Width;
   Icon.Height:=IList.Height;
   IList.GetIcon(ID, Icon);
-  PNG:=TPngImage.CreateBlank(COLOR_RGBALPHA, 16, Icon.Width, Icon.Height);
   ConvertToPNG(Icon, PNG);
- finally
-  Icon.Free;
- end;
- PNGNew:=TPngImage.CreateBlank(COLOR_RGBALPHA, 16, Icon.Width, Icon.Height);
- try
   PNGColored(0, 0, PNG, PNGNew, Color);
+  NewIcon:=PngToIco(PNGNew);
+  IList.ReplaceIcon(ID, NewIcon);
  finally
-  PNG.Free;
- end;
- try
-  IList.ReplaceIcon(ID, PngToIco(PNGNew));
- finally
-  PNGNew.Free;
+  begin
+   Icon.Free;
+   PNG.Free;
+   PNGNew.Free;
+   NewIcon.Free;
+  end;
  end;
 end;
 

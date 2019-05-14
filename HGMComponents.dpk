@@ -62,7 +62,8 @@ contains
   HGM.AutoTextType in 'HGM.AutoTextType.pas',
   HGM.Common.DateUtils in 'HGM.Common.DateUtils.pas',
   HGM.Popup in 'HGM.Popup.pas' {FormPopup},
-  HGM.Controls.ColorGrid in 'HGM.Controls.ColorGrid.pas';
+  HGM.Controls.ColorGrid in 'HGM.Controls.ColorGrid.pas',
+  HGM.License in 'HGM.License.pas';
 
 end.
 

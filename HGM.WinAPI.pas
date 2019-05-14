@@ -33,9 +33,57 @@ interface
   procedure SetImageListColor(ImgList:TImageList; Color:TColor);
   function Centred(V1, V2:Integer):Integer;
   function GetLastDir(Path:string):string;
+  function SIDToString(ASID:PSID): string;
+  function GetComputerSID:string;
+  function ConvertSidToStringSid(Sid:PSID; out StringSid:PChar):BOOL; stdcall; external 'ADVAPI32.DLL' name {$IFDEF UNICODE} 'ConvertSidToStringSidW'{$ELSE} 'ConvertSidToStringSidA'{$ENDIF};
 
 implementation
  uses ShlObj, ActiveX, System.Win.ComObj, HGM.Common.Utils, PNGFunctions, PNGImageList;
+
+function SIDToString(ASID:PSID):string;
+var StringSid:PChar;
+begin
+ ConvertSidToStringSid(ASID, StringSid);
+ Result:=string(StringSid);
+end;
+
+function GetComputerSID:string;
+var
+  Sid:PSID;
+  cbSid:DWORD;
+  cbReferencedDomainName:DWORD;
+  ReferencedDomainName:string;
+  peUse:SID_NAME_USE;
+  Success:BOOL;
+  lpSystemName:string;
+  lpAccountName:string;
+begin
+ Sid:=nil;
+ try
+  lpSystemName:='';
+  lpAccountName:=GetMachineName;
+
+  cbSid:=0;
+  cbReferencedDomainName:=0;
+  Success:=LookupAccountName(PChar(lpSystemName), PChar(lpAccountName), nil, cbSid, nil, cbReferencedDomainName, peUse);
+  if (not Success) and (GetLastError = ERROR_INSUFFICIENT_BUFFER) then
+   begin
+    SetLength(ReferencedDomainName, cbReferencedDomainName);
+    Sid:=AllocMem(cbSid);
+    Success:=LookupAccountName(PChar(lpSystemName), PChar(lpAccountName), Sid, cbSid, PChar(ReferencedDomainName), cbReferencedDomainName, peUse);
+    if not Success then
+     begin
+      FreeMem(Sid);
+      Sid:=nil;
+      RaiseLastOSError;
+     end
+    else Result:=SIDToString(Sid);
+   end
+  else RaiseLastOSError;
+ finally
+  if Assigned(Sid) then FreeMem(Sid);
+ end;
+end;
 
 function GetLastDir(Path:string):string;
 begin

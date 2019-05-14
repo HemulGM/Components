@@ -5,7 +5,11 @@ interface
  uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
   Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.ComCtrls, Vcl.StdCtrls, IniFiles, Registry,
-  Vcl.Samples.Spin, Vcl.Grids, Vcl.ValEdit, Vcl.ExtCtrls, Vcl.ExtDlgs;
+  Vcl.Samples.Spin, Vcl.Grids, Vcl.ValEdit, Vcl.ExtCtrls, Vcl.ExtDlgs
+  {$IFDEF NEEDFMX}
+  , FMX.Forms
+  {$ENDIF NEEDFMX}
+  ;
 
  type
   TRegRoot = (rrHKLM, rrHKCU);
@@ -53,8 +57,12 @@ interface
     function SetParam(Section:string; AControl:TCheckBox):Boolean; overload;
     function SetParam(Section:string; AControl:TPageControl):Boolean; overload;
 
-    function GetParamWindow(Section:string; AWindow:TForm; SaveItems:TWindowParamSave):Boolean;
-    function SetParamWindow(Section:string; AWindow:TForm; SaveItems:TWindowParamSave):Boolean;
+    function GetParamWindow(Section:string; AWindow:Vcl.Forms.TForm; SaveItems:TWindowParamSave):Boolean; overload;
+    function SetParamWindow(Section:string; AWindow:Vcl.Forms.TForm; SaveItems:TWindowParamSave):Boolean; overload;
+    {$IFDEF NEEDFMX}
+    function GetParamWindow(Section:string; AWindow:FMX.Forms.TForm; SaveItems:TWindowParamSave):Boolean; overload;
+    function SetParamWindow(Section:string; AWindow:FMX.Forms.TForm; SaveItems:TWindowParamSave):Boolean; overload;
+    {$ENDIF NEEDFMX}
 
     function ValueExists(Section, Param:string):Boolean;
   end;
@@ -618,7 +626,7 @@ begin
  Result:=WriteInt(Section, AControl.Name, AControl.ActivePageIndex);
 end;
 
-function TSettings.GetParamWindow(Section: string; AWindow: TForm; SaveItems: TWindowParamSave): Boolean;
+function TSettings.GetParamWindow(Section: string; AWindow: Vcl.Forms.TForm; SaveItems: TWindowParamSave): Boolean;
 var IValue:Integer;
 begin
  try
@@ -643,7 +651,7 @@ begin
  end;
 end;
 
-function TSettings.SetParamWindow(Section: string; AWindow: TForm; SaveItems: TWindowParamSave): Boolean;
+function TSettings.SetParamWindow(Section: string; AWindow: Vcl.Forms.TForm; SaveItems: TWindowParamSave): Boolean;
 begin
  try
   if (wpsState in SaveItems) or (wpsAll in SaveItems) then
@@ -668,5 +676,57 @@ begin
   Result:=False;
  end;
 end;
+{$IFDEF NEEDFMX}
+function TSettings.GetParamWindow(Section: string; AWindow: FMX.Forms.TForm; SaveItems: TWindowParamSave): Boolean;
+var IValue:Integer;
+begin
+ try
+  if (wpsCoord in SaveItems) or (wpsAll in SaveItems) then
+   begin
+    if ReadInt(Section, AWindow.Name+'.Left', IValue, AWindow.Left) then AWindow.Left:=IValue;
+    if ReadInt(Section, AWindow.Name+'.Top', IValue, AWindow.Top) then AWindow.Top:=IValue;
+   end;
+  if (wpsSize in SaveItems) or (wpsAll in SaveItems) then
+   begin
+    if ReadInt(Section, AWindow.Name+'.Width', IValue, AWindow.Width) then AWindow.Width:=IValue;
+    if ReadInt(Section, AWindow.Name+'.Height', IValue, AWindow.Height) then AWindow.Height:=IValue;
+   end;
+  if (wpsState in SaveItems) or (wpsAll in SaveItems) then
+   begin
+    if ReadInt(Section, AWindow.Name+'.WindowState', IValue, Ord(AWindow.WindowState)) then AWindow.WindowState:=TWindowState(IValue);
+    if AWindow.WindowState = wsMinimized then AWindow.WindowState:=wsNormal;
+   end;
+  Result:=True;
+ except
+  Result:=False;
+ end;
+end;
+
+function TSettings.SetParamWindow(Section: string; AWindow: FMX.Forms.TForm; SaveItems: TWindowParamSave): Boolean;
+begin
+ try
+  if (wpsState in SaveItems) or (wpsAll in SaveItems) then
+   begin
+    WriteInt(Section, AWindow.Name+'.WindowState', Ord(AWindow.WindowState));
+   end;
+  if AWindow.WindowState = wsNormal then
+   begin
+    if (wpsCoord in SaveItems) or (wpsAll in SaveItems) then
+     begin
+      WriteInt(Section, AWindow.Name+'.Left', AWindow.Left);
+      WriteInt(Section, AWindow.Name+'.Top', AWindow.Top);
+     end;
+    if (wpsSize in SaveItems) or (wpsAll in SaveItems) then
+     begin
+      WriteInt(Section, AWindow.Name+'.Width', AWindow.Width);
+      WriteInt(Section, AWindow.Name+'.Height', AWindow.Height);
+     end;
+   end;
+  Result:=True;
+ except
+  Result:=False;
+ end;
+end;
+{$ENDIF NEEDFMX}
 
 end.
