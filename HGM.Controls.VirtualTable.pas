@@ -410,7 +410,7 @@ procedure Register;
 implementation
 
 uses
-  Math;
+  Math, TypInfo;
 
 function IndexInList(const Index: Integer; ListCount: Integer): Boolean;
 begin
@@ -487,13 +487,13 @@ begin
   if Length(FCheck) - 1 < Index then
     SetLength(FCheck, Index + 1);
   System.Delete(FCheck, Index, 1);
+
   inherited Delete(Index);
 end;
 
 destructor TTableData<T>.Destroy;
 begin
   FTables.Free;
-  SetLength(FCheck, 0);
   inherited;
 end;
 
