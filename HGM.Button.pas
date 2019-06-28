@@ -30,6 +30,7 @@ type
     FIgnorBounds: Boolean;
     FNeedColor: TColor;
     FAnimPerc: Integer;
+    FTimerProcing: Boolean;
     FStyledColor: TColor;
     FOnPaint: TNotifyEvent;
     FRoundRectParam: Integer;
@@ -493,6 +494,9 @@ end;
 procedure TButtonFlat.OnTimerAnimateTime(Sender: TObject);
 begin
  //if csFreeNotification in ComponentState then Exit;
+  if FTimerProcing then Exit;
+
+  FTimerProcing := True;
   Inc(FAnimPerc, 8);
   if FAnimPerc >= 100 then
   begin
@@ -502,6 +506,7 @@ begin
   end
   else
     StyledColor := MixColors(NeedColor, FromColor, FAnimPerc);
+  FTimerProcing := False;
 end;
 
 procedure TButtonFlat.OnTimerAutoClickTime(Sender: TObject);
@@ -550,6 +555,7 @@ var
   d: Double;
   FDrawImg: Integer;
   FText: string;
+  I: Integer;
 begin
   try
     if FDrawTimedText then
