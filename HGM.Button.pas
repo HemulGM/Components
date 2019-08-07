@@ -555,7 +555,6 @@ var
   d: Double;
   FDrawImg: Integer;
   FText: string;
-  I: Integer;
 begin
   try
     if FDrawTimedText then
@@ -773,8 +772,8 @@ begin
   //Уменьшим размер для доп текста
     if FVisibleSubText then
     begin
-      Brush.Style := bsSolid;
-      Font.Color := clWhite;
+      Canvas.Brush.Style := bsSolid;
+      Canvas.Font.Color := clWhite;
       FSubRect.Offset(0, -1);
       Canvas.TextRect(FSubRect, FSubText, [tfSingleLine, tfCenter, tfVerticalCenter]);
       FRect.Right := Min(FRect.Right, FSubRect.Left);

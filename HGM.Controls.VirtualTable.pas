@@ -42,6 +42,7 @@ type
     procedure Delete(Index: Integer); virtual;
     //
     procedure AddTable(pTable: TTableEx);
+    function IndexIn(Index: Integer): Boolean;
     procedure UnAssignTables;
     procedure UpdateTable; virtual;
     procedure CheckAll; virtual;
@@ -440,6 +441,11 @@ end;
 procedure TTableData<T>.AddTable(pTable: TTableEx);
 begin
   FTables.Add(pTable);
+end;
+
+function TTableData<T>.IndexIn(Index: Integer): Boolean;
+begin
+  Result := IndexInList(Index, Count);
 end;
 
 procedure TTableData<T>.InitNotif(Sender: TObject; const Item: T; Action: TCollectionNotification);

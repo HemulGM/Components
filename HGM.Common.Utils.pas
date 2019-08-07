@@ -6,11 +6,10 @@ uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants,
   System.Classes, Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs,
   System.Generics.Collections, Winapi.Dwmapi, Vcl.ValEdit, System.DateUtils,
-  System.Math, System.Rtti, System.TypInfo, Vcl.ComCtrls, Vcl.Imaging.jpeg,
+  System.Math, System.Rtti, Vcl.ComCtrls, Vcl.Imaging.jpeg,
   Vcl.Grids, Vcl.Imaging.pngimage, Vcl.StdCtrls, Vcl.Mask, Vcl.ExtCtrls,
   System.Types;
 
- // function SendTelegram(BotToken, Chat_ID, SendText:string):Boolean;
 function AdvSelectDirectory(const Caption: string; const Root: WideString; var Directory: string; EditBox: Boolean = False; ShowFiles: Boolean = False; AllowCreateDirs: Boolean = True): Boolean;
 
 function Between(FMin, FValue, FMax: Integer): Boolean;
@@ -105,24 +104,50 @@ procedure RichEditSetBGCOlor(Target: TRichEdit; Color: TColor);
 
 function DownloadURL(URL: string): TMemoryStream;
 
+function GetVersion: string;
+
 implementation
 
 uses
-  ShlObj, ActiveX, System.Win.ComObj, PNGFunctions, PNGImageList, ClipBrd,
-  IdHTTP, Winapi.RichEdit;
+  ShlObj, ActiveX, PNGFunctions, PNGImageList, ClipBrd,
+  System.Net.HttpClient, Winapi.RichEdit;
+
+function GetVersion: string;
+var
+  Res: TResourceStream;
+  Info: PVSFixedFileInfo;
+  InfoLen: Cardinal;
+begin
+  Result := '';
+  Res := TResourceStream.Create(HInstance, '#1', RT_VERSION);
+  try
+    if Res.Size > 0 then
+    begin
+      if VerQueryValue(Res.Memory, '\', Pointer(Info), InfoLen) then
+      begin
+        Result := Format('%d.%d.%d.%d',
+          [Info.dwFileVersionMS shr $10, Info.dwFileVersionMS and $FFFF,
+           Info.dwFileVersionLS shr $10, Info.dwFileVersionLS and $FFFF]);
+      end;
+    end;
+  finally
+    Res.Free;
+  end;
+end;
 
 function DownloadURL(URL: string): TMemoryStream;
 var
-  HTTP: TIdHTTP;
+  HTTP: THTTPClient;
 begin
   Result := TMemoryStream.Create;
-  HTTP := TIdHTTP.Create(nil);
+  HTTP := THTTPClient.Create;
   try
     try
       HTTP.HandleRedirects := True;
       HTTP.Get(URL, Result);
     except
-
+      //Ну, ошибка... Поток всё равно создан и ошибки не должно возникнуть,
+      //если проверить размер потока перед его использованием
     end;
   finally
     HTTP.Free;
