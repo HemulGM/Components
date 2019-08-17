@@ -106,11 +106,59 @@ function DownloadURL(URL: string): TMemoryStream;
 
 function GetVersion: string;
 
+function Reverse(s: string): string;
+
+function GetFileNameWoE(FileName: TFileName): string;
+
+function GetFileNameFromLink(LinkFileName: string): string;
+
 implementation
 
 uses
   ShlObj, ActiveX, PNGFunctions, PNGImageList, ClipBrd,
-  System.Net.HttpClient, Winapi.RichEdit;
+  System.Net.HttpClient, Winapi.RichEdit, System.Win.ComObj;
+
+function GetFileNameFromLink(LinkFileName: string): string;
+var
+  MyObject: IUnknown;
+  MySLink: IShellLink;
+  MyPFile: IPersistFile;
+  FileInfo: TWin32FINDDATA;
+  Buff: array[0..MAX_PATH] of Char;
+begin
+  Result := '';
+  if not FileExists(LinkFileName) then
+    Exit;
+  MyObject := CreateComObject(CLSID_ShellLink);
+  MyPFile := MyObject as IPersistFile;
+  MySLink := MyObject as IShellLink;
+  MyPFile.Load(PWideChar(LinkFileName), STGM_READ);
+  MySLink.GetPath(Buff, MAX_PATH, FileInfo, SLGP_UNCPRIORITY);
+  Result := Buff;
+end;
+
+function Reverse(s: string): string;
+var
+  i: Word;
+begin
+  if Length(s) <= 1 then
+    Exit(s);
+  for i := Length(s) downto 1 do
+    Result := Result + s[i];
+end;
+
+function GetFileNameWoE(FileName: TFileName): string;
+var
+  PPos: Integer;
+  str: string;
+begin
+  str := ExtractFileName(FileName);
+  if Length(str) < 3 then
+    Exit;
+  PPos := Pos('.', Reverse(str));
+  if PPos > 0 then
+    Result := Copy(str, 1, Length(str) - PPos);
+end;
 
 function GetVersion: string;
 var

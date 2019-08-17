@@ -34,9 +34,11 @@ requires
   vcl,
   xmlrtl,
   vclimg,
-  IndyProtocols,
   VclSmp,
-  PngComponents;
+  PngComponents,
+  IndySystem,
+  IndyProtocols,
+  IndyCore;
 
 contains
   HGM.Autorun in 'HGM.Autorun.pas',

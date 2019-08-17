@@ -354,6 +354,9 @@ end;
 
 constructor TButtonFlat.Create(AOwner: TComponent);
 begin
+  {$IFNDEF FORXP}
+  //DOTO Нужна проверка на версию винды. Если XP, то требовать включения директивы FORXP. XP не хочет работать с Direct2D
+  {$ENDIF}
   inherited Create(AOwner);
   inherited Cursor := crHandPoint;
   ControlStyle := ControlStyle + [csReplicatable, csOpaque];
@@ -494,7 +497,8 @@ end;
 procedure TButtonFlat.OnTimerAnimateTime(Sender: TObject);
 begin
  //if csFreeNotification in ComponentState then Exit;
-  if FTimerProcing then Exit;
+  if FTimerProcing then
+    Exit;
 
   FTimerProcing := True;
   Inc(FAnimPerc, 8);
@@ -572,20 +576,23 @@ begin
         if Assigned(Font) then
           Canvas.Font.Assign(Font);
     end;
-    with TDirect2DCanvas.Create(Canvas, ClientRect) do
+
+    with {$IFDEF FORXP} Canvas {$ELSE} TDirect2DCanvas.Create(Canvas, ClientRect) {$ENDIF} do
     begin
+      {$IFNDEF FORXP}
       BeginDraw;
+      {$ENDIF}
       Brush.Style := bsSolid;
       if Assigned(Parent) and (Parent is TControl) then
       begin
-      //TColorControl(Parent).ParentColor
+        //TColorControl(Parent).ParentColor
         Brush.Color := GetColor(Parent);
       end
       else
         Brush.Color := ColorNormal;
       FillRect(ClientRect);
       Brush.Color := StyledColor;
-    // Плоский стиль
+      // Плоский стиль
       if Flat then
         Pen.Color := Brush.Color
       else
@@ -596,7 +603,7 @@ begin
           Pen.Color := FBorderColor;
         Pen.Width := FBorderWidth;
       end;
-    // Фигура
+      // Фигура
       X := Pen.Width div 2;
       Y := X;
       W := Width - Pen.Width + 1;
@@ -621,7 +628,7 @@ begin
         Inc(Y, (H - S) div 2);
         H := S;
       end;
-    //Если не прозрачная кнопка, то рисуем фигуру
+      // Если не прозрачная кнопка, то рисуем фигуру
       if not FTransparent then
       begin
         case Shape of
@@ -675,7 +682,7 @@ begin
             end;
         end;
       end;
-    // Уведомление
+      // Уведомление
       if FNotifyVisible then
       begin
         FRect := Rect(0, 0, FNotifyWidth, FNotifyWidth);
@@ -683,7 +690,7 @@ begin
           FRect.SetLocation(Min(ImageIndentLeft + Images.Width - 4, ClientWidth - FNotifyWidth - 2), (Height div 2 - Images.Height div 2) - 4)
         else
           FRect.SetLocation(FNotifyWidth div 2, FNotifyWidth div 2);
-      //if FText <> '' then FRect.Offset(Canvas.TextWidth(FText), 0);
+        //if FText <> '' then FRect.Offset(Canvas.TextWidth(FText), 0);
 
         Brush.Style := bsSolid;
         Pen.Style := psSolid;
@@ -691,8 +698,8 @@ begin
         Brush.Color := FNotifyColor;
         Ellipse(FRect);
       end;
-    //
-    //Доп. текст
+      //
+      //Доп. текст
       if FVisibleSubText then
       begin
         FSubRect := ClientRect;
@@ -703,11 +710,13 @@ begin
         Pen.Color := FSubTextColor;
         RoundRect(FSubRect, FSubRect.Height, FSubRect.Height);
       end;
-    //
+      //
+      {$IFNDEF FORXP}
       EndDraw;
       Free;
+      {$ENDIF}
     end;
-  //Прямоугольник для текста
+    //Прямоугольник для текста
     if FIgnorBounds then
       FRect := ClientRect
     else
