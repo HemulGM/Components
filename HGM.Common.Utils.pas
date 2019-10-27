@@ -6,9 +6,8 @@ uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants,
   System.Classes, Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs,
   System.Generics.Collections, Winapi.Dwmapi, Vcl.ValEdit, System.DateUtils,
-  System.Math, System.Rtti, Vcl.ComCtrls, Vcl.Imaging.jpeg,
-  Vcl.Grids, Vcl.Imaging.pngimage, Vcl.StdCtrls, Vcl.Mask, Vcl.ExtCtrls,
-  System.Types;
+  System.Math, System.Rtti, Vcl.ComCtrls, Vcl.Imaging.jpeg, Vcl.Grids,
+  Vcl.Imaging.pngimage, Vcl.StdCtrls, Vcl.Mask, Vcl.ExtCtrls, System.Types;
 
 function AdvSelectDirectory(const Caption: string; const Root: WideString; var Directory: string; EditBox: Boolean = False; ShowFiles: Boolean = False; AllowCreateDirs: Boolean = True): Boolean;
 
@@ -112,11 +111,42 @@ function GetFileNameWoE(FileName: TFileName): string;
 
 function GetFileNameFromLink(LinkFileName: string): string;
 
+function GetFileDescription(const FileName, ExceptText: string): string;
+
+function GetGroup(LV: TListView; GroupName: string; Expand: Boolean): Word;
+
 implementation
 
 uses
-  ShlObj, ActiveX, PNGFunctions, PNGImageList, ClipBrd,
-  System.Net.HttpClient, Winapi.RichEdit, System.Win.ComObj;
+  ShlObj, ActiveX, PNGFunctions, PNGImageList, ClipBrd, System.Net.HttpClient,
+  Winapi.RichEdit, System.Win.ComObj;
+
+//Получить ИД группы по названию (если нет - добавить)
+function GetGroup(LV: TListView; GroupName: string; Expand: Boolean): Word;
+var
+  i: Word;
+  NewGroup: TListGroup;
+begin
+  if GroupName = '' then
+    GroupName := 'Без группы';
+  if LV.Groups.Count > 0 then
+    for i := 0 to LV.Groups.Count - 1 do
+      if LV.Groups.Items[i].Header = GroupName then
+      begin
+        Result := i;
+        Exit;
+      end;
+  NewGroup := LV.Groups.Add;
+  with NewGroup do
+  begin
+    Header := GroupName;
+    Result := GroupID;
+    if not Expand then
+      NewGroup.State := [lgsNormal, lgsCollapsible, lgsCollapsed]
+    else
+      NewGroup.State := [lgsNormal, lgsCollapsible];
+  end;
+end;
 
 function GetFileNameFromLink(LinkFileName: string): string;
 var
@@ -147,6 +177,51 @@ begin
     Result := Result + s[i];
 end;
 
+function GetFileDescription(const FileName, ExceptText: string): string;
+type
+  TLangRec = array[0..1] of Word;
+var
+  InfoSize, zero: Cardinal;
+  pbuff: Pointer;
+  pk: Pointer;
+  nk: Cardinal;
+  lang_hex_str: string;
+  LangID: Word;
+  LangCP: Word;
+begin
+  pbuff := nil;
+  Result := '';
+  InfoSize := Winapi.Windows.GetFileVersionInfoSize(PChar(FileName), zero);
+  if InfoSize <> 0 then
+  try
+    GetMem(pbuff, InfoSize);
+    if Winapi.Windows.GetFileVersionInfo(PChar(FileName), 0, InfoSize, pbuff) then
+    begin
+      if VerQueryValue(pbuff, '\VarFileInfo\Translation', pk, nk) then
+      begin
+        LangID := TLangRec(pk^)[0];
+        LangCP := TLangRec(pk^)[1];
+        lang_hex_str := Format('%.4x', [LangID]) + Format('%.4x', [LangCP]);  //FileDescription
+        if VerQueryValue(pbuff, PChar('\\StringFileInfo\\' + lang_hex_str + '\\FileDescription'), pk, nk) then
+          Result := string(PChar(pk))
+        else if VerQueryValue(pbuff, PChar('\\StringFileInfo\\' + lang_hex_str + '\\CompanyName'), pk, nk) then
+          Result := string(PChar(pk));
+      end;
+    end;
+  finally
+    if pbuff <> nil then
+      FreeMem(pbuff);
+  end;
+  if Result = '' then
+    if (ExceptText <> '') then
+      if (ExceptText <> '/') then
+        Result := ExceptText
+      else
+        Exit('')
+    else
+      Result := GetFileNameWoE(FileName);
+end;
+
 function GetFileNameWoE(FileName: TFileName): string;
 var
   PPos: Integer;
@@ -173,9 +248,7 @@ begin
     begin
       if VerQueryValue(Res.Memory, '\', Pointer(Info), InfoLen) then
       begin
-        Result := Format('%d.%d.%d.%d',
-          [Info.dwFileVersionMS shr $10, Info.dwFileVersionMS and $FFFF,
-           Info.dwFileVersionLS shr $10, Info.dwFileVersionLS and $FFFF]);
+        Result := Format('%d.%d.%d.%d', [Info.dwFileVersionMS shr $10, Info.dwFileVersionMS and $FFFF, Info.dwFileVersionLS shr $10, Info.dwFileVersionLS and $FFFF]);
       end;
     end;
   finally
@@ -193,6 +266,7 @@ begin
     try
       HTTP.HandleRedirects := True;
       HTTP.Get(URL, Result);
+      Result.Position := 0;
     except
       //Ну, ошибка... Поток всё равно создан и ошибки не должно возникнуть,
       //если проверить размер потока перед его использованием
@@ -632,12 +706,12 @@ begin
     PNGColored(0, 0, PNG, PNGNew, Color);
     NewIcon := PngToIco(PNGNew);
     IList.ReplaceIcon(ID, NewIcon);
+    NewIcon.Free;
   finally
     begin
       Icon.Free;
       PNG.Free;
       PNGNew.Free;
-      NewIcon.Free;
     end;
   end;
 end;

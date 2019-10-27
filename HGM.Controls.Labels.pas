@@ -6,7 +6,7 @@ uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants,
   System.Classes, Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs,
   Vcl.StdCtrls, Vcl.ExtCtrls, System.UITypes, Vcl.Direct2D, Winapi.D2D1,
-  HGM.Common, HGM.Common.Utils;
+  HGM.Common, HGM.Common.Utils, HGM.Controls.Labels.Base;
 
 type
   ThLink = class(TLabel)
@@ -53,14 +53,65 @@ type
     property EllipseRectVertical: Boolean read FEllipseRectVertical write SetEllipseRectVertical;
   end;
 
+  ThLabel = class(ThCustomLabel)
+  published
+    property Align;
+    property Alignment;
+    property Anchors;
+    property AutoSize;
+    property BiDiMode;
+    property Caption;
+    property Color nodefault;
+    property Constraints;
+    property DragCursor;
+    property DragKind;
+    property DragMode;
+    property EllipsisPosition;
+    property Enabled;
+    property FocusControl;
+    property Font;
+    property GlowSize; // Windows Vista only
+    property ParentBiDiMode;
+    property ParentColor;
+    property ParentFont;
+    property ParentShowHint;
+    property PopupMenu;
+    property ShowAccelChar;
+    property ShowHint;
+    property Touch;
+    property Transparent;
+    property Layout;
+    property Visible;
+    property WordWrap;
+    property StyleElements;
+    property OnClick;
+    property OnContextPopup;
+    property OnDblClick;
+    property OnDragDrop;
+    property OnDragOver;
+    property OnEndDock;
+    property OnEndDrag;
+    property OnGesture;
+    property OnMouseActivate;
+    property OnMouseDown;
+    property OnMouseMove;
+    property OnMouseUp;
+    property OnMouseEnter;
+    property OnMouseLeave;
+    property OnStartDock;
+    property OnStartDrag;
+  end;
+
 procedure Register;
 
 implementation
+ uses Vcl.Themes;
 
 procedure Register;
 begin
   RegisterComponents(PackageName, [ThLink]);
   RegisterComponents(PackageName, [TLabelEx]);
+  RegisterComponents(PackageName, [ThLabel]);
 end;
 
 

@@ -499,6 +499,7 @@ end;
 
 destructor TTableData<T>.Destroy;
 begin
+  Clear;
   FTables.Free;
   inherited;
 end;

@@ -781,7 +781,7 @@ begin
   //Уменьшим размер для доп текста
     if FVisibleSubText then
     begin
-      Canvas.Brush.Style := bsSolid;
+      Canvas.Brush.Style := bsClear;
       Canvas.Font.Color := clWhite;
       FSubRect.Offset(0, -1);
       Canvas.TextRect(FSubRect, FSubText, [tfSingleLine, tfCenter, tfVerticalCenter]);

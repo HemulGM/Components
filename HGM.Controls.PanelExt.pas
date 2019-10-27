@@ -285,6 +285,22 @@ type
     property OnUnDock;
   end;
 
+  TDecoratePanel = class
+  private
+    FAnimate: Boolean;
+    FOwner: TControl;
+    FPanel: TPanel;
+    FOpen: Boolean;
+    FOpening: Boolean;
+  published
+    constructor Create(AOwner: TControl; APanel: TPanel; AOpen: Boolean = False);
+    procedure Close;
+    procedure CloseDelay(Interval: Integer; FProc: TProc = nil);
+    procedure Open(Animate: Boolean = True);
+    procedure UpdateSize;
+    property Animate: Boolean read FAnimate write FAnimate default True;
+  end;
+
 procedure Register;
 
 implementation
@@ -419,6 +435,69 @@ end;
 procedure TDragPanel.SetOnMouseDown(const Value: TMouseEvent);
 begin
   FOnMouseDown := Value;
+end;
+
+{ TDecoratePanel }
+
+procedure TDecoratePanel.Close;
+var
+  i: Integer;
+begin
+  for i := 0 to FOwner.ClientHeight div 30 do
+  begin
+    FPanel.Top := i * 30;
+    FOwner.Repaint;
+  end;
+  FPanel.Hide;
+  FOwner.Repaint;
+end;
+
+procedure TDecoratePanel.CloseDelay;
+begin
+  TThread.CreateAnonymousThread(
+    procedure
+    begin
+      Sleep(3000);
+      TThread.Synchronize(TThread.Current,
+        procedure
+        begin
+          Close;
+          if Assigned(FProc) then
+            FProc;
+        end);
+    end).Start;
+end;
+
+constructor TDecoratePanel.Create(AOwner: TControl; APanel: TPanel; AOpen: Boolean);
+begin
+  FOwner := AOwner;
+  FPanel := APanel;
+  FOpening := False;
+  FPanel.Left := 0;
+  FPanel.Top := 0;
+  FPanel.Hide;
+  if AOpen then
+    Open(False);
+end;
+
+procedure TDecoratePanel.Open(Animate: Boolean);
+begin
+  UpdateSize;
+  FOpening := True;
+  FPanel.Show;
+  FPanel.BringToFront;
+  FPanel.Left := 0;
+  FPanel.Top := 0;
+  FOpening := False;
+end;
+
+procedure TDecoratePanel.UpdateSize;
+begin
+  if Assigned(FOwner) and Assigned(FPanel) then
+  begin
+    FPanel.Width := FOwner.ClientWidth;
+    FPanel.Height := FOwner.ClientHeight;
+  end;
 end;
 
 end.
