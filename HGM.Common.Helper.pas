@@ -12,6 +12,10 @@ type
     class function InArray(Target: array of Integer; Item: Integer): Boolean; overload;
   end;
 
+  TAppender<T> = class
+    class procedure Append(var Arr: TArray<T>; Value: T);
+  end;
+
 implementation
 
 class function ThArray.InArray(Target: array of string; Item: string): Boolean;
@@ -32,6 +36,12 @@ begin
   for i := Low(Target) to High(Target) do
     if Target[i] = Item then
       Exit(True);
+end;
+
+class procedure TAppender<T>.Append;
+begin
+  SetLength(Arr, Length(Arr) + 1);
+  Arr[High(Arr)] := Value;
 end;
 
 end.

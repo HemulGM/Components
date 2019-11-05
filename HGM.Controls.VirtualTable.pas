@@ -63,6 +63,8 @@ type
     Items: TStringList;
     ReadOnly: Boolean;
     ListDrop: Boolean;
+    Color: TColor;
+    FontColor: TColor;
   end;
 
   TFieldMaskEdit = class(TMaskEdit)
@@ -199,6 +201,7 @@ type
     FAddingColumns: Boolean;
     FCanClickToUnfocused: Boolean;
     FOnHotOver: TNotifyEvent;
+    FActiveCursor: TCursor;
     function DataRow: Integer;
     procedure CloseControl(Sender: TObject);
     procedure DoEditCancel;
@@ -299,6 +302,8 @@ type
     property ItemUnderMouse: Integer read GetItemUnderMouse;
     procedure BeginAddColumns;
     procedure EndAddColumns;
+    procedure SetRowHeight(Index, Value: Integer);
+    function GetRowHeight(Index: Integer): Integer;
   published
     property OnActivate: TNotifyEvent read FOnActivate write FOnActivate;
     property OnDeactivate: TNotifyEvent read FOnDeactivate write FOnDeactivate;
@@ -402,6 +407,7 @@ type
     property LastColumnAutoSize: Boolean read FLastColumnAutoSize write SetLastColumnAutoSize default True;
     property EditOnDblClick: Boolean read FEditOnDblClick write SetEditOnDblClick default True;
     property CanClickToUnfocused: Boolean read FCanClickToUnfocused write SetCanClickToUnfocused default False;
+    property CursorActive: TCursor read FActiveCursor write FActiveCursor default crHandPoint;
   end;
 
 function IndexInList(const Index: Integer; ListCount: Integer): Boolean;
@@ -670,9 +676,19 @@ begin
   Repaint;
 end;
 
+procedure TTableEx.SetRowHeight(Index, Value: Integer);
+begin
+  inherited RowHeights[Index] := Value;
+end;
+
 function TTableEx.GetRowCount: Longint;
 begin
   Result := FItemCount;
+end;
+
+function TTableEx.GetRowHeight(Index: Integer): Integer;
+begin
+  Result := inherited RowHeights[Index];
 end;
 
 procedure TTableEx.SetShowColumns(const Value: Boolean);
@@ -1007,6 +1023,7 @@ begin
   inherited DrawingStyle := gdsGradient;
   inherited OnMouseWheel := FOnComboMouseWheel;
   FColumnsStream := nil;
+  FActiveCursor := crHandPoint;
   FUpdatesCount := 0;
   FAddingColumns := False;
   FCanClickToUnfocused := False;
@@ -1333,6 +1350,9 @@ var
 begin
   if (csDestroying in ComponentState) then
     Exit;
+  if RowHeights[ARow] <= 0 then
+    Exit;
+
   with Canvas do
   try
     Lock;
@@ -1401,7 +1421,10 @@ begin
       begin
         Font.Assign(FFontHotLine);
         Font.Color := FFontSelLine.Color;
-        BColor := ColorDarker(FLineHotColor, 10);
+        if FLineHotColor <> FLineColor then
+          BColor := ColorDarker(FLineHotColor, 10)
+        else
+          BColor := FLineHotColor;
         Include(State, gdPressed);
       end
       else
@@ -1727,7 +1750,10 @@ begin
     if FEditOnDblClick then
     begin
       if (FCordHot.X = Col) and (FCordHot.Y = Row) then
+      begin
         FOnDblClick;
+        Exit;
+      end;
     end;
   ItemDowned := True;
   if Assigned(FOnMouseDown) then
@@ -1839,12 +1865,12 @@ begin
     if FShowColumns and (FCordHot.Y = 0) then
     begin
       if Assigned(FOnColumnClick) then
-        Cursor := crHandPoint
+        Cursor := FActiveCursor
       else
         Cursor := crDefault;
     end
     else
-      Cursor := crHandPoint;
+      Cursor := FActiveCursor;
   end
   else
     Cursor := crDefault;
@@ -1960,6 +1986,8 @@ begin
   EData.FixedList := False;
   EData.ReadOnly := False;
   EData.ListDrop := True;
+  EData.Color := clNone;
+  EData.FontColor := clNone;
   FOnEdit(Self, EData, FEditingCell.X, FEditingCell.Y, VAllow);
   if not VAllow then
     Exit;
@@ -1993,12 +2021,19 @@ begin
         FFieldEdit.ReadOnly := EData.ReadOnly;
         if FVisibleEdit then
         begin
-          FFieldEdit.Font.Color := clBlack;
-          FFieldEdit.Color := clWhite;
+          if EData.Color = clNone then
+            FFieldEdit.Font.Color := clBlack
+          else
+            FFieldEdit.Font.Color := EData.FontColor;
+
+          if EData.Color = clNone then
+            FFieldEdit.Color := clWhite
+          else
+            FFieldEdit.Color := EData.Color;
         end
         else
         begin
-          FFieldEdit.Font.Color := clWhite;
+          FFieldEdit.Font.Color := FontLine.Color;
           FFieldEdit.Color := LineSelColor;
         end;
         FFieldEdit.StyleElements := StyleElements;

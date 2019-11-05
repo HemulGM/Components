@@ -39,6 +39,8 @@ function PercentRound(Value: Extended): Extended;
 
 function PngToIco(PNGObj: TPngImage): TIcon;
 
+function IcoToPng(ICON: TIcon): TPngImage;
+
 function SecondsToStr(Value: Cardinal): string;
 
 function SimpleStrCompare(const Str1, Str2: string): Double;
@@ -114,6 +116,8 @@ function GetFileNameFromLink(LinkFileName: string): string;
 function GetFileDescription(const FileName, ExceptText: string): string;
 
 function GetGroup(LV: TListView; GroupName: string; Expand: Boolean): Word;
+
+procedure ApplyMask(X, Y: Integer; Mask, Target: TPngImage);
 
 implementation
 
@@ -656,6 +660,20 @@ begin
   PngImageList.Free;
 end;
 
+function IcoToPng(ICON: TIcon): TPngImage;
+var
+  PngImageList: TPngImageList;
+begin
+  PngImageList := TPngImageList.Create(nil);
+  PngImageList.Width := ICON.Width;
+  PngImageList.Height := ICON.Height;
+  PngImageList.PngImages.Add(False);
+  PngImageList.PngImages[0].Assign(ICON);
+  Result := PngImageList.PngImages[0].PngImage;
+  PngImageList.Clear;
+  PngImageList.Free;
+end;
+
 procedure DrawIconColorLine(IList: TImageList; ID: Integer; Color: TColor);
 var
   Icon: TIcon;
@@ -685,6 +703,25 @@ begin
   finally
     Icon.Free;
     PNGNew.Free;
+  end;
+end;
+
+procedure ApplyMask(X, Y: Integer; Mask, Target: TPngImage);
+var
+  dX, dY: Integer;
+  DAS, SAS: pByteArray;
+begin
+  for dY := 0 to Mask.Height - 1 do
+  begin
+    SAS := Mask.AlphaScanline[dY];
+    DAS := Target.AlphaScanline[dY + Y];
+    for dX := 0 to Mask.Width - 1 do
+    begin
+     { if SAS^[dX] >= 255 then
+        Continue;      }
+      DAS[dX + X] := SAS^[dX]; // + DAS^[dX + X];
+      //Target.Canvas.Pixels[dX + X, dY + Y] := MColor; //, Dest.Canvas.Pixels[dX + X, dY + Y], DAS^[dX + X]);
+    end;
   end;
 end;
 
