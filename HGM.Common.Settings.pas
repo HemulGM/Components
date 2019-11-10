@@ -143,7 +143,6 @@ end;
 
 function TSettingsReg.FGetSections(Section: string; List: TStringList): Boolean;
 begin
-  Result := False;
   with CreateReg(KEY_READ, RegRootToHKEY(FRoot)) do
   begin
     try
@@ -159,7 +158,6 @@ end;
 
 function TSettingsReg.FValueExists(Section, Param: string): Boolean;
 begin
-  Result := False;
   with CreateReg(KEY_READ, RegRootToHKEY(FRoot)) do
   begin
     try
@@ -175,7 +173,6 @@ end;
 
 function TSettingsReg.ReadBool(Section, Param: string; var Value: Boolean; Default: Boolean): Boolean;
 begin
-  Result := False;
   Value := Default;
   with CreateReg(KEY_READ, RegRootToHKEY(FRoot)) do
   begin
@@ -192,7 +189,6 @@ end;
 
 function TSettingsReg.ReadDate(Section, Param: string; var Value: TDateTime; Default: TDateTime): Boolean;
 begin
-  Result := False;
   Value := Default;
   with CreateReg(KEY_READ, RegRootToHKEY(FRoot)) do
   begin
@@ -209,7 +205,6 @@ end;
 
 function TSettingsReg.ReadFloat(Section, Param: string; var Value: Extended; Default: Extended): Boolean;
 begin
-  Result := False;
   Value := Default;
   with CreateReg(KEY_READ, RegRootToHKEY(FRoot)) do
   begin
@@ -226,7 +221,6 @@ end;
 
 function TSettingsReg.ReadInt(Section, Param: string; var Value: Integer; Default: Integer): Boolean;
 begin
-  Result := False;
   Value := Default;
   with CreateReg(KEY_READ, RegRootToHKEY(FRoot)) do
   begin
@@ -243,7 +237,6 @@ end;
 
 function TSettingsReg.ReadStr(Section, Param: string; var Value: string; Default: string): Boolean;
 begin
-  Result := False;
   Value := Default;
   with CreateReg(KEY_READ, RegRootToHKEY(FRoot)) do
   begin
@@ -260,7 +253,6 @@ end;
 
 function TSettingsReg.WriteBool(Section, Param: string; Value: Boolean): Boolean;
 begin
-  Result := False;
   with CreateReg(KEY_WRITE, RegRootToHKEY(FRoot)) do
   begin
     try
@@ -276,7 +268,6 @@ end;
 
 function TSettingsReg.WriteDate(Section, Param: string; Value: TDateTime): Boolean;
 begin
-  Result := False;
   with CreateReg(KEY_WRITE, RegRootToHKEY(FRoot)) do
   begin
     try
@@ -292,7 +283,6 @@ end;
 
 function TSettingsReg.WriteFloat(Section, Param: string; Value: Extended): Boolean;
 begin
-  Result := False;
   with CreateReg(KEY_WRITE, RegRootToHKEY(FRoot)) do
   begin
     try
@@ -308,7 +298,6 @@ end;
 
 function TSettingsReg.WriteInt(Section, Param: string; Value: Integer): Boolean;
 begin
-  Result := False;
   with CreateReg(KEY_WRITE, RegRootToHKEY(FRoot)) do
   begin
     try
@@ -324,7 +313,6 @@ end;
 
 function TSettingsReg.WriteStr(Section, Param, Value: string): Boolean;
 begin
-  Result := False;
   with CreateReg(KEY_WRITE, RegRootToHKEY(FRoot)) do
   begin
     try
@@ -355,7 +343,6 @@ end;
 
 function TSettingsIni.FGetSections(Section: string; List: TStringList): Boolean;
 begin
-  Result := False;
   with CreateIni do
   begin
     try
@@ -371,7 +358,6 @@ end;
 
 function TSettingsIni.FValueExists(Section, Param: string): Boolean;
 begin
-  Result := False;
   with CreateIni do
   begin
     try
@@ -387,7 +373,6 @@ end;
 
 function TSettingsIni.ReadBool(Section, Param: string; var Value: Boolean; Default: Boolean): Boolean;
 begin
-  Result := False;
   Value := Default;
   with CreateIni do
   begin
@@ -404,7 +389,6 @@ end;
 
 function TSettingsIni.ReadDate(Section, Param: string; var Value: TDateTime; Default: TDateTime): Boolean;
 begin
-  Result := False;
   Value := Default;
   with CreateIni do
   begin
@@ -421,7 +405,6 @@ end;
 
 function TSettingsIni.ReadFloat(Section, Param: string; var Value: Extended; Default: Extended): Boolean;
 begin
-  Result := False;
   Value := Default;
   with CreateIni do
   begin
@@ -438,7 +421,6 @@ end;
 
 function TSettingsIni.ReadInt(Section, Param: string; var Value: Integer; Default: Integer): Boolean;
 begin
-  Result := False;
   Value := Default;
   with CreateIni do
   begin
@@ -455,7 +437,6 @@ end;
 
 function TSettingsIni.ReadStr(Section, Param: string; var Value: string; Default: string): Boolean;
 begin
-  Result := False;
   Value := Default;
   with CreateIni do
   begin
@@ -472,7 +453,6 @@ end;
 
 function TSettingsIni.WriteBool(Section, Param: string; Value: Boolean): Boolean;
 begin
-  Result := False;
   with CreateIni do
   begin
     try
@@ -487,7 +467,6 @@ end;
 
 function TSettingsIni.WriteDate(Section, Param: string; Value: TDateTime): Boolean;
 begin
-  Result := False;
   with CreateIni do
   begin
     try
@@ -502,7 +481,6 @@ end;
 
 function TSettingsIni.WriteFloat(Section, Param: string; Value: Extended): Boolean;
 begin
-  Result := False;
   with CreateIni do
   begin
     try
@@ -517,7 +495,6 @@ end;
 
 function TSettingsIni.WriteInt(Section, Param: string; Value: Integer): Boolean;
 begin
-  Result := False;
   with CreateIni do
   begin
     try
@@ -532,7 +509,6 @@ end;
 
 function TSettingsIni.WriteStr(Section, Param, Value: string): Boolean;
 begin
-  Result := False;
   with CreateIni do
   begin
     try

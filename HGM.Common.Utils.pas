@@ -119,13 +119,25 @@ function GetGroup(LV: TListView; GroupName: string; Expand: Boolean): Word;
 
 procedure ApplyMask(X, Y: Integer; Mask, Target: TPngImage);
 
+function ColorRedOrBlue(Precent: Byte): TColor;
+
 implementation
 
 uses
-  ShlObj, ActiveX, PNGFunctions, PNGImageList, ClipBrd, System.Net.HttpClient,
-  Winapi.RichEdit, System.Win.ComObj;
+  Winapi.ShlObj, Winapi.ActiveX, PNGFunctions, PNGImageList, ClipBrd,
+  System.Net.HttpClient, Winapi.RichEdit, System.Win.ComObj;
 
-//Получить ИД группы по названию (если нет - добавить)
+function ColorRedOrBlue(Precent: Byte): TColor;
+var
+  R, B: Integer;
+begin
+  //255 000 000
+  //000 000 255
+  R := Round(255 * Precent / 100);
+  B := Round(255 * (100 - Precent) / 100);
+  Result := RGB(R, 100, B);
+end;
+
 function GetGroup(LV: TListView; GroupName: string; Expand: Boolean): Word;
 var
   i: Word;
@@ -717,10 +729,7 @@ begin
     DAS := Target.AlphaScanline[dY + Y];
     for dX := 0 to Mask.Width - 1 do
     begin
-     { if SAS^[dX] >= 255 then
-        Continue;      }
-      DAS[dX + X] := SAS^[dX]; // + DAS^[dX + X];
-      //Target.Canvas.Pixels[dX + X, dY + Y] := MColor; //, Dest.Canvas.Pixels[dX + X, dY + Y], DAS^[dX + X]);
+      DAS[dX + X] := Min(DAS[dX + X], SAS[dX]);
     end;
   end;
 end;

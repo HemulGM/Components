@@ -134,6 +134,7 @@ type
     destructor Destroy; override;
     procedure TimedText(Text: string; Delay: Cardinal);
     procedure ShowPopup;
+    procedure Click; virtual;
   published
     property Align;
     property Anchors;
@@ -334,6 +335,11 @@ procedure TButtonFlat.SetShowFocusRect(const Value: Boolean);
 begin
   FShowFocusRect := Value;
   Repaint;
+end;
+
+procedure TButtonFlat.Click;
+begin
+  inherited;
 end;
 
 procedure TButtonFlat.CMMouseEnter(var Message: TMessage);

@@ -6,7 +6,7 @@ uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Classes, Vcl.Graphics,
   Vcl.Controls, Vcl.Forms, Vcl.StdCtrls, System.Generics.Collections,
   Vcl.ComCtrls, Winapi.CommCtrl, Vcl.ExtCtrls, System.UITypes, Vcl.Grids,
-  Vcl.Mask, Direct2D, D2D1, HGM.Common, HGM.Common.Utils;
+  Vcl.Mask, Direct2D, Winapi.D2D1, HGM.Common, HGM.Common.Utils;
 
 type
   TOnTablePaint = procedure(Sender: TObject; Canvas: TCanvas) of object;
@@ -338,6 +338,7 @@ type
     property TabOrder;
     property Touch;
     property Visible;
+    property VisibleRowCount;
     property StyleElements;
     property OnClick;
     property OnContextPopup;
