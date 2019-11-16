@@ -44,6 +44,7 @@ type
     procedure AddTable(pTable: TTableEx);
     function IndexIn(Index: Integer): Boolean;
     procedure UnAssignTables;
+    procedure UnAssignTable(pTable: TTableEx);
     procedure UpdateTable; virtual;
     procedure CheckAll; virtual;
     procedure UnCheckAll; virtual;
@@ -549,6 +550,18 @@ begin
   Result := FTables[Index];
 end;
 
+procedure TTableData<T>.UnAssignTable(pTable: TTableEx);
+var
+  i: Integer;
+begin
+  for i := 0 to FTables.Count - 1 do
+    if Assigned(FTables[i]) and (FTables[i] = pTable) then
+    begin
+      FTables.Delete(i);
+      Exit;
+    end;
+end;
+
 procedure TTableData<T>.UnAssignTables;
 begin
   FTables.Clear;
@@ -885,11 +898,11 @@ begin
     if FItemIndex >= 0 then
       Row := Max(0, Min(ItemCount, FItemIndex + Ord(FShowColumns)))
     else
-    begin
+    begin {
       Col := 0;
       Row := 0;
       if not (csLoading in ComponentState) then
-        SendMessage(Handle, WM_VSCROLL, SB_THUMBPOSITION, 0);
+        SendMessage(Handle, WM_VSCROLL, SB_THUMBPOSITION, 0); }
     end;
   end;
   UpdateMouse(FCordHot, True);

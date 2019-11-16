@@ -290,7 +290,6 @@ type
     FAnimate: Boolean;
     FOwner: TControl;
     FPanel: TPanel;
-    FOpen: Boolean;
     FOpening: Boolean;
   published
     constructor Create(AOwner: TControl; APanel: TPanel; AOpen: Boolean = False);

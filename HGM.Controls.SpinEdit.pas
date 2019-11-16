@@ -11,23 +11,23 @@ unit HGM.Controls.SpinEdit;
 
 interface
 
-uses Winapi.Windows, System.Classes, Vcl.StdCtrls, Vcl.ExtCtrls, Vcl.Controls,
-     Winapi.Messages, System.SysUtils, HGM.Common,
-     Vcl.Forms, Vcl.Graphics, Vcl.Menus, Vcl.Buttons;
+uses
+  Winapi.Windows, System.Classes, Vcl.StdCtrls, Vcl.ExtCtrls, Vcl.Controls,
+  Winapi.Messages, System.SysUtils, HGM.Common, Vcl.Forms, Vcl.Graphics,
+  Vcl.Menus, Vcl.Buttons;
 
 const
   InitRepeatPause = 400;  { pause before repeat timer (ms) }
-  RepeatPause     = 100;  { pause before hint window displays (ms)}
+  RepeatPause = 100;  { pause before hint window displays (ms)}
 
 type
-
   TNumGlyphs = Vcl.Buttons.TNumGlyphs;
 
   TTimerSpeedButton = class;
 
 { TSpinButton }
 
-  TSpinButton = class (TWinControl)
+  TSpinButton = class(TWinControl)
   private
     FUpButton: TTimerSpeedButton;
     FDownButton: TTimerSpeedButton;
@@ -45,11 +45,10 @@ type
     procedure SetUpNumGlyphs(Value: TNumGlyphs);
     procedure SetDownNumGlyphs(Value: TNumGlyphs);
     procedure BtnClick(Sender: TObject);
-    procedure BtnMouseDown (Sender: TObject; Button: TMouseButton;
-      Shift: TShiftState; X, Y: Integer);
-    procedure SetFocusBtn (Btn: TTimerSpeedButton);
-    procedure AdjustSize (var W, H: Integer); reintroduce;
-    procedure WMSize(var Message: TWMSize);  message WM_SIZE;
+    procedure BtnMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+    procedure SetFocusBtn(Btn: TTimerSpeedButton);
+    procedure AdjustSize(var W, H: Integer); reintroduce;
+    procedure WMSize(var Message: TWMSize); message WM_SIZE;
     procedure WMSetFocus(var Message: TWMSetFocus); message WM_SETFOCUS;
     procedure WMKillFocus(var Message: TWMKillFocus); message WM_KILLFOCUS;
     procedure WMGetDlgCode(var Message: TWMGetDlgCode); message WM_GETDLGCODE;
@@ -57,8 +56,7 @@ type
   protected
     procedure Loaded; override;
     procedure KeyDown(var Key: Word; Shift: TShiftState); override;
-    procedure Notification(AComponent: TComponent;
-      Operation: TOperation); override;
+    procedure Notification(AComponent: TComponent; Operation: TOperation); override;
     procedure CreateWnd; override;
   public
     constructor Create(AOwner: TComponent); override;
@@ -109,22 +107,22 @@ type
     FOnChange: TNotifyEvent;
     //function GetMinHeight: Integer;
     function GetValue: LongInt;
-    function CheckValue (NewValue: LongInt): LongInt;
-    procedure SetValue (NewValue: LongInt);
+    function CheckValue(NewValue: LongInt): LongInt;
+    procedure SetValue(NewValue: LongInt);
     procedure SetEditRect;
     procedure WMSize(var Message: TWMSize); message WM_SIZE;
     procedure CMEnter(var Message: TCMGotFocus); message CM_ENTER;
-    procedure CMExit(var Message: TCMExit);   message CM_EXIT;
-    procedure WMPaste(var Message: TWMPaste);   message WM_PASTE;
-    procedure WMMouseWheel(var Message:TWMMouseWheel); message WM_MOUSEWHEEL;
-    procedure WMCut(var Message: TWMCut);   message WM_CUT;
+    procedure CMExit(var Message: TCMExit); message CM_EXIT;
+    procedure WMPaste(var Message: TWMPaste); message WM_PASTE;
+    procedure WMMouseWheel(var Message: TWMMouseWheel); message WM_MOUSEWHEEL;
+    procedure WMCut(var Message: TWMCut); message WM_CUT;
     procedure WMGetDlgCode(var Message: TWMGetDlgCode); message WM_GETDLGCODE;
-    procedure WMChange(var message:TWMKeyUp); message WM_KEYUP;
+    procedure WMChange(var message: TWMKeyUp); message WM_KEYUP;
     procedure DoChange;
   protected
     function IsValidChar(Key: Char): Boolean; virtual;
-    procedure UpClick (Sender: TObject); virtual;
-    procedure DownClick (Sender: TObject); virtual;
+    procedure UpClick(Sender: TObject); virtual;
+    procedure DownClick(Sender: TObject); virtual;
     procedure KeyDown(var Key: Word; Shift: TShiftState); override;
     procedure KeyPress(var Key: Char); override;
     procedure CreateParams(var Params: TCreateParams); override;
@@ -168,7 +166,7 @@ type
     property TabStop;
     property Value: LongInt read GetValue write SetValue;
     property Visible;
-    property OnChange:TNotifyEvent read FOnChange write FOnChange;
+    property OnChange: TNotifyEvent read FOnChange write FOnChange;
     property OnClick;
     property OnDblClick;
     property OnDragDrop;
@@ -210,11 +208,12 @@ implementation
 
 {$R hSpin.res}
 
-uses Vcl.Themes, Vcl.GraphUtil;
+uses
+  Vcl.Themes, Vcl.GraphUtil;
 
 procedure Register;
 begin
- RegisterComponents(PackageName, [TlkSpinEdit]);
+  RegisterComponents(PackageName, [TlkSpinEdit]);
 end;
 
 { TSpinButton }
@@ -222,15 +221,14 @@ end;
 constructor TSpinButton.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
-  ControlStyle := ControlStyle - [csAcceptsControls, csSetCaption] +
-    [csFramed, csOpaque];
+  ControlStyle := ControlStyle - [csAcceptsControls, csSetCaption] + [csFramed, csOpaque];
   { Frames don't look good around the buttons when themes are on }
   if StyleServices.Enabled then
     ControlStyle := ControlStyle - [csFramed];
   FUpButton := CreateButton(False);
   FDownButton := CreateButton(True);
-  FUpButton.Flat:=True;
-  FDownButton.Flat:=True;
+  FUpButton.Flat := True;
+  FDownButton.Flat := True;
   UpGlyph := nil;
   DownGlyph := nil;
   Width := 20;
@@ -256,8 +254,7 @@ begin
   DoubleBuffered := StyleServices.Enabled;
 end;
 
-procedure TSpinButton.Notification(AComponent: TComponent;
-  Operation: TOperation);
+procedure TSpinButton.Notification(AComponent: TComponent; Operation: TOperation);
 begin
   inherited Notification(AComponent, Operation);
   if (Operation = opRemove) and (AComponent = FFocusControl) then
@@ -266,10 +263,12 @@ end;
 
 procedure TSpinButton.AdjustSize(var W, H: Integer);
 begin
-  if (FUpButton = nil) or (csLoading in ComponentState) then Exit;
-  if W < 15 then W := 15;
-  FUpButton.SetBounds(0, 0, W, H div 2+2);
-  FDownButton.SetBounds(0, FUpButton.Height-2, W, H - (H div 2)+1);
+  if (FUpButton = nil) or (csLoading in ComponentState) then
+    Exit;
+  if W < 15 then
+    W := 15;
+  FUpButton.SetBounds(0, 0, W, H div 2 + 2);
+  FDownButton.SetBounds(0, FUpButton.Height - 2, W, H - (H div 2) + 1);
 end;
 
 procedure TSpinButton.SetBounds(ALeft, ATop, AWidth, AHeight: Integer);
@@ -334,12 +333,12 @@ begin
   case Key of
     VK_UP:
       begin
-        SetFocusBtn (FUpButton);
+        SetFocusBtn(FUpButton);
         FUpButton.Click;
       end;
     VK_DOWN:
       begin
-        SetFocusBtn (FDownButton);
+        SetFocusBtn(FDownButton);
         FDownButton.Click;
       end;
     VK_SPACE:
@@ -347,14 +346,12 @@ begin
   end;
 end;
 
-procedure TSpinButton.BtnMouseDown (Sender: TObject; Button: TMouseButton;
-  Shift: TShiftState; X, Y: Integer);
+procedure TSpinButton.BtnMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 begin
   if Button = mbLeft then
   begin
-    SetFocusBtn (TTimerSpeedButton (Sender));
-    if (FFocusControl <> nil) and FFocusControl.TabStop and
-        FFocusControl.CanFocus and (GetFocus <> FFocusControl.Handle) then
+    SetFocusBtn(TTimerSpeedButton(Sender));
+    if (FFocusControl <> nil) and FFocusControl.TabStop and FFocusControl.CanFocus and (GetFocus <> FFocusControl.Handle) then
       FFocusControl.SetFocus
     else if TabStop and (GetFocus <> Handle) and CanFocus then
       SetFocus;
@@ -365,22 +362,23 @@ procedure TSpinButton.BtnClick(Sender: TObject);
 begin
   if Sender = FUpButton then
   begin
-    if Assigned(FOnUpClick) then FOnUpClick(Self);
+    if Assigned(FOnUpClick) then
+      FOnUpClick(Self);
   end
-  else
-    if Assigned(FOnDownClick) then FOnDownClick(Self);
+  else if Assigned(FOnDownClick) then
+    FOnDownClick(Self);
 end;
 
-procedure TSpinButton.SetFocusBtn (Btn: TTimerSpeedButton);
+procedure TSpinButton.SetFocusBtn(Btn: TTimerSpeedButton);
 begin
-  if TabStop and CanFocus and  (Btn <> FFocusedButton) then
+  if TabStop and CanFocus and (Btn <> FFocusedButton) then
   begin
     FFocusedButton.TimeBtnState := FFocusedButton.TimeBtnState - [tbFocusRect];
     FFocusedButton := Btn;
     if (GetFocus = Handle) then
     begin
-       FFocusedButton.TimeBtnState := FFocusedButton.TimeBtnState + [tbFocusRect];
-       Invalidate;
+      FFocusedButton.TimeBtnState := FFocusedButton.TimeBtnState + [tbFocusRect];
+      Invalidate;
     end;
   end;
 end;
@@ -397,9 +395,9 @@ begin
   inherited Loaded;
   W := Width;
   H := Height;
-  AdjustSize (W, H);
+  AdjustSize(W, H);
   if (W <> Width) or (H <> Height) then
-    inherited SetBounds (Left, Top, W, H);
+    inherited SetBounds(Left, Top, W, H);
 end;
 
 function TSpinButton.GetUpGlyph: TBitmap;
@@ -488,8 +486,10 @@ end;
 
 procedure TlkSpinEdit.KeyDown(var Key: Word; Shift: TShiftState);
 begin
-  if Key = VK_UP then UpClick (Self)
-  else if Key = VK_DOWN then DownClick (Self);
+  if Key = VK_UP then
+    UpClick(Self)
+  else if Key = VK_DOWN then
+    DownClick(Self);
   inherited KeyDown(Key, Shift);
 end;
 
@@ -500,14 +500,15 @@ begin
     Key := #0;
     MessageBeep(0)
   end;
-  if Key <> #0 then inherited KeyPress(Key);
+  if Key <> #0 then
+    inherited KeyPress(Key);
 end;
 
 function TlkSpinEdit.IsValidChar(Key: Char): Boolean;
 begin
- Result:=(CharInSet(Key, [FormatSettings.DecimalSeparator, '+', '-', '0'..'9'])) or ((Key<#32) and (Key<>Chr(VK_RETURN)));
- if not FEditorEnabled and Result and ((Key>=#32) or (Key=Char(VK_BACK)) or (Key=Char(VK_DELETE))) then
-  Result:=False;
+  Result := (CharInSet(Key, [FormatSettings.DecimalSeparator, '+', '-', '0'..'9'])) or ((Key < #32) and (Key <> Chr(VK_RETURN)));
+  if not FEditorEnabled and Result and ((Key >= #32) or (Key = Char(VK_BACK)) or (Key = Char(VK_DELETE))) then
+    Result := False;
 end;
 
 procedure TlkSpinEdit.CreateParams(var Params: TCreateParams);
@@ -542,7 +543,7 @@ var
   MinHeight: Integer;
 begin
   inherited;
-  MinHeight := 0;//GetMinHeight;
+  MinHeight := 0; //GetMinHeight;
     { text edit bug: if size to less than minheight, then edit ctrl does
       not display the text }
   if Height < MinHeight then
@@ -551,7 +552,8 @@ begin
   begin
     if NewStyleControls and Ctl3D then
       FButton.SetBounds(Width - FButton.Width - 5, 0, FButton.Width, Height - 5)
-    else FButton.SetBounds (Width - FButton.Width - 1, 1, FButton.Width, Height - 3);
+    else
+      FButton.SetBounds(Width - FButton.Width - 1, 1, FButton.Width, Height - 3);
     SetEditRect;
   end;
 end;
@@ -574,46 +576,51 @@ begin
   Result := Metrics.tmHeight + I div 4 + GetSystemMetrics(SM_CYBORDER) * 4 + 2;
 end;  }
 
-procedure TlkSpinEdit.UpClick (Sender: TObject);
+procedure TlkSpinEdit.UpClick(Sender: TObject);
 begin
-  if ReadOnly then MessageBeep(0)
+  if ReadOnly then
+    MessageBeep(0)
   else
-   begin
+  begin
     Value := Value + FIncrement;
     DoChange;
-   end;
+  end;
 end;
 
 procedure TlkSpinEdit.DoChange;
 begin
- if Assigned(FOnChange) then FOnChange(Self);
+  if Assigned(FOnChange) then
+    FOnChange(Self);
 end;
 
-procedure TlkSpinEdit.DownClick (Sender: TObject);
+procedure TlkSpinEdit.DownClick(Sender: TObject);
 begin
-  if ReadOnly then MessageBeep(0)
+  if ReadOnly then
+    MessageBeep(0)
   else
-   begin
+  begin
     Value := Value - FIncrement;
     DoChange;
-   end;
+  end;
 end;
 
 procedure TlkSpinEdit.WMPaste(var Message: TWMPaste);
 begin
-  if not FEditorEnabled or ReadOnly then Exit;
+  if not FEditorEnabled or ReadOnly then
+    Exit;
   inherited;
 end;
 
 procedure TlkSpinEdit.WMChange(var message: TWMKeyUp);
 begin
- inherited;
- DoChange;
+  inherited;
+  DoChange;
 end;
 
 procedure TlkSpinEdit.WMCut(var Message: TWMPaste);
 begin
-  if not FEditorEnabled or ReadOnly then Exit;
+  if not FEditorEnabled or ReadOnly then
+    Exit;
   inherited;
 end;
 
@@ -625,17 +632,20 @@ end;
 
 procedure TlkSpinEdit.WMMouseWheel(var Message: TWMMouseWheel);
 begin
- if Message.WheelDelta > 0 then UpClick(Self) else DownClick(Self);
+  if Message.WheelDelta > 0 then
+    UpClick(Self)
+  else
+    DownClick(Self);
 end;
 
 procedure TlkSpinEdit.CMExit(var Message: TCMExit);
 begin
   inherited;
-  if CheckValue (Value) <> Value then
-   begin
+  if CheckValue(Value) <> Value then
+  begin
     SetValue(Value);
     DoChange;
-   end;
+  end;
 end;
 
 function TlkSpinEdit.GetValue: LongInt;
@@ -643,12 +653,12 @@ begin
   Result := StrToIntDef(Text, FMinValue);
 end;
 
-procedure TlkSpinEdit.SetValue (NewValue: LongInt);
+procedure TlkSpinEdit.SetValue(NewValue: LongInt);
 begin
-  Text := IntToStr (CheckValue (NewValue));
+  Text := IntToStr(CheckValue(NewValue));
 end;
 
-function TlkSpinEdit.CheckValue (NewValue: LongInt): LongInt;
+function TlkSpinEdit.CheckValue(NewValue: LongInt): LongInt;
 begin
   Result := NewValue;
   if (FMaxValue <> FMinValue) then
@@ -676,10 +686,9 @@ begin
   inherited Destroy;
 end;
 
-procedure TTimerSpeedButton.MouseDown(Button: TMouseButton; Shift: TShiftState;
-  X, Y: Integer);
+procedure TTimerSpeedButton.MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 begin
-  inherited MouseDown (Button, Shift, X, Y);
+  inherited MouseDown(Button, Shift, X, Y);
   if tbAllowTimer in FTimeBtnState then
   begin
     if FRepeatTimer = nil then
@@ -687,16 +696,15 @@ begin
 
     FRepeatTimer.OnTimer := TimerExpired;
     FRepeatTimer.Interval := InitRepeatPause;
-    FRepeatTimer.Enabled  := True;
+    FRepeatTimer.Enabled := True;
   end;
 end;
 
-procedure TTimerSpeedButton.MouseUp(Button: TMouseButton; Shift: TShiftState;
-                                  X, Y: Integer);
+procedure TTimerSpeedButton.MouseUp(Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 begin
-  inherited MouseUp (Button, Shift, X, Y);
+  inherited MouseUp(Button, Shift, X, Y);
   if FRepeatTimer <> nil then
-    FRepeatTimer.Enabled  := False;
+    FRepeatTimer.Enabled := False;
 end;
 
 procedure TTimerSpeedButton.TimerExpired(Sender: TObject);
@@ -721,19 +729,16 @@ var
   P: TPoint;
   SaveIndex: Integer;
 begin
-  if TStyleManager.IsCustomStyleActive and (Parent <> nil) and (Parent is TSpinButton) and
-    (seClient in Parent.StyleElements) then
+  if TStyleManager.IsCustomStyleActive and (Parent <> nil) and (Parent is TSpinButton) and (seClient in Parent.StyleElements) then
   begin
     if not Enabled then
       Details := StyleServices.GetElementDetails(ttbButtonDisabled)
+    else if FState in [bsDown, bsExclusive] then
+      Details := StyleServices.GetElementDetails(ttbButtonPressed)
+    else if MouseInControl then
+      Details := StyleServices.GetElementDetails(ttbButtonHot)
     else
-      if FState in [bsDown, bsExclusive] then
-        Details := StyleServices.GetElementDetails(ttbButtonPressed)
-      else
-        if MouseInControl then
-          Details := StyleServices.GetElementDetails(ttbButtonHot)
-        else
-          Details := StyleServices.GetElementDetails(ttbButtonNormal);
+      Details := StyleServices.GetElementDetails(ttbButtonNormal);
     R := Bounds(0, 0, Width, Height);
     SaveIndex := SaveDC(Canvas.Handle);
     try
@@ -768,3 +773,4 @@ begin
 end;
 
 end.
+

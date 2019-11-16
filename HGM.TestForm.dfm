@@ -4,7 +4,7 @@ object FormList: TFormList
   BorderStyle = bsNone
   Caption = 'FormList'
   ClientHeight = 630
-  ClientWidth = 980
+  ClientWidth = 543
   Color = clBtnFace
   DoubleBuffered = True
   Font.Charset = DEFAULT_CHARSET

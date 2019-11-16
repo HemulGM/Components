@@ -67,7 +67,8 @@ contains
   HGM.Popup in 'HGM.Popup.pas' {FormPopup},
   HGM.Controls.ColorGrid in 'HGM.Controls.ColorGrid.pas',
   HGM.License in 'HGM.License.pas',
-  HGM.Controls.Labels.Base in 'HGM.Controls.Labels.Base.pas';
+  HGM.Controls.Labels.Base in 'HGM.Controls.Labels.Base.pas',
+  HGM.Controls.Chat in 'HGM.Controls.Chat.pas';
 
 end.
 

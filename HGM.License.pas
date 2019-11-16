@@ -1,50 +1,52 @@
 unit HGM.License;
 
 interface
- uses
-  Vcl.Controls, System.Classes, Winapi.Messages, Winapi.Windows,
-  System.SysUtils, Vcl.Graphics, Vcl.ExtCtrls, Vcl.Themes, Vcl.Forms,
-  Vcl.ImgList, Vcl.ActnList, System.SyncObjs, System.Types, System.UITypes,
 
-  HGM.Controls.PanelExt, HGM.Common, HGM.WinAPI;
+uses
+  Vcl.Controls, System.Classes, Winapi.Messages, Winapi.Windows, System.SysUtils,
+  Vcl.Graphics, Vcl.ExtCtrls, Vcl.Themes, Vcl.Forms, Vcl.ImgList, Vcl.ActnList,
+  System.SyncObjs, System.Types, System.UITypes, HGM.Controls.PanelExt,
+  HGM.Common, HGM.WinAPI;
 
- type
+type
   ThTrueInstance = class(TThread)
-   procedure Execute; override;
-   procedure Check;
+    procedure Execute; override;
+    procedure Check;
   end;
 
   ThTrue = class(TComponent)
-    class var Instance:ThTrueInstance;
-   private
+    class var
+      Instance: ThTrueInstance;
+  private
     FIsCreated: Boolean;
     FAppGUID: string;
     procedure SetAppGUID(const Value: string);
-   public
+  public
     constructor Create(AOwner: TComponent); override;
-    class function GetInstance:ThTrueInstance;
-    property IsCreated:Boolean read FIsCreated;
-   published
-    property AppGUID:string read FAppGUID write SetAppGUID;
+    class function GetInstance: ThTrueInstance;
+    property IsCreated: Boolean read FIsCreated;
+  published
+    property AppGUID: string read FAppGUID write SetAppGUID;
   end;
-
 
 procedure Register;
 
 implementation
- uses Math;
+
+uses
+  Math;
 
 procedure Register;
 begin
- RegisterComponents(PackageName, [ThTrue]);
+  RegisterComponents(PackageName, [ThTrue]);
 end;
 
 { ThTrue }
 
 constructor ThTrue.Create(AOwner: TComponent);
 begin
- inherited;
- FIsCreated:=True;
+  inherited;
+  FIsCreated := True;
 end;
 
 class function ThTrue.GetInstance: ThTrueInstance;
@@ -53,33 +55,35 @@ begin
 
 end;
 
-procedure ThTrue.SetAppGUID(const Value:string);
+procedure ThTrue.SetAppGUID(const Value: string);
 begin
- FAppGUID:=Value;
+  FAppGUID := Value;
 end;
 
 { ThTrueInstance }
 
 procedure ThTrueInstance.Check;
 begin
- Synchronize(
-  procedure
-  begin
-   Halt;
-  end);
+  Synchronize(
+    procedure
+    begin
+      Halt;
+    end);
 end;
 
 procedure ThTrueInstance.Execute;
-var TS:Cardinal;
+var
+  TS: Cardinal;
 begin
- TS:=GetTickCount + 1000 * 5;//(1000 * 60) * 1;
- while TS > GetTickCount do
+  TS := GetTickCount + 1000 * 5; //(1000 * 60) * 1;
+  while TS > GetTickCount do
   begin
-   Sleep(1000);
+    Sleep(1000);
   end;
- Terminate;
- while not Terminated do Sleep(1000);
- Check;
+  Terminate;
+  while not Terminated do
+    Sleep(1000);
+  Check;
 end;
       {
 initialization
@@ -87,3 +91,4 @@ initialization
  ThTrue.Instance.FreeOnTerminate:=True; }
 
 end.
+
