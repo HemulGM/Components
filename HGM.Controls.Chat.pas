@@ -23,9 +23,11 @@ type
     FSelected: Boolean;
     FImageIndex: Integer;
     FCanSelected: Boolean;
+    FDate: TDateTime;
     procedure SetOwner(const Value: TChatItems);
     procedure SetSelected(const Value: Boolean);
     procedure SetImageIndex(const Value: Integer);
+    procedure SetDate(const Value: TDateTime);
   public
     Text: string;
     Color: TColor;
@@ -36,11 +38,14 @@ type
     property Owner: TChatItems read FOwner write SetOwner;
     property Selected: Boolean read FSelected write SetSelected;
     property ImageIndex: Integer read FImageIndex write SetImageIndex;
+    property Date: TDateTime read FDate write SetDate;
   end;
 
   TChatMessage = class(TChatItem)
   private
     FCalcedFromHeight: Integer;
+    FShowFrom: Boolean;
+    procedure SetShowFrom(const Value: Boolean);
   public
     From: string;
     FromType: TChatMessageType;
@@ -49,6 +54,7 @@ type
     function DrawRect(Canvas: TCanvas; Rect: TRect): TRect; override;
     constructor Create(AOwner: TChatItems); override;
     destructor Destroy; override;
+    property ShowFrom: Boolean read FShowFrom write SetShowFrom;
   end;
 
   TChatInfo = class(TChatItem)
@@ -64,13 +70,13 @@ type
   public
     function AddMessage: TChatMessage; overload;
     function AddInfo: TChatInfo; overload;
+    function SelectCount: Integer;
     procedure Delete(Index: Integer);
     procedure Clear;
     procedure DoChanged(Item: TChatItem);
-    function SelectCount: Integer;
     procedure NeedResize;
-    destructor Destroy; override;
     constructor Create(AOwner: ThCustomChat);
+    destructor Destroy; override;
     property Owner: ThCustomChat read FOwner write SetOwner;
   end;
 
@@ -302,7 +308,7 @@ end;
 
 procedure ThCustomChat.FOnClick(Sender: TObject);
 begin
-  if (not FDragItem) and (not FScrolling) then
+  if (not FDragItem) and (not FScrolling) and (FSelectionMode) then
     if FItemUnderMouse >= 0 then
     begin
     //ShowMessage(FItems[FItemUnderMouse].Text);
@@ -716,6 +722,8 @@ end;
 
 procedure ThCustomChat.SetItems(const Value: TChatItems);
 begin
+  if Assigned(FItems) then
+    FItems.Free;
   FItems := Value;
 end;
 
@@ -875,6 +883,11 @@ begin
   inherited;
 end;
 
+procedure TChatItem.SetDate(const Value: TDateTime);
+begin
+  FDate := Value;
+end;
+
 procedure TChatItem.SetImageIndex(const Value: Integer);
 begin
   FImageIndex := Value;
@@ -897,33 +910,33 @@ end;
 
 function TChatMessage.CalcRect(Canvas: TCanvas; Rect: TRect): TRect;
 var
-  R: TRect;
+  R, Txt: TRect;
   S: string;
 begin
   if FNeedCalc then
   begin
+    Result := Rect;
     R := Rect;
     S := Text;
     Canvas.Font.Size := 8;
     Canvas.Font.Style := [];
     Canvas.TextRect(R, S, [tfLeft, tfCalcRect, tfWordBreak, tfEndEllipsis]);
-    Rect.Width := R.Width;
-    Rect.Height := R.Height;
+    Result.Width := R.Width;
+    Result.Height := R.Height;
 
-    if FromType = mtOpponent then
+    if (FromType = mtOpponent) and FShowFrom then
     begin
       R := Rect;
       S := From;
       Canvas.Font.Size := 11;
       Canvas.Font.Style := [];
       Canvas.TextRect(R, S, [tfLeft, tfCalcRect, tfSingleLine, tfEndEllipsis]);
-      Rect.Width := Max(Rect.Width, R.Width);
-      Rect.Height := Rect.Height + R.Height;
+      Result.Width := Max(Result.Width, R.Width);
+      Result.Height := Result.Height + R.Height;
       FCalcedFromHeight := R.Height;
     end;
 
-    FCalcedRect := Rect;
-    Result := Rect;
+    FCalcedRect := Result;
     FNeedCalc := False;
   end
   else
@@ -935,7 +948,7 @@ var
   R: TRect;
   S: string;
 begin
-  if FromType = mtOpponent then
+  if (FromType = mtOpponent) and FShowFrom then
   begin
     S := From;
     R := Rect;
@@ -946,7 +959,7 @@ begin
   end;
 
   R := Rect;
-  if FromType = mtOpponent then
+  if (FromType = mtOpponent) and FShowFrom then
     R.Offset(0, FCalcedFromHeight);
   S := Text;
   Canvas.Font.Size := 8;
@@ -959,9 +972,15 @@ begin
   Result := Rect;
 end;
 
+procedure TChatMessage.SetShowFrom(const Value: Boolean);
+begin
+  FShowFrom := Value;
+end;
+
 constructor TChatMessage.Create(AOwner: TChatItems);
 begin
   inherited;
+  FShowFrom := True;
   FromColor := $00D4D4D4;
 end;
 
