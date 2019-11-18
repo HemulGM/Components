@@ -3,7 +3,7 @@ object Form8: TForm8
   Top = 0
   Caption = 'Form8'
   ClientHeight = 580
-  ClientWidth = 275
+  ClientWidth = 391
   Color = clSilver
   DoubleBuffered = True
   Font.Charset = DEFAULT_CHARSET
@@ -15,31 +15,17 @@ object Form8: TForm8
   OnCreate = FormCreate
   PixelsPerInch = 96
   TextHeight = 13
-  object hChat1: ThChat
-    Left = 0
-    Top = 50
-    Width = 275
-    Height = 530
-    Margins.Top = 0
-    Align = alClient
-    Color = 2102799
-    OnSelectionStart = hChat1SelectionStart
-    OnSelectionChange = hChat1SelectionChange
-    OnSelectionEnd = hChat1SelectionEnd
-    ExplicitWidth = 802
-  end
   object PanelSelection: TPanel
     Left = 0
     Top = 0
-    Width = 275
+    Width = 391
     Height = 50
     Align = alTop
     BevelOuter = bvNone
     Color = 2826519
     ParentBackground = False
-    TabOrder = 1
+    TabOrder = 0
     Visible = False
-    ExplicitWidth = 802
     object ButtonFlatReply: TButtonFlat
       AlignWithMargins = True
       Left = 10
@@ -84,7 +70,26 @@ object Form8: TForm8
       SubTextFont.Style = []
     end
   end
+  object hChat1: ThChat
+    Left = 0
+    Top = 50
+    Width = 391
+    Height = 530
+    Align = alClient
+    Color = 14927223
+    OnSelectionStart = hChat1SelectionStart
+    OnSelectionChange = hChat1SelectionChange
+    OnSelectionEnd = hChat1SelectionEnd
+    ColorInfo = 12820815
+    ColorOpponent = clWhite
+    ColorMe = 16512738
+    ColorSelection = 16574402
+    ColorScrollInactive = 14927223
+    ColorScrollActive = 13414001
+    ColorScrollButton = 9335883
+  end
   object Timer1: TTimer
+    Enabled = False
     Interval = 10000
     OnTimer = Timer1Timer
     Left = 176

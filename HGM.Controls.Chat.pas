@@ -85,7 +85,6 @@ type
     FItemUnderMouse: Integer;
     FPreviousSelectedItem: Integer;
     FSelectionMode: Boolean;
-    FSelectionMouseMode: Boolean;
     FScrollBarVisible: Boolean;
     FMouseIn: Boolean;
     FMouseInScroll: Boolean;
@@ -101,6 +100,16 @@ type
     FOnSelectionStart: TOnSelectionEvent;
     FOnSelectionEnd: TOnSelectionEvent;
     FOnSelectionChange: TOnSelectionEvent;
+    FColorMe: TColor;
+    FColorInfo: TColor;
+    FColorSelection: TColor;
+    FColorOpponent: TColor;
+    FColorScrollActive: TColor;
+    FColorScrollInactive: TColor;
+    FColorScrollButton: TColor;
+    FImageMargin: Integer;
+    FPaddingSize: Integer;
+    FBorderWidth: Integer;
     function GetItem(Index: Integer): TChatItem;
     procedure SetItem(Index: Integer; const Value: TChatItem);
     procedure SetItems(const Value: TChatItems);
@@ -123,11 +132,21 @@ type
     procedure SetOnSelectionEnd(const Value: TOnSelectionEvent);
     procedure SetOnSelectionStart(const Value: TOnSelectionEvent);
     procedure WMSize(var Message: TWMSize); message WM_SIZE;
+    procedure SetColorInfo(const Value: TColor);
+    procedure SetColorMe(const Value: TColor);
+    procedure SetColorOpponent(const Value: TColor);
+    procedure SetColorSelection(const Value: TColor);
+    procedure SetColorScrollActive(const Value: TColor);
+    procedure SetColorScrollButton(const Value: TColor);
+    procedure SetColorScrollInactive(const Value: TColor);
+    procedure SetBorderWidth(const Value: Integer);
+    procedure SetImageMargin(const Value: Integer);
+    procedure SetPaddingSize(const Value: Integer);
   protected
     procedure CreateParams(var Params: TCreateParams); override;
     procedure Paint; override;
     procedure UpdateStyleElements; override;
-    property Color default $0021160E;
+    property Color default $0020160F;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -136,10 +155,20 @@ type
     property DoubleBuffered default True;
     property ScrollBarVisible: Boolean read FScrollBarVisible write SetScrollBarVisible default True;
     property ImageList: TImageList read FImageList write SetImageList;
-    property DrawImages: Boolean read FDrawImages write SetDrawImages;
+    property DrawImages: Boolean read FDrawImages write SetDrawImages default False;
     property OnSelectionStart: TOnSelectionEvent read FOnSelectionStart write SetOnSelectionStart;
     property OnSelectionChange: TOnSelectionEvent read FOnSelectionChange write SetOnSelectionChange;
     property OnSelectionEnd: TOnSelectionEvent read FOnSelectionEnd write SetOnSelectionEnd;
+    property ColorInfo: TColor read FColorInfo write SetColorInfo default $003A2C1D;
+    property ColorOpponent: TColor read FColorOpponent write SetColorOpponent default $00322519;
+    property ColorMe: TColor read FColorMe write SetColorMe default $0078522B;
+    property ColorSelection: TColor read FColorSelection write SetColorSelection default $00A5702E;
+    property ColorScrollInactive: TColor read FColorScrollInactive write SetColorScrollInactive default $00332A24;
+    property ColorScrollActive: TColor read FColorScrollActive write SetColorScrollActive default $003C342E;
+    property ColorScrollButton: TColor read FColorScrollButton write SetColorScrollButton default $00605B56;
+    property BorderWidth: Integer read FBorderWidth write SetBorderWidth default 4;
+    property PaddingSize: Integer read FPaddingSize write SetPaddingSize default 10;
+    property ImageMargin: Integer read FImageMargin write SetImageMargin default 36;
   end;
 
   ThChat = class(ThCustomChat)
@@ -153,9 +182,20 @@ type
     property DoubleBuffered;
     property Visible;
     property ImageList;
+    property DrawImages;
     property OnSelectionStart;
     property OnSelectionChange;
     property OnSelectionEnd;
+    property ColorInfo;
+    property ColorOpponent;
+    property ColorMe;
+    property ColorSelection;
+    property ColorScrollInactive;
+    property ColorScrollActive;
+    property ColorScrollButton;
+    property BorderWidth;
+    property PaddingSize;
+    property ImageMargin;
   end;
 
 procedure Register;
@@ -163,7 +203,7 @@ procedure Register;
 implementation
 
 uses
-  Math;
+  Math, HGM.Common.Utils;
 
 procedure Register;
 begin
@@ -200,6 +240,18 @@ begin
   OnMouseEnter := FOnMouseEnter;
   OnMouseLeave := FOnMouseLeave;
   OnResize := FOnResize;
+
+  FColorOpponent := $00322519;
+  FColorMe := $0078522B;
+  FColorInfo := $003A2C1D;
+  FColorSelection := $00A5702E;
+  FColorScrollActive := $003C342E;
+  FColorScrollInactive := $00332A24;
+  FColorScrollButton := $00605B56;
+
+  FBorderWidth := 4;
+  FPaddingSize := 10;
+  FImageMargin := 36;
 
   FItemUnderMouse := -1;
   FDragItem := False;
@@ -380,10 +432,6 @@ begin
 end;
 
 procedure ThCustomChat.Paint;
-const
-  BorderWidth = 4;
-  PaddingSize = 10;
-  ImageMargin = 36;
 var
   Rect, ItemRect, LastRect, TxtRect, Limit, ImageRect: TRect;
   BaseColor: TColor;
@@ -432,7 +480,7 @@ begin
         Limit.Width := Min(500, Limit.Width);
         TxtRect := FItems[i].CalcRect(Canvas, Limit);
 
-        Brush.Color := $00322519;
+        Brush.Color := FColorOpponent;
 
         ItemRect := TxtRect;
         ItemRect.Inflate(PaddingSize, PaddingSize);
@@ -454,8 +502,10 @@ begin
           if (FItems[i] as TChatMessage).FromType = mtMe then
           begin
             if ClientRect.Width <= 1000 then
-              ItemRect.Location := TPoint.Create(Rect.Right - ItemRect.Width, ItemRect.Top);
-            Brush.Color := $0078522B;
+              ItemRect.Location := TPoint.Create(Rect.Right - ItemRect.Width, ItemRect.Top)
+            else
+              ItemRect.Location := TPoint.Create(ItemRect.Left + FImageMargin, ItemRect.Top);
+            Brush.Color := FColorMe;
           end
           else if FNeedImage then
             ItemRect.Location := TPoint.Create(ItemRect.Left + ImageMargin, ItemRect.Top);
@@ -466,7 +516,7 @@ begin
             ItemRect.Offset(Rect.CenterPoint.X - (ItemRect.Width div 2 + BorderWidth), 0)
           else
             ItemRect.Offset(500 div 2 - (ItemRect.Width div 2 + BorderWidth), 0);
-          Brush.Color := $003A2C1D;
+          Brush.Color := FColorInfo;
           Radius := ItemRect.Height;
         end;
         ItemRect.Offset(PaddingSize, FOffset);
@@ -487,8 +537,8 @@ begin
           FStartDraw := True;
           Brush.Style := bsSolid;
           if (FItems[i] is TChatMessage) and (FItems[i].Selected) then
-            Brush.Color := $00A5702E;
-          Pen.Color := Brush.Color;
+            Brush.Color := FColorSelection;
+          Pen.Color := ColorDarker(Brush.Color, 5);
           RoundRect(ItemRect, Radius, Radius);
           Brush.Style := bsClear;
           TxtRect.Location := TPoint.Create(ItemRect.Left + PaddingSize, ItemRect.Top + PaddingSize);
@@ -508,7 +558,7 @@ begin
       end;
     FMaxOffset := 0 - LastRect.Top;
 
-    if FScrollBarVisible or (csDesigning in ComponentState) then
+    if FScrollBarVisible then
     begin
       FMouseInScroll := False;
       FMouseInScrollButton := False;
@@ -522,10 +572,10 @@ begin
         if ItemRect.Contains(FMousePos) or FScrolling then
         begin
           FMouseInScroll := True;
-          Brush.Color := $003C342E;
+          Brush.Color := FColorScrollActive;
         end
         else
-          Brush.Color := $00332A24;
+          Brush.Color := FColorScrollInactive;
         Pen.Color := Brush.Color;
         RoundRect(ItemRect, 6, 6);
 
@@ -540,7 +590,7 @@ begin
 
         if LastRect.Contains(FMousePos) then
           FMouseInScrollButton := True;
-        Brush.Color := $00605B56;
+        Brush.Color := FColorScrollButton;
         Pen.Color := Brush.Color;
         RoundRect(LastRect, 6, 6);
       end;
@@ -587,16 +637,75 @@ begin
   end;
 end;
 
+procedure ThCustomChat.SetBorderWidth(const Value: Integer);
+begin
+  FBorderWidth := Value;
+  if not (csLoading in ComponentState) then
+  begin
+    FItems.NeedResize;
+    NeedRepaint;
+  end;
+end;
+
+procedure ThCustomChat.SetColorInfo(const Value: TColor);
+begin
+  FColorInfo := Value;
+end;
+
+procedure ThCustomChat.SetColorMe(const Value: TColor);
+begin
+  FColorMe := Value;
+end;
+
+procedure ThCustomChat.SetColorOpponent(const Value: TColor);
+begin
+  FColorOpponent := Value;
+end;
+
+procedure ThCustomChat.SetColorScrollActive(const Value: TColor);
+begin
+  FColorScrollActive := Value;
+end;
+
+procedure ThCustomChat.SetColorScrollButton(const Value: TColor);
+begin
+  FColorScrollButton := Value;
+end;
+
+procedure ThCustomChat.SetColorScrollInactive(const Value: TColor);
+begin
+  FColorScrollInactive := Value;
+end;
+
+procedure ThCustomChat.SetColorSelection(const Value: TColor);
+begin
+  FColorSelection := Value;
+end;
+
 procedure ThCustomChat.SetDrawImages(const Value: Boolean);
 begin
   FDrawImages := Value;
-  NeedRepaint;
+  if not (csLoading in ComponentState) then
+  begin
+    FItems.NeedResize;
+    NeedRepaint;
+  end;
 end;
 
 procedure ThCustomChat.SetImageList(const Value: TImageList);
 begin
   FImageList := Value;
   NeedRepaint;
+end;
+
+procedure ThCustomChat.SetImageMargin(const Value: Integer);
+begin
+  FImageMargin := Value;
+  if not (csLoading in ComponentState) then
+  begin
+    FItems.NeedResize;
+    NeedRepaint;
+  end;
 end;
 
 procedure ThCustomChat.SetItem(Index: Integer; const Value: TChatItem);
@@ -623,6 +732,16 @@ end;
 procedure ThCustomChat.SetOnSelectionStart(const Value: TOnSelectionEvent);
 begin
   FOnSelectionStart := Value;
+end;
+
+procedure ThCustomChat.SetPaddingSize(const Value: Integer);
+begin
+  FPaddingSize := Value;
+  if not (csLoading in ComponentState) then
+  begin
+    FItems.NeedResize;
+    NeedRepaint;
+  end;
 end;
 
 procedure ThCustomChat.SetScrollBarVisible(const Value: Boolean);

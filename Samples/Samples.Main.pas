@@ -105,6 +105,7 @@ begin
         for j := 1 to 150 do
           Text := Text + 'Text body';
       Text := DateTimeToStr(Now) + #13#10 + Text;
+      Color := clBlack;
       FromColor := RGB(RandomRange(100, 240), RandomRange(100, 240), RandomRange(100, 240));
     end;
     if i mod 3 = 0 then
@@ -147,12 +148,14 @@ begin
       for j := 1 to 150 do
         Text := Text + 'Text body';
     Text := DateTimeToStr(Now) + #13#10 + Text;
+    Color := clBlack;
     FromColor := RGB(RandomRange(100, 240), RandomRange(100, 240), RandomRange(100, 240));
   end;
   if Random(10) mod 3 = 0 then
     with hChat1.Items.AddInfo do
     begin
       Text := DateTimeToStr(Now);
+      Color := clBlack;
     end;
   Timer1.Interval := Random(10000);
 end;
