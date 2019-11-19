@@ -292,6 +292,24 @@ type
     property ImageUncheck: Integer read FImageUncheck write SetImageUncheck default -1;
   end;
 
+  TButtonItems = TList<TButtonFlat>;
+
+  TButtonRadioControl = class
+  private
+    FItems: TButtonItems;
+    FSelected: TButtonFlat;
+    FSelectedColor: TColor;
+    FUnselectedColor: TColor;
+    procedure SetItems(const Value: TButtonItems);
+    procedure SetSelected(const Value: TButtonFlat);
+    procedure SetSelect(Button: TButtonFlat);
+  public
+    constructor Create(Selected, Unselected: TColor);
+    destructor Destroy; override;
+    property Items: TButtonItems read FItems write SetItems;
+    property Selected: TButtonFlat read FSelected write SetSelected;
+  end;
+
 procedure Register;
 
 implementation
@@ -565,6 +583,11 @@ var
   d: Double;
   FDrawImg: Integer;
   FText: string;
+  {$IFDEF FORXP}
+  Target: TCanvas;
+  {$ELSE}
+  Target: TDirect2DCanvas;
+  {$ENDIF}
 begin
   try
     if FDrawTimedText then
@@ -582,8 +605,10 @@ begin
         if Assigned(Font) then
           Canvas.Font.Assign(Font);
     end;
-
-    with {$IFDEF FORXP} Canvas {$ELSE} TDirect2DCanvas.Create(Canvas, ClientRect) {$ENDIF} do
+    {$IFNDEF FORXP}
+    Target := TDirect2DCanvas.Create(Canvas, ClientRect);
+    {$ENDIF}
+    with Target do
     begin
       {$IFNDEF FORXP}
       BeginDraw;
@@ -1098,6 +1123,46 @@ procedure TCheckBoxFlat.SetChecked(const Value: Boolean);
 begin
   FChecked := Value;
   UpdateChecked;
+end;
+
+{ TButtonRadioControl }
+
+constructor TButtonRadioControl.Create(Selected, Unselected: TColor);
+begin
+  inherited Create;
+  FItems := (TList<TButtonFlat>).Create;
+  FSelectedColor := Selected;
+  FUnselectedColor := Unselected;
+end;
+
+destructor TButtonRadioControl.Destroy;
+begin
+  FItems.Free;
+  inherited;
+end;
+
+procedure TButtonRadioControl.SetItems(const Value: TButtonItems);
+begin
+  FItems := Value;
+end;
+
+procedure TButtonRadioControl.SetSelect(Button: TButtonFlat);
+var
+  i: Integer;
+begin
+  for i := 0 to FItems.Count - 1 do
+  begin
+    if FItems[i] <> Button then
+      FItems[i].ColorNormal := FUnselectedColor
+    else
+      FItems[i].ColorNormal := FSelectedColor;
+  end;
+end;
+
+procedure TButtonRadioControl.SetSelected(const Value: TButtonFlat);
+begin
+  FSelected := Value;
+  SetSelect(FSelected);
 end;
 
 end.
