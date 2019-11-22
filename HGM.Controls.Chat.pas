@@ -308,6 +308,8 @@ end;
 
 procedure ThCustomChat.FOnClick(Sender: TObject);
 begin
+  if not Focused then
+    SetFocus;
   if (not FDragItem) and (not FScrolling) and (FSelectionMode) then
     if FItemUnderMouse >= 0 then
     begin
@@ -358,8 +360,8 @@ end;
 
 procedure ThCustomChat.FOnMouseMoveEvent(Sender: TObject; Shift: TShiftState; X, Y: Integer);
 begin
-  if not Focused then
-    SetFocus;
+  {if not Focused then
+    SetFocus;  }
 
   FMousePos := TPoint.Create(X, Y);
   if FScrolling then
@@ -509,7 +511,7 @@ begin
           begin
             if ClientRect.Width <= 1000 then
               ItemRect.Location := TPoint.Create(Rect.Right - ItemRect.Width, ItemRect.Top)
-            else
+            else if FNeedImage then
               ItemRect.Location := TPoint.Create(ItemRect.Left + FImageMargin, ItemRect.Top);
             Brush.Color := FColorMe;
           end
@@ -910,7 +912,7 @@ end;
 
 function TChatMessage.CalcRect(Canvas: TCanvas; Rect: TRect): TRect;
 var
-  R, Txt: TRect;
+  R: TRect;
   S: string;
 begin
   if FNeedCalc then

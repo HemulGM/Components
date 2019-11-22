@@ -7,20 +7,17 @@ uses
   System.Classes, Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.Grids,
   HGM.Controls.ColorGrid, HGM.Controls.VirtualTable, System.Generics.Collections,
   Vcl.ExtCtrls, Vcl.StdCtrls, HGM.Controls.PanelExt, Direct2D, D2D1,
-  HGM.AutoTextType, HGM.Controls.Edit, HGM.Controls.Chat, HGM.Button;
+  HGM.AutoTextType, HGM.Controls.Edit, HGM.Controls.Chat, HGM.Button,
+  Vcl.ComCtrls, HGM.Controls.ProgressBar;
 
 type
   TForm8 = class(TForm)
-    hChat1: ThChat;
-    PanelSelection: TPanel;
-    ButtonFlatReply: TButtonFlat;
-    Timer1: TTimer;
+    ProgressBar1: TProgressBar;
+    hProgrsssBar1: ThProgrsssBar;
+    TrackBar1: TTrackBar;
+    Panel1: TPanel;
     procedure DrawPanel1Paint(Sender: TObject);
-    procedure FormCreate(Sender: TObject);
-    procedure hChat1SelectionStart(Sender: TObject; Count: Integer);
-    procedure hChat1SelectionChange(Sender: TObject; Count: Integer);
-    procedure hChat1SelectionEnd(Sender: TObject; Count: Integer);
-    procedure Timer1Timer(Sender: TObject);
+    procedure TrackBar1Change(Sender: TObject);
   private
     { Private declarations }
   public
@@ -81,83 +78,9 @@ begin
   end;
 end;
 
-procedure TForm8.FormCreate(Sender: TObject);
-var
-  i: Integer;
-  j: Integer;
+procedure TForm8.TrackBar1Change(Sender: TObject);
 begin
-  hChat1.DrawImages := True;
-  with hChat1.Items.AddInfo do
-  begin
-    Text := DateTimeToStr(Now);
-  end;
-  for i := 0 to 100 do
-  begin
-    with hChat1.Items.AddMessage do
-    begin
-      From := 'HGM user';
-      if Random(40) in [20..30] then
-        FromType := mtMe;
-      Text := 'Text body';
-      for j := 1 to Random(10) do
-        Text := Text + 'Text body';
-      if Random(40) = 15 then
-        for j := 1 to 150 do
-          Text := Text + 'Text body';
-      Text := DateTimeToStr(Now) + #13#10 + Text;
-      Color := clBlack;
-      FromColor := RGB(RandomRange(100, 240), RandomRange(100, 240), RandomRange(100, 240));
-    end;
-    if i mod 3 = 0 then
-      with hChat1.Items.AddInfo do
-      begin
-        Text := DateTimeToStr(Now);
-      end;
-  end;
-end;
-
-procedure TForm8.hChat1SelectionChange(Sender: TObject; Count: Integer);
-begin
-  ButtonFlatReply.Caption := 'œ≈–≈—À¿“‹ ' + Count.ToString;
-end;
-
-procedure TForm8.hChat1SelectionEnd(Sender: TObject; Count: Integer);
-begin
-  PanelSelection.Visible := False;
-end;
-
-procedure TForm8.hChat1SelectionStart(Sender: TObject; Count: Integer);
-begin
-  ButtonFlatReply.Caption := 'œ≈–≈—À¿“‹ ' + Count.ToString;
-  PanelSelection.Visible := True;
-end;
-
-procedure TForm8.Timer1Timer(Sender: TObject);
-var
-  j: Integer;
-begin
-  with hChat1.Items.AddMessage do
-  begin
-    From := 'HGM user';
-    if Random(40) in [20..30] then
-      FromType := mtMe;
-    Text := 'Text body';
-    for j := 1 to Random(10) do
-      Text := Text + 'Text body';
-    if Random(40) = 15 then
-      for j := 1 to 150 do
-        Text := Text + 'Text body';
-    Text := DateTimeToStr(Now) + #13#10 + Text;
-    Color := clBlack;
-    FromColor := RGB(RandomRange(100, 240), RandomRange(100, 240), RandomRange(100, 240));
-  end;
-  if Random(10) mod 3 = 0 then
-    with hChat1.Items.AddInfo do
-    begin
-      Text := DateTimeToStr(Now);
-      Color := clBlack;
-    end;
-  Timer1.Interval := Random(10000);
+  hProgrsssBar1.Position := TrackBar1.Position;
 end;
 
 end.

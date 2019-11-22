@@ -81,6 +81,8 @@ function ScaledRect(const Src: TRect; Delta: Integer): TRect;
 
 function MixColors(Color1, Color2: TColor; Alpha: Byte): TColor;
 
+function MixColorsValue(Color1, Color2: TColor; Alpha: Byte): TColor;
+
 function IndexInList(const Index: Integer; ListCount: Integer): Boolean;
 
 function FlashControl(Control: TControl): Boolean;
@@ -121,11 +123,36 @@ procedure ApplyMask(X, Y: Integer; Mask, Target: TPngImage);
 
 function ColorRedOrBlue(Precent: Byte): TColor;
 
+function ShowModalFor(Parent: TWinControl; Form: TForm): TModalResult;
+
+function SmoothStrechDraw(Source: TGraphic; Size: TSize): TBitmap;
+
 implementation
 
 uses
   Winapi.ShlObj, Winapi.ActiveX, PNGFunctions, PNGImageList, ClipBrd,
   System.Net.HttpClient, Winapi.RichEdit, System.Win.ComObj;
+
+function ShowModalFor(Parent: TWinControl; Form: TForm): TModalResult;
+begin
+  Form.Show;
+  //Parent.Enabled := False;
+  try
+    SendMessage(Form.Handle, CM_ACTIVATE, 0, 0);
+    Form.ModalResult := 0;
+    Form.BringToFront;
+    repeat
+      Application.HandleMessage;
+      if Application.Terminated then
+        Form.ModalResult := mrCancel;
+    until Form.ModalResult <> 0;
+    Result := Form.ModalResult;
+    SendMessage(Form.Handle, CM_DEACTIVATE, 0, 0);
+  finally
+    Form.Hide;
+    //Parent.Enabled := True;
+  end;
+end;
 
 function ColorRedOrBlue(Precent: Byte): TColor;
 var
@@ -1143,6 +1170,25 @@ begin
   Result := (B shl 16) + (G shl 8) + R;
 end;
 
+function MixColorsValue(Color1, Color2: TColor; Alpha: Byte): TColor;
+var
+  C1, C2: LongInt;
+  R, G, B, V1, V2: Byte;
+begin
+  C1 := ColorToRGB(Color1);
+  C2 := ColorToRGB(Color2);
+  V1 := Byte(C1);
+  V2 := Byte(C2);
+  R := Alpha * (V1 - V2) shr 8 + V2;
+  V1 := Byte(C1 shr 8);
+  V2 := Byte(C2 shr 8);
+  G := Alpha * (V1 - V2) shr 8 + V2;
+  V1 := Byte(C1 shr 16);
+  V2 := Byte(C2 shr 16);
+  B := Alpha * (V1 - V2) shr 8 + V2;
+  Result := (B shl 16) + (G shl 8) + R;
+end;
+
 function DrawTextCentered(Canvas: TCanvas; const R: TRect; S: string; FDrawFlags: Cardinal): Integer;
 var
   DrawRect: TRect;
@@ -1216,6 +1262,29 @@ begin
   end;
 end;
 
+function SmoothStrechDraw(Source: TGraphic; Size: TSize): TBitmap;
+var
+  pt: TPoint;
+  h: HDC;
+  BMP: TBitmap;
+begin
+  BMP := TBitmap.Create;
+  BMP.PixelFormat := pf24bit;
+  BMP.SetSize(Source.Width, Source.Height);
+  BMP.Canvas.Draw(0, 0, Source);
+
+  Result := TBitmap.Create;
+  Result.PixelFormat := pf24bit;
+  Result.SetSize(Size.Width, Size.Height);
+
+  h := Result.Canvas.Handle;
+  GetBrushOrgEx(h, pt);
+  SetStretchBltMode(h, HALFTONE);
+  SetBrushOrgEx(h, pt.x, pt.y, @pt);
+  StretchBlt(h, 0, 0, Result.Width, Result.Height, BMP.Canvas.Handle, 0, 0, BMP.Width, BMP.Height, SRCCOPY);
+  BMP.Free;
+end;
+
 //Автор: Я (очень медленная процедура ~300 мсек. для ср. рисунка)
 procedure DrawTo(X, Y: Integer; Src, Dest: TPngImage);
 var
@@ -1230,8 +1299,16 @@ begin
     begin
       if SAS^[dX] <= 0 then
         Continue;
-      DAS[dX + X] := SAS^[dX] + DAS^[dX + X];
-      Dest.Canvas.Pixels[dX + X, dY + Y] := MixColors(Src.Canvas.Pixels[dX, dY], Dest.Canvas.Pixels[dX + X, dY + Y], DAS^[dX + X]);
+      if DAS[dX + X] > 0 then
+      begin
+        DAS[dX + X] := Min(255, (SAS^[dX] + DAS^[dX + X]));
+        Dest.Canvas.Pixels[dX + X, dY + Y] := MixColorsValue(Src.Canvas.Pixels[dX, dY], Dest.Canvas.Pixels[dX + X, dY + Y], DAS^[dX + X]);
+      end
+      else
+      begin
+        DAS[dX + X] := SAS^[dX];
+        Dest.Canvas.Pixels[dX + X, dY + Y] := Src.Canvas.Pixels[dX, dY];
+      end;
     end;
   end;
 end;

@@ -68,7 +68,8 @@ contains
   HGM.Controls.ColorGrid in 'HGM.Controls.ColorGrid.pas',
   HGM.License in 'HGM.License.pas',
   HGM.Controls.Labels.Base in 'HGM.Controls.Labels.Base.pas',
-  HGM.Controls.Chat in 'HGM.Controls.Chat.pas';
+  HGM.Controls.Chat in 'HGM.Controls.Chat.pas',
+  HGM.Controls.ProgressBar in 'HGM.Controls.ProgressBar.pas';
 
 end.
 
