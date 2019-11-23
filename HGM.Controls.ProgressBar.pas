@@ -32,16 +32,21 @@ type
     procedure SetKind(const Value: ThProgressBarKind);
     procedure SetRoundRadius(const Value: Integer);
     procedure TimerAnimateTimer(Sender: TObject);
+    function GetColorScale: TColor;
+    function GetColorBackground: TColor;
+    function GetPosition: Integer;
+    function GetKind: ThProgressBarKind;
+    function GetRoundRadius: Integer;
   public
     property ParentColor default False;
     procedure Paint; override;
     constructor Create(AOwner: TComponent); override;
-    property ColorScale: TColor read FColorScale write SetColorScale;
-    property ColorBackground: TColor read FColorBackground write SetColorBackground;
-    property Position: Integer read FPosition write SetPosition;
+    property ColorScale: TColor read GetColorScale write SetColorScale;
+    property ColorBackground: TColor read GetColorBackground write SetColorBackground;
+    property Position: Integer read GetPosition write SetPosition;
     property ParentBackground default True;
-    property Kind: ThProgressBarKind read FKind write SetKind;
-    property RoundRadius: Integer read FRoundRadius write SetRoundRadius;
+    property Kind: ThProgressBarKind read GetKind write SetKind;
+    property RoundRadius: Integer read GetRoundRadius write SetRoundRadius;
   end;
 
   ThProgrsssBar = class(ThCustomProgrsssBar)
@@ -90,6 +95,31 @@ begin
   begin
     WindowClass.style := WindowClass.style and not (CS_HREDRAW or CS_VREDRAW);
   end;
+end;
+
+function ThCustomProgrsssBar.GetColorBackground: TColor;
+begin
+  Result := FColorBackground;
+end;
+
+function ThCustomProgrsssBar.GetColorScale: TColor;
+begin
+  Result := FColorScale;
+end;
+
+function ThCustomProgrsssBar.GetKind: ThProgressBarKind;
+begin
+  Result := FKind;
+end;
+
+function ThCustomProgrsssBar.GetPosition: Integer;
+begin
+  Result := FPosition;
+end;
+
+function ThCustomProgrsssBar.GetRoundRadius: Integer;
+begin
+  Result := FRoundRadius;
 end;
 
 constructor ThCustomProgrsssBar.Create(AOwner: TComponent);

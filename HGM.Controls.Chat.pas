@@ -50,6 +50,7 @@ type
     From: string;
     FromType: TChatMessageType;
     FromColor: TColor;
+    FromColorSelect: TColor;
     function CalcRect(Canvas: TCanvas; Rect: TRect): TRect; override;
     function DrawRect(Canvas: TCanvas; Rect: TRect): TRect; override;
     constructor Create(AOwner: TChatItems); override;
@@ -58,9 +59,14 @@ type
   end;
 
   TChatInfo = class(TChatItem)
+  private
+    FFillColor: TColor;
+    procedure SetFillColor(const Value: TColor);
+  published
     function CalcRect(Canvas: TCanvas; Rect: TRect): TRect; override;
     function DrawRect(Canvas: TCanvas; Rect: TRect): TRect; override;
     constructor Create(AOwner: TChatItems); override;
+    property FillColor: TColor read FFillColor write SetFillColor;
   end;
 
   TChatItems = class(TList<TChatItem>)
@@ -524,7 +530,10 @@ begin
             ItemRect.Offset(Rect.CenterPoint.X - (ItemRect.Width div 2 + BorderWidth), 0)
           else
             ItemRect.Offset(500 div 2 - (ItemRect.Width div 2 + BorderWidth), 0);
-          Brush.Color := FColorInfo;
+          if (FItems[i] as TChatInfo).FillColor = clNone then
+            Brush.Color := FColorInfo
+          else
+            Brush.Color := (FItems[i] as TChatInfo).FillColor;
           Radius := ItemRect.Height;
         end;
         ItemRect.Offset(PaddingSize, FOffset);
@@ -956,7 +965,10 @@ begin
     R := Rect;
     Canvas.Font.Size := 11;
     Canvas.Font.Style := [];
-    Canvas.Font.Color := FromColor;
+    if Selected then
+      Canvas.Font.Color := FromColorSelect
+    else
+      Canvas.Font.Color := FromColor;
     Canvas.TextRect(R, S, [tfLeft, tfSingleLine, tfEndEllipsis]);
   end;
 
@@ -984,6 +996,7 @@ begin
   inherited;
   FShowFrom := True;
   FromColor := $00D4D4D4;
+  FromColorSelect := clWhite;
 end;
 
 destructor TChatMessage.Destroy;
@@ -1017,6 +1030,7 @@ constructor TChatInfo.Create(AOwner: TChatItems);
 begin
   inherited;
   FCanSelected := False;
+  FFillColor := clNone;
 end;
 
 function TChatInfo.DrawRect(Canvas: TCanvas; Rect: TRect): TRect;
@@ -1031,6 +1045,11 @@ begin
   Canvas.Font.Color := Color;
   Canvas.TextRect(R, S, [tfLeft, tfWordBreak, tfEndEllipsis]);
   Result := R;
+end;
+
+procedure TChatInfo.SetFillColor(const Value: TColor);
+begin
+  FFillColor := Value;
 end;
 
 end.
