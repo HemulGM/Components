@@ -125,13 +125,28 @@ function ColorRedOrBlue(Precent: Byte): TColor;
 
 function ShowModalFor(Parent: TWinControl; Form: TForm): TModalResult;
 
-function SmoothStrechDraw(Source: TGraphic; Size: TSize): TBitmap;
+function SmoothStrechDraw(Source: TGraphic; Rect: TRect): TBitmap;
+
+procedure DrawBitmapTo(X, Y: Integer; Src: TBitmap; Dest: TPngImage);
+
+function GetFromConsole(Caption: string; var Text: string): Boolean;
 
 implementation
 
 uses
   Winapi.ShlObj, Winapi.ActiveX, PNGFunctions, PNGImageList, ClipBrd,
   System.Net.HttpClient, Winapi.RichEdit, System.Win.ComObj;
+
+function GetFromConsole(Caption: string; var Text: string): Boolean;
+begin
+  AllocConsole;
+  try
+    Write(Caption);
+    Readln(Text);
+  finally
+    FreeConsole;
+  end;
+end;
 
 function ShowModalFor(Parent: TWinControl; Form: TForm): TModalResult;
 begin
@@ -1262,26 +1277,27 @@ begin
   end;
 end;
 
-function SmoothStrechDraw(Source: TGraphic; Size: TSize): TBitmap;
+function SmoothStrechDraw(Source: TGraphic; Rect: TRect): TBitmap;
 var
-  pt: TPoint;
-  h: HDC;
+  Pt: TPoint;
+  Target: HDC;
   BMP: TBitmap;
 begin
+  // В этот bitmap поместим нише изображение (любое)
   BMP := TBitmap.Create;
-  BMP.PixelFormat := pf24bit;
+  BMP.PixelFormat := pf32bit;
   BMP.SetSize(Source.Width, Source.Height);
-  BMP.Canvas.Draw(0, 0, Source);
-
+  BMP.Assign(Source);
+  // А это - результат
   Result := TBitmap.Create;
-  Result.PixelFormat := pf24bit;
-  Result.SetSize(Size.Width, Size.Height);
-
-  h := Result.Canvas.Handle;
-  GetBrushOrgEx(h, pt);
-  SetStretchBltMode(h, HALFTONE);
-  SetBrushOrgEx(h, pt.x, pt.y, @pt);
-  StretchBlt(h, 0, 0, Result.Width, Result.Height, BMP.Canvas.Handle, 0, 0, BMP.Width, BMP.Height, SRCCOPY);
+  Result.PixelFormat := pf32bit;
+  Result.SetSize(Rect.Width, Rect.Height);
+  // Сглаженное растягивание (или сжатие)
+  Target := Result.Canvas.Handle;
+  GetBrushOrgEx(Target, Pt);
+  SetStretchBltMode(Target, HALFTONE);
+  SetBrushOrgEx(Target, Pt.X, Pt.Y, @Pt);
+  StretchBlt(Target, Rect.Left, Rect.Top, Rect.Width, Rect.Height, BMP.Canvas.Handle, 0, 0, BMP.Width, BMP.Height, SRCCOPY);
   BMP.Free;
 end;
 
@@ -1307,6 +1323,44 @@ begin
       else
       begin
         DAS[dX + X] := SAS^[dX];
+        Dest.Canvas.Pixels[dX + X, dY + Y] := Src.Canvas.Pixels[dX, dY];
+      end;
+    end;
+  end;
+end;
+
+procedure DrawBitmapTo(X, Y: Integer; Src: TBitmap; Dest: TPngImage);
+type
+  TRGB32 = packed record
+    B, G, R, Alpha: Byte;
+  end;
+
+  PRGBArray32 = ^TRGBArray32;
+
+  TRGBArray32 = array[0..0] of TRGB32;
+var
+  dX, dY: Integer;
+  DAS: pByteArray;
+  Ap: TRGB32;
+  Line: PRGBArray32;
+begin
+  for dY := 0 to Src.Height - 1 do
+  begin
+    DAS := Dest.AlphaScanline[dY + Y];
+    Line := PRGBArray32(Src.ScanLine[dY]);
+
+    for dX := 0 to Src.Width - 1 do
+    begin
+      {if Line[dX].Alpha <= 0 then
+        Continue; }
+      if DAS[dX + X] > 0 then
+      begin
+        DAS[dX + X] := Min(255, (Line[dX].Alpha + DAS^[dX + X]));
+        Dest.Canvas.Pixels[dX + X, dY + Y] := MixColorsValue(Src.Canvas.Pixels[dX, dY], Dest.Canvas.Pixels[dX + X, dY + Y], DAS^[dX + X]);
+      end
+      else
+      begin
+        DAS[dX + X] := 255; //Line[dX].Alpha;
         Dest.Canvas.Pixels[dX + X, dY + Y] := Src.Canvas.Pixels[dX, dY];
       end;
     end;

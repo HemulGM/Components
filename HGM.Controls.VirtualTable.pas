@@ -679,6 +679,9 @@ procedure TTableEx.SetRowCount(Value: Longint);
 var
   msg: TWMSize;
 begin
+  if (csDestroying in ComponentState) then
+    Exit;
+
   if FItemCount <> Value then
   begin
     FItemCount := Value;

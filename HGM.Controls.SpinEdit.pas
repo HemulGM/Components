@@ -35,6 +35,7 @@ type
     FFocusControl: TWinControl;
     FOnUpClick: TNotifyEvent;
     FOnDownClick: TNotifyEvent;
+    FLightButtons: Boolean;
     function CreateButton(ADownButton: Boolean): TTimerSpeedButton;
     function GetUpGlyph: TBitmap;
     function GetDownGlyph: TBitmap;
@@ -53,6 +54,7 @@ type
     procedure WMKillFocus(var Message: TWMKillFocus); message WM_KILLFOCUS;
     procedure WMGetDlgCode(var Message: TWMGetDlgCode); message WM_GETDLGCODE;
     procedure WMEraseBkgnd(var Message: TWmEraseBkgnd); message WM_ERASEBKGND;
+    procedure SetLightButtons(const Value: Boolean);
   protected
     procedure Loaded; override;
     procedure KeyDown(var Key: Word; Shift: TShiftState); override;
@@ -93,6 +95,7 @@ type
     property OnStartDock;
     property OnStartDrag;
     property OnUpClick: TNotifyEvent read FOnUpClick write FOnUpClick;
+    property LightButtons: Boolean read FLightButtons write SetLightButtons;
   end;
 
 { TSpinEdit }
@@ -105,6 +108,7 @@ type
     FButton: TSpinButton;
     FEditorEnabled: Boolean;
     FOnChange: TNotifyEvent;
+    FLightButtons: Boolean;
     //function GetMinHeight: Integer;
     function GetValue: LongInt;
     function CheckValue(NewValue: LongInt): LongInt;
@@ -119,6 +123,7 @@ type
     procedure WMGetDlgCode(var Message: TWMGetDlgCode); message WM_GETDLGCODE;
     procedure WMChange(var message: TWMKeyUp); message WM_KEYUP;
     procedure DoChange;
+    procedure SetLightButtons(const Value: Boolean);
   protected
     function IsValidChar(Key: Char): Boolean; virtual;
     procedure UpClick(Sender: TObject); virtual;
@@ -181,6 +186,7 @@ type
     property OnMouseMove;
     property OnMouseUp;
     property OnStartDrag;
+    property LightButtons: Boolean read FLightButtons write SetLightButtons;
   end;
 
 { TTimerSpeedButton }
@@ -411,7 +417,10 @@ begin
     FUpButton.Glyph := Value
   else
   begin
-    FUpButton.Glyph.Handle := LoadBitmap(HInstance, 'lkSpinUp');
+    if LightButtons then
+      FUpButton.Glyph.Handle := LoadBitmap(HInstance, 'lkSpinUpLight')
+    else
+      FUpButton.Glyph.Handle := LoadBitmap(HInstance, 'lkSpinUp');
     FUpButton.NumGlyphs := 1;
     FUpButton.Invalidate;
   end;
@@ -432,13 +441,26 @@ begin
   Result := FDownButton.Glyph;
 end;
 
+procedure TSpinButton.SetLightButtons(const Value: Boolean);
+begin
+  FLightButtons := Value;
+  if FLightButtons then
+  begin
+    SetUpGlyph(nil);
+    SetDownGlyph(nil);
+  end;
+end;
+
 procedure TSpinButton.SetDownGlyph(Value: TBitmap);
 begin
   if Value <> nil then
     FDownButton.Glyph := Value
   else
   begin
-    FDownButton.Glyph.Handle := LoadBitmap(HInstance, 'lkSpinDown');
+    if LightButtons then
+      FDownButton.Glyph.Handle := LoadBitmap(HInstance, 'lkSpinDownLight')
+    else
+      FDownButton.Glyph.Handle := LoadBitmap(HInstance, 'lkSpinDown');
     FDownButton.NumGlyphs := 1;
     FDownButton.Invalidate;
   end;
@@ -467,6 +489,7 @@ begin
   FButton.FocusControl := Self;
   FButton.OnUpClick := UpClick;
   FButton.OnDownClick := DownClick;
+  FButton.LightButtons := False;
   Text := '0';
   ControlStyle := ControlStyle - [csSetCaption];
   FIncrement := 1;
@@ -522,6 +545,14 @@ procedure TlkSpinEdit.CreateWnd;
 begin
   inherited CreateWnd;
   SetEditRect;
+end;
+
+procedure TlkSpinEdit.SetLightButtons(const Value: Boolean);
+begin
+  FLightButtons := Value;
+  FButton.LightButtons := FLightButtons;
+  if not (csLoading in ComponentState) then
+    Repaint;
 end;
 
 procedure TlkSpinEdit.SetEditRect;
