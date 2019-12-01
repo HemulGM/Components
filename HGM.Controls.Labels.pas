@@ -51,6 +51,7 @@ type
     property RoundRectParam: TPoint read FRoundRectParam write SetRoundRectParam;
     property IgnorBounds: Boolean read FIgnorBounds write SetIgnorBounds;
     property EllipseRectVertical: Boolean read FEllipseRectVertical write SetEllipseRectVertical;
+    property OnClick;
   end;
 
   ThLabel = class(ThCustomLabel)

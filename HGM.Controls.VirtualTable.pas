@@ -257,7 +257,6 @@ type
     procedure UpdateColumn(Index: Integer);
     procedure SetPaintGrid(const Value: Boolean);
     procedure SetLastColumnAutoSize(const Value: Boolean);
-    procedure UpdateMaxColumn;
     procedure SetEditOnDblClick(const Value: Boolean);
     procedure UpdateColumnList;
     procedure SetCanClickToUnfocused(const Value: Boolean);
@@ -304,6 +303,7 @@ type
     procedure BeginAddColumns;
     procedure EndAddColumns;
     procedure SetRowHeight(Index, Value: Integer);
+    procedure UpdateMaxColumn;
     function GetRowHeight(Index: Integer): Integer;
   published
     property OnActivate: TNotifyEvent read FOnActivate write FOnActivate;
