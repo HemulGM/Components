@@ -3,10 +3,9 @@ unit HGM.Controls.VirtualTable;
 interface
 
 uses
-  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Classes, Vcl.Graphics,
-  Vcl.Controls, Vcl.Forms, Vcl.StdCtrls, System.Generics.Collections,
-  Vcl.ComCtrls, Winapi.CommCtrl, Vcl.ExtCtrls, System.UITypes, Vcl.Grids,
-  Vcl.Mask, Direct2D, Winapi.D2D1, HGM.Common, HGM.Common.Utils;
+  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Classes, Vcl.Graphics, Vcl.Controls,
+  Vcl.Forms, Vcl.StdCtrls, System.Generics.Collections, Vcl.ComCtrls, Winapi.CommCtrl, Vcl.ExtCtrls,
+  System.UITypes, Vcl.Grids, Vcl.Mask, Direct2D, Winapi.D2D1, HGM.Common, HGM.Common.Utils;
 
 type
   TOnTablePaint = procedure(Sender: TObject; Canvas: TCanvas) of object;
@@ -31,6 +30,7 @@ type
     function GetChecked(Index: Integer): Boolean;
     procedure SetChecked(Index: Integer; const Value: Boolean);
     function GetCheckedCount: Integer;
+    function GetIsUpdate: Boolean;
   public
     procedure BeginUpdate;
     procedure EndUpdate(Force: Boolean = False);
@@ -45,12 +45,13 @@ type
     function IndexIn(Index: Integer): Boolean;
     procedure UnAssignTables;
     procedure UnAssignTable(pTable: TTableEx);
-    procedure UpdateTable; virtual;
+    procedure UpdateTable(Table: TTableEx = nil); virtual;
     procedure CheckAll; virtual;
     procedure UnCheckAll; virtual;
     property CheckedCount: Integer read GetCheckedCount;
     property Tables[Index: Integer]: TTableEx read GetTable;
     property Checked[Index: Integer]: Boolean read GetChecked write SetChecked;
+    property IsUpdate: Boolean read GetIsUpdate;
   end;
 
   TEditMode = (teText, teList, teDate, teMask, teTime, teInt, teFloat);
@@ -115,7 +116,8 @@ type
     property Caption: string read FCaption write SetCaption;
     property Width: Cardinal read FWidth write SetWidth default 100;
     property Format: TTextFormat read FTextFormat write SetTextFormat default[tfVerticalCenter, tfLeft, tfSingleLine];
-    property FormatColumns: TTextFormat read FFormatColumns write SetFormatColumns default[tfVerticalCenter, tfCenter, tfSingleLine];
+    property FormatColumns: TTextFormat read FFormatColumns write SetFormatColumns default[tfVerticalCenter,
+      tfCenter, tfSingleLine];
     property MinWidth: Cardinal read FMinWidth write FMinWidth default 60;
     property AsButton: Boolean read FAsButton write FAsButton default False;
     property ShowButtonOnlySelect: Boolean read FShowButtonOnlySelect write FShowButtonOnlySelect default False;
@@ -217,7 +219,8 @@ type
     procedure FMouseUp(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
     procedure FMouseLeave(Sender: TObject);
     procedure FOnEditChange(Sender: TObject);
-    procedure FOnComboMouseWheel(Sender: TObject; Shift: TShiftState; WheelDelta: Integer; MousePos: TPoint; var Handled: Boolean);
+    procedure FOnComboMouseWheel(Sender: TObject; Shift: TShiftState; WheelDelta: Integer; MousePos:
+      TPoint; var Handled: Boolean);
     procedure FMouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
     procedure SetRowCount(Value: Integer);
     function GetRowCount: Longint;
@@ -404,7 +407,8 @@ type
     property DrawColumnBorded: Boolean read FDrawColumnBorded write SetDrawColumnBorded default True;
     property DrawColumnSections: Boolean read FDrawColumnSections write SetDrawColumnSections default True;
     property FlashSelectedCol: Boolean read FFlashSelectedCol write SetFlashSelectedCol default False;
-    property MouseRightClickTooClick: Boolean read FMouseRightClickTooClick write FMouseRightClickTooClick default False;
+    property MouseRightClickTooClick: Boolean read FMouseRightClickTooClick write
+      FMouseRightClickTooClick default False;
     property PaintGrid: Boolean read FPaintGrid write SetPaintGrid default False;
     property LastColumnAutoSize: Boolean read FLastColumnAutoSize write SetLastColumnAutoSize default True;
     property EditOnDblClick: Boolean read FEditOnDblClick write SetEditOnDblClick default True;
@@ -543,6 +547,11 @@ begin
       Inc(Result);
 end;
 
+function TTableData<T>.GetIsUpdate: Boolean;
+begin
+  Result := FUpdate > 0;
+end;
+
 function TTableData<T>.GetTable(Index: Integer): TTableEx;
 begin
   if not IndexInList(Index, FTables.Count) then
@@ -581,6 +590,12 @@ var
 begin
   if FUpdate > 0 then
     Exit;
+  //Обновить только одну таблицу
+  if Assigned(Table) then
+  begin
+    Table.ItemCount := Count;
+    Exit;
+  end;
   for i := 0 to FTables.Count - 1 do
     if Assigned(FTables[i]) then
     begin
@@ -1583,7 +1598,8 @@ begin
         if Assigned(FOnDrawCell) then
           FOnDrawCell(Sender, ACol, DataARow, Rect, State);
         if FShowFocus then
-          if IndexInList(ACol, Columns.Count) and (ACol = Col) and (ARow = DataRow) and Focused and (not Columns[ACol].AsButton) then
+          if IndexInList(ACol, Columns.Count) and (ACol = Col) and (ARow = DataRow) and Focused and
+            (not Columns[ACol].AsButton) then
           begin
             DrawFocusRect(Rect);
           end;
@@ -1828,7 +1844,8 @@ begin
     FOnMouseUp(Sender, Button, Shift, X, Y);
 end;
 
-procedure TTableEx.FonComboMouseWheel(Sender: TObject; Shift: TShiftState; WheelDelta: Integer; MousePos: TPoint; var Handled: Boolean);
+procedure TTableEx.FonComboMouseWheel(Sender: TObject; Shift: TShiftState; WheelDelta: Integer;
+  MousePos: TPoint; var Handled: Boolean);
 begin
   Handled := FEditing;
 end;

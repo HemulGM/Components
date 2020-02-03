@@ -3,10 +3,9 @@ unit HGM.Button;
 interface
 
 uses
-  Winapi.Windows, Winapi.Messages, System.Classes, Vcl.Graphics, Vcl.Controls,
-  Vcl.StdCtrls, System.Generics.Collections, Vcl.ExtCtrls, System.UITypes,
-  System.Types, HGM.Controls.VirtualTable, Vcl.Direct2D, Winapi.D2D1, HGM.Common,
-  HGM.Common.Utils, Vcl.Menus, System.SysUtils;
+  Winapi.Windows, Winapi.Messages, System.Classes, Vcl.Graphics, Vcl.Controls, Vcl.StdCtrls,
+  System.Generics.Collections, Vcl.ExtCtrls, System.UITypes, System.Types, HGM.Controls.VirtualTable,
+  Vcl.Direct2D, Winapi.D2D1, HGM.Common, HGM.Common.Utils, Vcl.Menus, System.SysUtils;
 
 type
   TButtonFlatState = (bfsNormal, bfsOver, bfsPressed);
@@ -122,6 +121,8 @@ type
     procedure SetSubTextFont(const Value: TFont);
     procedure SetBorderWidth(const Value: Integer);
     procedure SetShowCaption(const Value: Boolean);
+    procedure SetOnMouseEnter(const Value: TNotifyEvent);
+    procedure SetOnMouseLeave(const Value: TNotifyEvent);
     property ButtonState: TButtonFlatState read FButtonState write SetButtonState;
     property StyledColor: TColor read FStyledColor write SetStyledColor;
     property FromColor: TColor read FFromColor write FFromColor;
@@ -179,8 +180,8 @@ type
     property OnGesture;
     property OnMouseActivate;
     property OnMouseDown: TMouseEvent read FOnMouseDown write FOnMouseDown;
-    property OnMouseEnter;
-    property OnMouseLeave;
+    property OnMouseEnter: TNotifyEvent read FOnMouseEnter write SetOnMouseEnter;
+    property OnMouseLeave: TNotifyEvent read FOnMouseLeave write SetOnMouseLeave;
     property OnMouseMove;
     property OnMouseUp: TMouseEvent read FOnMouseUp write FOnMouseUp;
     property OnMouseWheelDown;
@@ -588,6 +589,7 @@ var
   {$ELSE}
   Target: TDirect2DCanvas;
   {$ENDIF}
+
 begin
   try
     if FDrawTimedText then
@@ -718,7 +720,8 @@ begin
       begin
         FRect := Rect(0, 0, FNotifyWidth, FNotifyWidth);
         if Assigned(Images) then
-          FRect.SetLocation(Min(ImageIndentLeft + Images.Width - 4, ClientWidth - FNotifyWidth - 2), (Height div 2 - Images.Height div 2) - 4)
+          FRect.SetLocation(Min(ImageIndentLeft + Images.Width - 4, ClientWidth - FNotifyWidth - 2),
+            (Height div 2 - Images.Height div 2) - 4)
         else
           FRect.SetLocation(FNotifyWidth div 2, FNotifyWidth div 2);
         //if FText <> '' then FRect.Offset(Canvas.TextWidth(FText), 0);
@@ -754,9 +757,11 @@ begin
     begin
       d := 1.6; //6.8
       if FEllipseRectVertical then
-        FRect := Rect(Round(X + W / (6.8 / d)), Round(Y + H / (6.8 * d)), Round(X + W - W / (6.8 / d)), Round(Y + H - H / (6.8 * d)))
+        FRect := Rect(Round(X + W / (6.8 / d)), Round(Y + H / (6.8 * d)), Round(X + W - W / (6.8 / d)),
+          Round(Y + H - H / (6.8 * d)))
       else
-        FRect := Rect(Round(X + W / (6.8 * d)), Round(Y + H / (6.8 / d)), Round(X + W - W / (6.8 * d)), Round(Y + H - H / (6.8 / d)));
+        FRect := Rect(Round(X + W / (6.8 * d)), Round(Y + H / (6.8 / d)), Round(X + W - W / (6.8 * d)),
+          Round(Y + H - H / (6.8 / d)));
     end;
   //Изображение
     FRect.Offset(FImageIndentLeft, 0);
@@ -1019,6 +1024,16 @@ procedure TButtonFlat.SetNotifyWidth(const Value: Integer);
 begin
   FNotifyWidth := Value;
   Repaint;
+end;
+
+procedure TButtonFlat.SetOnMouseEnter(const Value: TNotifyEvent);
+begin
+  FOnMouseEnter := Value;
+end;
+
+procedure TButtonFlat.SetOnMouseLeave(const Value: TNotifyEvent);
+begin
+  FOnMouseLeave := Value;
 end;
 
 procedure TButtonFlat.SetPopup(const Value: TPopupMenu);

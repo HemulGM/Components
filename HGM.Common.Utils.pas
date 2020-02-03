@@ -3,13 +3,13 @@
 interface
 
 uses
-  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants,
-  System.Classes, Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs,
-  System.Generics.Collections, Winapi.Dwmapi, Vcl.ValEdit, System.DateUtils,
-  System.Math, System.Rtti, Vcl.ComCtrls, Vcl.Imaging.jpeg, Vcl.Grids,
+  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
+  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, System.Generics.Collections, Winapi.Dwmapi, Vcl.ValEdit,
+  System.DateUtils, System.Math, System.Rtti, Vcl.ComCtrls, Vcl.Imaging.jpeg, Vcl.Grids,
   Vcl.Imaging.pngimage, Vcl.StdCtrls, Vcl.Mask, Vcl.ExtCtrls, System.Types;
 
-function AdvSelectDirectory(const Caption: string; const Root: WideString; var Directory: string; EditBox: Boolean = False; ShowFiles: Boolean = False; AllowCreateDirs: Boolean = True): Boolean;
+function AdvSelectDirectory(const Caption: string; const Root: WideString; var Directory: string;
+  EditBox: Boolean = False; ShowFiles: Boolean = False; AllowCreateDirs: Boolean = True): Boolean;
 
 function Between(FMin, FValue, FMax: Integer): Boolean;
 
@@ -105,7 +105,9 @@ function RichEditGetBGCOlor(Target: TRichEdit; IfNone: TColor): TColor;
 
 procedure RichEditSetBGCOlor(Target: TRichEdit; Color: TColor);
 
-function DownloadURL(URL: string): TMemoryStream;
+function DownloadURL(URL: string): TMemoryStream; overload;
+
+function DownloadURL(URL: string; FileName: string): Boolean; overload;
 
 function GetVersion: string;
 
@@ -131,11 +133,29 @@ procedure DrawBitmapTo(X, Y: Integer; Src: TBitmap; Dest: TPngImage);
 
 function GetFromConsole(Caption: string; var Text: string): Boolean;
 
+procedure WaitTime(MS: Int64);
+
 implementation
 
 uses
-  Winapi.ShlObj, Winapi.ActiveX, PNGFunctions, PNGImageList, ClipBrd,
-  System.Net.HttpClient, Winapi.RichEdit, System.Win.ComObj;
+  Winapi.ShlObj, Winapi.ActiveX, PNGFunctions, PNGImageList, ClipBrd, System.Net.HttpClient,
+  Winapi.RichEdit, System.Win.ComObj;
+
+procedure WaitTime(MS: Int64);
+var
+  TS: Cardinal;
+begin
+  if MS < 0 then
+    Exit;
+  if MS = 0 then
+  begin
+    Application.ProcessMessages;
+    Exit;
+  end;
+  TS := GetTickCount;
+  while TS + MS > GetTickCount do
+    Application.ProcessMessages;
+end;
 
 function GetFromConsole(Caption: string; var Text: string): Boolean;
 begin
@@ -306,7 +326,8 @@ begin
     begin
       if VerQueryValue(Res.Memory, '\', Pointer(Info), InfoLen) then
       begin
-        Result := Format('%d.%d.%d.%d', [Info.dwFileVersionMS shr $10, Info.dwFileVersionMS and $FFFF, Info.dwFileVersionLS shr $10, Info.dwFileVersionLS and $FFFF]);
+        Result := Format('%d.%d.%d.%d', [Info.dwFileVersionMS shr $10, Info.dwFileVersionMS and
+          $FFFF, Info.dwFileVersionLS shr $10, Info.dwFileVersionLS and $FFFF]);
       end;
     end;
   finally
@@ -326,6 +347,30 @@ begin
       HTTP.Get(URL, Result);
       Result.Position := 0;
     except
+      //Ну, ошибка... Поток всё равно создан и ошибки не должно возникнуть,
+      //если проверить размер потока перед его использованием
+    end;
+  finally
+    HTTP.Free;
+  end;
+end;
+
+function DownloadURL(URL: string; FileName: string): Boolean;
+var
+  HTTP: THTTPClient;
+  Mem: TFileStream;
+begin
+  HTTP := THTTPClient.Create;
+  try
+    try
+      FileClose(FileCreate(FileName));
+      Mem := TFileStream.Create(FileName, fmOpenWrite);
+      HTTP.HandleRedirects := True;
+      HTTP.Get(URL, Mem);
+      Mem.Free;
+      Result := True;
+    except
+      Result := False;
       //Ну, ошибка... Поток всё равно создан и ошибки не должно возникнуть,
       //если проверить размер потока перед его использованием
     end;
@@ -595,7 +640,10 @@ const
   RArrayL = 'абвгдеёжзийклмнопрстуфхцчшщьыъэюя';
   RArrayU = 'АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЬЫЪЭЮЯ';
   colChar = 33;
-  arr: array[1..2, 1..ColChar] of string = (('a', 'b', 'v', 'g', 'd', 'e', 'yo', 'zh', 'z', 'i', 'y', 'k', 'l', 'm', 'n', 'o', 'p', 'r', 's', 't', 'u', 'f', 'kh', 'ts', 'ch', 'sh', 'shch', '''', 'y', '''', 'e', 'yu', 'ya'), ('A', 'B', 'V', 'G', 'D', 'E', 'Yo', 'Zh', 'Z', 'I', 'Y', 'K', 'L', 'M', 'N', 'O', 'P', 'R', 'S', 'T', 'U', 'F', 'Kh', 'Ts', 'Ch', 'Sh', 'Shch', '''', 'Y', '''', 'E', 'Yu', 'Ya'));
+  arr: array[1..2, 1..ColChar] of string = (('a', 'b', 'v', 'g', 'd', 'e', 'yo', 'zh', 'z', 'i', 'y',
+    'k', 'l', 'm', 'n', 'o', 'p', 'r', 's', 't', 'u', 'f', 'kh', 'ts', 'ch', 'sh', 'shch', '''', 'y',
+    '''', 'e', 'yu', 'ya'), ('A', 'B', 'V', 'G', 'D', 'E', 'Yo', 'Zh', 'Z', 'I', 'Y', 'K', 'L', 'M',
+    'N', 'O', 'P', 'R', 'S', 'T', 'U', 'F', 'Kh', 'Ts', 'Ch', 'Sh', 'Shch', '''', 'Y', '''', 'E', 'Yu', 'Ya'));
 var
   i, p: Integer;
   d: Byte;
@@ -791,6 +839,8 @@ begin
     Icon.Height := IList.Height;
     IList.GetIcon(ID, Icon);
     ConvertToPNG(Icon, PNG);
+    if PNG.TransparencyMode = ptmNone then
+      PNG.CreateAlpha;
     PNGColored(0, 0, PNG, PNGNew, Color);
     NewIcon := PngToIco(PNGNew);
     IList.ReplaceIcon(ID, NewIcon);
@@ -873,7 +923,8 @@ begin
  end;
 end;            }
 
-function AdvSelectDirectory(const Caption: string; const Root: WideString; var Directory: string; EditBox: Boolean = False; ShowFiles: Boolean = False; AllowCreateDirs: Boolean = True): Boolean;
+function AdvSelectDirectory(const Caption: string; const Root: WideString; var Directory: string;
+  EditBox: Boolean = False; ShowFiles: Boolean = False; AllowCreateDirs: Boolean = True): Boolean;
 
   function SelectDirCB(Wnd: HWND; uMsg: UINT; lParam, lpData: lParam): Integer; stdcall;
   begin
@@ -917,7 +968,8 @@ begin
         pidlRoot := RootItemIDList;
         pszDisplayName := Buffer;
         lpszTitle := PChar(Caption);
-        ulFlags := BIF_RETURNONLYFSDIRS or BIF_USENEWUI or BIF_EDITBOX * Ord(EditBox) or BIF_BROWSEINCLUDEFILES * Ord(ShowFiles) or BIF_NOCREATEDIRS * Ord(not AllowCreateDirs);
+        ulFlags := BIF_RETURNONLYFSDIRS or BIF_USENEWUI or BIF_EDITBOX * Ord(EditBox) or
+          BIF_BROWSEINCLUDEFILES * Ord(ShowFiles) or BIF_NOCREATEDIRS * Ord(not AllowCreateDirs);
         lpfn := @SelectDirCB;
         if Directory <> '' then
           lParam := Integer(PChar(Directory));
@@ -950,7 +1002,8 @@ var
 begin
   ZeroMemory(@OSInfo, SizeOf(OSInfo));
   OSInfo.dwOSVersionInfoSize := SizeOf(TOSVERSIONINFO);
-  if (((not GetVersionEx(OSInfo)) and (OSInfo.dwPlatformId <> VER_PLATFORM_WIN32_NT) and (OSInfo.dwMajorVersion < 5))) or (Winapi.Dwmapi.DwmGetColorizationColor(AColor, OpaqueBlend) = S_FALSE) then
+  if (((not GetVersionEx(OSInfo)) and (OSInfo.dwPlatformId <> VER_PLATFORM_WIN32_NT) and (OSInfo.dwMajorVersion
+    < 5))) or (Winapi.Dwmapi.DwmGetColorizationColor(AColor, OpaqueBlend) = S_FALSE) then
   begin
     Result := clNone;
     Exit;
@@ -1297,7 +1350,8 @@ begin
   GetBrushOrgEx(Target, Pt);
   SetStretchBltMode(Target, HALFTONE);
   SetBrushOrgEx(Target, Pt.X, Pt.Y, @Pt);
-  StretchBlt(Target, Rect.Left, Rect.Top, Rect.Width, Rect.Height, BMP.Canvas.Handle, 0, 0, BMP.Width, BMP.Height, SRCCOPY);
+  StretchBlt(Target, Rect.Left, Rect.Top, Rect.Width, Rect.Height, BMP.Canvas.Handle, 0, 0, BMP.Width,
+    BMP.Height, SRCCOPY);
   BMP.Free;
 end;
 
@@ -1318,7 +1372,8 @@ begin
       if DAS[dX + X] > 0 then
       begin
         DAS[dX + X] := Min(255, (SAS^[dX] + DAS^[dX + X]));
-        Dest.Canvas.Pixels[dX + X, dY + Y] := MixColorsValue(Src.Canvas.Pixels[dX, dY], Dest.Canvas.Pixels[dX + X, dY + Y], DAS^[dX + X]);
+        Dest.Canvas.Pixels[dX + X, dY + Y] := MixColorsValue(Src.Canvas.Pixels[dX, dY], Dest.Canvas.Pixels
+          [dX + X, dY + Y], DAS^[dX + X]);
       end
       else
       begin
@@ -1341,7 +1396,6 @@ type
 var
   dX, dY: Integer;
   DAS: pByteArray;
-  Ap: TRGB32;
   Line: PRGBArray32;
 begin
   for dY := 0 to Src.Height - 1 do
@@ -1356,7 +1410,8 @@ begin
       if DAS[dX + X] > 0 then
       begin
         DAS[dX + X] := Min(255, (Line[dX].Alpha + DAS^[dX + X]));
-        Dest.Canvas.Pixels[dX + X, dY + Y] := MixColorsValue(Src.Canvas.Pixels[dX, dY], Dest.Canvas.Pixels[dX + X, dY + Y], DAS^[dX + X]);
+        Dest.Canvas.Pixels[dX + X, dY + Y] := MixColorsValue(Src.Canvas.Pixels[dX, dY], Dest.Canvas.Pixels
+          [dX + X, dY + Y], DAS^[dX + X]);
       end
       else
       begin
@@ -1380,8 +1435,8 @@ begin
     begin
       if SAS^[dX] <= 0 then
         Continue;
-      DAS[dX + X] := SAS^[dX]; // + DAS^[dX + X];
-      Dest.Canvas.Pixels[dX + X, dY + Y] := MColor; //, Dest.Canvas.Pixels[dX + X, dY + Y], DAS^[dX + X]);
+      DAS[dX + X] := SAS^[dX];
+      Dest.Canvas.Pixels[dX + X, dY + Y] := MColor;
     end;
   end;
 end;
@@ -1402,12 +1457,12 @@ begin
       if (dY > Src.Height - 5) then
       begin
         DAS[dX + X] := 255;
-        Dest.Canvas.Pixels[dX + X, dY + Y] := MColor; //, Dest.Canvas.Pixels[dX + X, dY + Y], DAS^[dX + X]);
+        Dest.Canvas.Pixels[dX + X, dY + Y] := MColor;
       end
       else
       begin
-        DAS[dX + X] := SAS^[dX]; // + DAS^[dX + X];
-        Dest.Canvas.Pixels[dX + X, dY + Y] := Src.Canvas.Pixels[dX + X, dY + Y]; //, Dest.Canvas.Pixels[dX + X, dY + Y], DAS^[dX + X]);
+        DAS[dX + X] := SAS^[dX];
+        Dest.Canvas.Pixels[dX + X, dY + Y] := Src.Canvas.Pixels[dX + X, dY + Y];
       end;
     end;
   end;

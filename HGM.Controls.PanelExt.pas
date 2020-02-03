@@ -3,9 +3,8 @@ unit HGM.Controls.PanelExt;
 interface
 
 uses
-  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants,
-  System.Classes, Vcl.Graphics, System.Types, Vcl.Controls, Vcl.Forms,
-  Vcl.Dialogs, Vcl.StdCtrls, Vcl.ExtCtrls, HGM.Common;
+  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
+  System.Types, Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, Vcl.ExtCtrls, HGM.Common;
 
 type
   TPanelExt = class(TCustomPanel)
@@ -291,7 +290,7 @@ type
     FOwner: TControl;
     FPanel: TPanel;
     FOpening: Boolean;
-  published
+  public
     constructor Create(AOwner: TControl; APanel: TPanel; AOpen: Boolean = False);
     procedure Close;
     procedure CloseDelay(Interval: Integer; FProc: TProc = nil);
