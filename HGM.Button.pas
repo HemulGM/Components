@@ -134,7 +134,7 @@ type
     destructor Destroy; override;
     procedure TimedText(Text: string; Delay: Cardinal);
     procedure ShowPopup;
-    procedure Click; virtual;
+    procedure Click; override;
   published
     property Align;
     property Anchors;

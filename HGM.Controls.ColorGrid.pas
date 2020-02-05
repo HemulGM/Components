@@ -40,16 +40,15 @@ type
     procedure SetOnMouseDown(const Value: TMouseEvent);
     procedure SetOnMouseMove(const Value: TMouseMoveEvent);
     procedure WMSize(var Message: TWMSize); message WM_SIZE;
-    procedure DrawCell(Sender: TObject; ACol, ARow: Integer; Rect: TRect; State: TGridDrawState);
+    procedure FDrawCell(Sender: TObject; ACol, ARow: Integer; Rect: TRect; State: TGridDrawState);
     procedure UpdateCellSizes(DoRepaint: Boolean);
     procedure SetColorColumns(const Value: TColorColumns);
     procedure UpdateColorData;
-    procedure DefineProperties(Filer: TFiler); override;
-    procedure MouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
-    procedure MouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
+    procedure FMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer); overload;
+    procedure FMouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer); overload;
     function CheckCell(C, R: Integer): Boolean;
     procedure SetOnMouseLeave(const Value: TNotifyEvent);
-    procedure MouseLeave(Sender: TObject);
+    procedure FMouseLeave(Sender: TObject);
     procedure SetSelectedItem(const Value: TPoint);
     function GetSelectedColor: TColor;
     procedure CtrlExit(Sender: TObject);
@@ -62,6 +61,7 @@ type
     procedure FillDefault;
     procedure SetInlineColumn(const Value: Boolean);
   protected
+    procedure DefineProperties(Filer: TFiler); override;
     property RowHeights;
     property ColWidths;
   public
@@ -198,7 +198,7 @@ begin
   ColorColumns.Add(Column);
 end;
 
-procedure TCustomColorGrid.DrawCell(Sender: TObject; ACol, ARow: Integer; Rect: TRect; State: TGridDrawState);
+procedure TCustomColorGrid.FDrawCell(Sender: TObject; ACol, ARow: Integer; Rect: TRect; State: TGridDrawState);
 var
   CRect: TRect;
 begin
@@ -365,7 +365,7 @@ begin
     FOnExit(Sender);
 end;
 
-procedure TCustomColorGrid.MouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+procedure TCustomColorGrid.FMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 begin
   if CheckCell(FHotItem.X, FHotItem.Y) then
   begin
@@ -376,7 +376,7 @@ begin
     FOnMouseDown(Sender, Button, Shift, X, Y);
 end;
 
-procedure TCustomColorGrid.MouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
+procedure TCustomColorGrid.FMouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
 var
   C, R: Integer;
 begin
@@ -390,7 +390,7 @@ begin
   Repaint;
 end;
 
-procedure TCustomColorGrid.MouseLeave(Sender: TObject);
+procedure TCustomColorGrid.FMouseLeave(Sender: TObject);
 begin
   FHotItem := Point(-1, -1);
   if Assigned(FOnMouseLeave) then
@@ -421,10 +421,6 @@ begin
 end;
 
 constructor TCustomColorGrid.Create(AOwner: TComponent);
-var
-  i, j: Integer;
-  Item: TColorColumn;
-  CItem: TColorItem;
 begin
   FCreating := True;
   inherited;
@@ -449,10 +445,10 @@ begin
   FixedRows := 0;
   GridLineWidth := 0;
   ScrollBars := ssNone;
-  OnDrawCell := DrawCell;
-  inherited OnMouseDown := MouseDown;
-  inherited OnMouseMove := MouseMove;
-  inherited OnMouseLeave := MouseLeave;
+  OnDrawCell := FDrawCell;
+  inherited OnMouseDown := FMouseDown;
+  inherited OnMouseMove := FMouseMove;
+  inherited OnMouseLeave := FMouseLeave;
   inherited OnExit := CtrlExit;
   FCreating := False;
 end;

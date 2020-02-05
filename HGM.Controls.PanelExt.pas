@@ -131,12 +131,12 @@ type
     property OnKeyPress;
     property OnKeyUp;
     property OnPanel;
-    property DefaultPaint: Boolean read FDefaultPaint write SetDefaultPaint;
-    property OnMouseEnter: TNotifyEvent read FOnMouseEnter write FOnMouseEnter;
-    property OnMouseLeave: TNotifyEvent read FOnMouseLeave write FOnMouseLeave;
-    property OnMouseDown: TMouseEvent read FOnMouseDown write FOnMouseDown;
-    property OnMouseMove: TMouseMoveEvent read FOnMouseMove write FOnMouseMove;
-    property OnMouseUp: TMouseEvent read FOnMouseUp write FOnMouseUp;
+    property DefaultPaint;
+    property OnMouseEnter;
+    property OnMouseLeave;
+    property OnMouseDown;
+    property OnMouseMove;
+    property OnMouseUp;
     property Align;
     property Alignment;
     property Anchors;
@@ -291,7 +291,7 @@ type
     FOwner: TControl;
     FPanel: TPanel;
     FOpening: Boolean;
-  published
+  public
     constructor Create(AOwner: TControl; APanel: TPanel; AOpen: Boolean = False);
     procedure Close;
     procedure CloseDelay(Interval: Integer; FProc: TProc = nil);
