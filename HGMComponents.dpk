@@ -35,10 +35,10 @@ requires
   xmlrtl,
   vclimg,
   VclSmp,
-  PngComponents,
   IndySystem,
   IndyProtocols,
-  IndyCore;
+  IndyCore,
+  PngComponentsD;
 
 contains
   HGM.Autorun in 'HGM.Autorun.pas',
@@ -69,7 +69,8 @@ contains
   HGM.License in 'HGM.License.pas',
   HGM.Controls.Labels.Base in 'HGM.Controls.Labels.Base.pas',
   HGM.Controls.Chat in 'HGM.Controls.Chat.pas',
-  HGM.Controls.ProgressBar in 'HGM.Controls.ProgressBar.pas';
+  HGM.Controls.ProgressBar in 'HGM.Controls.ProgressBar.pas',
+  HGM.Controls.TrackBar in 'HGM.Controls.TrackBar.pas';
 
 end.
 

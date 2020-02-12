@@ -62,7 +62,7 @@ type
   private
     FFillColor: TColor;
     procedure SetFillColor(const Value: TColor);
-  published
+  public
     function CalcRect(Canvas: TCanvas; Rect: TRect): TRect; override;
     function DrawRect(Canvas: TCanvas; Rect: TRect): TRect; override;
     constructor Create(AOwner: TChatItems); override;

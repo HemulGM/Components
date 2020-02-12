@@ -1,10 +1,10 @@
 object FormList: TFormList
   Left = 0
   Top = 0
-  BorderStyle = bsNone
+  BorderStyle = bsSingle
   Caption = 'FormList'
-  ClientHeight = 630
-  ClientWidth = 543
+  ClientHeight = 602
+  ClientWidth = 537
   Color = clBtnFace
   DoubleBuffered = True
   Font.Charset = DEFAULT_CHARSET
@@ -15,4 +15,11 @@ object FormList: TFormList
   OldCreateOrder = False
   PixelsPerInch = 96
   TextHeight = 13
+  object ThTrackbar1: ThTrackbar
+    Left = 8
+    Top = 8
+    Width = 521
+    Height = 30
+    Position = 100.000000000000000000
+  end
 end

@@ -7,7 +7,7 @@ uses
   Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.Grids, HGM.Controls.ColorGrid, HGM.Controls.VirtualTable,
   System.Generics.Collections, Vcl.ExtCtrls, Vcl.StdCtrls, HGM.Controls.PanelExt, Direct2D, D2D1,
   HGM.AutoTextType, HGM.Controls.Edit, HGM.Controls.Chat, HGM.Button, Vcl.ComCtrls,
-  HGM.Controls.ProgressBar;
+  HGM.Controls.ProgressBar, HGM.Controls.TrackBar;
 
 type
   TForm8 = class(TForm)
@@ -15,8 +15,10 @@ type
     hProgrsssBar1: ThProgrsssBar;
     TrackBar1: TTrackBar;
     Panel1: TPanel;
+    hTrackbar1: ThTrackbar;
     procedure DrawPanel1Paint(Sender: TObject);
     procedure TrackBar1Change(Sender: TObject);
+    procedure hTrackbar1Change(Sender: TObject; Position: Extended);
   private
     { Private declarations }
   public
@@ -75,6 +77,11 @@ begin
     Brush.Color := $0020160F;
     FillRect(Panel.ClientRect);
   end;
+end;
+
+procedure TForm8.hTrackbar1Change(Sender: TObject; Position: Extended);
+begin
+  hProgrsssBar1.Position := Round(Position);
 end;
 
 procedure TForm8.TrackBar1Change(Sender: TObject);

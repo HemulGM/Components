@@ -11,7 +11,6 @@ implementation
 
 function AskYesNo(aCaption, aQuestion: string): Boolean;
 begin
-  Result := False;
   with TTaskDialog.Create(nil) do
   begin
     Caption := aCaption;

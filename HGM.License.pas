@@ -52,7 +52,7 @@ end;
 class function ThTrue.GetInstance: ThTrueInstance;
 begin
 // if not Assigned(Instance) then Instance:=ThTrue.Create();
-
+  Result := nil;
 end;
 
 procedure ThTrue.SetAppGUID(const Value: string);

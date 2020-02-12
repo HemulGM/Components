@@ -85,7 +85,6 @@ function GetMailServers(const DNSHost, Domain: AnsiString; const Servers: TStrin
 var
   i: integer;
 begin
-  Result := False;
   with TIdDNSResolver.Create(nil) do
   begin
     QueryType := [qtMX];
@@ -150,7 +149,6 @@ end;
 
 function TServerOptions.Load(Settings: TSettings; RelativePath: string): Boolean;
 begin
-  Result := False;
   if not Assigned(Settings) then
     raise ESettingsNotAssign.Create('Класс параметров "TSettings" не инициализирован');
   try
@@ -168,7 +166,6 @@ end;
 
 function TServerOptions.Save(Settings: TSettings; RelativePath: string): Boolean;
 begin
-  Result := False;
   if not Assigned(Settings) then
     raise ESettingsNotAssign.Create('Класс параметров "TSettings" не инициализирован');
   try
@@ -356,9 +353,9 @@ begin
           case AnsiIndexStr(ServerNode.NodeName, cServerNodes) of
             0:
               SOption.HostName := ServerNode.Text; // hostname
-            1:
+              1:
               SOption.Port := StrToInt(ServerNode.Text); // port
-            2:
+              2:
               begin // socketType
                 if SameText(ServerNode.Text, 'SSL') then
                   SOption.SocketType := TSocketType.sSSL

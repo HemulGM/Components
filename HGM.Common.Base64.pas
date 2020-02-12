@@ -95,34 +95,33 @@ end;
 
 procedure Base64Decode(const InBuffer; InSize: DWord; var OutBuffer);
 const
-  cBase64Codec: array[0..255] of Byte = (
-            $FF, $FF, $FF, $FF, $FF, {005>} $FF, $FF, $FF, $FF, $FF, // 000..009
-              $FF, $FF, $FF, $FF, $FF, {015>} $FF, $FF, $FF, $FF, $FF, // 010..019
-              $FF, $FF, $FF, $FF, $FF, {025>} $FF, $FF, $FF, $FF, $FF, // 020..029
-              $FF, $FF, $FF, $FF, $FF, {035>} $FF, $FF, $FF, $FF, $FF, // 030..039
-              $FF, $FF, $FF, $3E, $FF, {045>} $FF, $FF, $3F, $34, $35, // 040..049
-              $36, $37, $38, $39, $3A, {055>} $3B, $3C, $3D, $FF, $FF, // 050..059
-              $FF, $00, $FF, $FF, $FF, {065>} $00, $01, $02, $03, $04, // 060..069
-              $05, $06, $07, $08, $09, {075>} $0A, $0B, $0C, $0D, $0E, // 070..079
-              $0F, $10, $11, $12, $13, {085>} $14, $15, $16, $17, $18, // 080..089
-              $19, $FF, $FF, $FF, $FF, {095>} $FF, $FF, $1A, $1B, $1C, // 090..099
-              $1D, $1E, $1F, $20, $21, {105>} $22, $23, $24, $25, $26, // 100..109
-              $27, $28, $29, $2A, $2B, {115>} $2C, $2D, $2E, $2F, $30, // 110..119
-              $31, $32, $33, $FF, $FF, {125>} $FF, $FF, $FF, $FF, $FF, // 120..129
-              $FF, $FF, $FF, $FF, $FF, {135>} $FF, $FF, $FF, $FF, $FF, // 130..139
-              $FF, $FF, $FF, $FF, $FF, {145>} $FF, $FF, $FF, $FF, $FF, // 140..149
-              $FF, $FF, $FF, $FF, $FF, {155>} $FF, $FF, $FF, $FF, $FF, // 150..159
-              $FF, $FF, $FF, $FF, $FF, {165>} $FF, $FF, $FF, $FF, $FF, // 160..169
-              $FF, $FF, $FF, $FF, $FF, {175>} $FF, $FF, $FF, $FF, $FF, // 170..179
-              $FF, $FF, $FF, $FF, $FF, {185>} $FF, $FF, $FF, $FF, $FF, // 180..189
-              $FF, $FF, $FF, $FF, $FF, {195>} $FF, $FF, $FF, $FF, $FF, // 190..199
-              $FF, $FF, $FF, $FF, $FF, {205>} $FF, $FF, $FF, $FF, $FF, // 200..209
-              $FF, $FF, $FF, $FF, $FF, {215>} $FF, $FF, $FF, $FF, $FF, // 210..219
-              $FF, $FF, $FF, $FF, $FF, {225>} $FF, $FF, $FF, $FF, $FF, // 220..229
-              $FF, $FF, $FF, $FF, $FF, {235>} $FF, $FF, $FF, $FF, $FF, // 230..239
-              $FF, $FF, $FF, $FF, $FF, {245>} $FF, $FF, $FF, $FF, $FF, // 240..249
-              $FF, $FF, $FF, $FF, $FF, {255>} $FF                      // 250..255
-              );
+  cBase64Codec: array[0..255] of Byte = ($FF, $FF, $FF, $FF, $FF, {005>} $FF, $FF, $FF, $FF, $FF, // 000..009
+    $FF, $FF, $FF, $FF, $FF, {015>} $FF, $FF, $FF, $FF, $FF, // 010..019
+    $FF, $FF, $FF, $FF, $FF, {025>} $FF, $FF, $FF, $FF, $FF, // 020..029
+    $FF, $FF, $FF, $FF, $FF, {035>} $FF, $FF, $FF, $FF, $FF, // 030..039
+    $FF, $FF, $FF, $3E, $FF, {045>} $FF, $FF, $3F, $34, $35, // 040..049
+    $36, $37, $38, $39, $3A, {055>} $3B, $3C, $3D, $FF, $FF, // 050..059
+    $FF, $00, $FF, $FF, $FF, {065>} $00, $01, $02, $03, $04, // 060..069
+    $05, $06, $07, $08, $09, {075>} $0A, $0B, $0C, $0D, $0E, // 070..079
+    $0F, $10, $11, $12, $13, {085>} $14, $15, $16, $17, $18, // 080..089
+    $19, $FF, $FF, $FF, $FF, {095>} $FF, $FF, $1A, $1B, $1C, // 090..099
+    $1D, $1E, $1F, $20, $21, {105>} $22, $23, $24, $25, $26, // 100..109
+    $27, $28, $29, $2A, $2B, {115>} $2C, $2D, $2E, $2F, $30, // 110..119
+    $31, $32, $33, $FF, $FF, {125>} $FF, $FF, $FF, $FF, $FF, // 120..129
+    $FF, $FF, $FF, $FF, $FF, {135>} $FF, $FF, $FF, $FF, $FF, // 130..139
+    $FF, $FF, $FF, $FF, $FF, {145>} $FF, $FF, $FF, $FF, $FF, // 140..149
+    $FF, $FF, $FF, $FF, $FF, {155>} $FF, $FF, $FF, $FF, $FF, // 150..159
+    $FF, $FF, $FF, $FF, $FF, {165>} $FF, $FF, $FF, $FF, $FF, // 160..169
+    $FF, $FF, $FF, $FF, $FF, {175>} $FF, $FF, $FF, $FF, $FF, // 170..179
+    $FF, $FF, $FF, $FF, $FF, {185>} $FF, $FF, $FF, $FF, $FF, // 180..189
+    $FF, $FF, $FF, $FF, $FF, {195>} $FF, $FF, $FF, $FF, $FF, // 190..199
+    $FF, $FF, $FF, $FF, $FF, {205>} $FF, $FF, $FF, $FF, $FF, // 200..209
+    $FF, $FF, $FF, $FF, $FF, {215>} $FF, $FF, $FF, $FF, $FF, // 210..219
+    $FF, $FF, $FF, $FF, $FF, {225>} $FF, $FF, $FF, $FF, $FF, // 220..229
+    $FF, $FF, $FF, $FF, $FF, {235>} $FF, $FF, $FF, $FF, $FF, // 230..239
+    $FF, $FF, $FF, $FF, $FF, {245>} $FF, $FF, $FF, $FF, $FF, // 240..249
+    $FF, $FF, $FF, $FF, $FF, {255>} $FF                      // 250..255
+    );
 var
   X, Y: Integer;
   PIn, POut: TPAByte;
@@ -184,22 +183,25 @@ procedure Base64EncodeStr(const InText: string; var OutText: string);
 var
   InSize, OutSize: DWord;
   PIn, POut: Pointer;
+  FOut, FIn: AnsiString;
 begin
+  FIn := AnsiString(InText);
   // get size of source
-  InSize := Length(InText);
+  InSize := Length(FIn);
   // calculate size for destination
   OutSize := CalcEncodedSize(InSize);
 
   // prepare AnsiString length to fit result data
-  SetLength(OutText, OutSize);
+  SetLength(FOut, OutSize);
 
   if OutSize > 0 then
   begin
-    PIn := @InText[1];
-    POut := @OutText[1];
+    PIn := @FIn[1];
+    POut := @FOut[1];
 
     // encode !
     Base64Encode(PIn^, InSize, POut^);
+    OutText := FOut;
   end;
 end;
 
@@ -207,23 +209,26 @@ procedure Base64DecodeStr(const InText: string; var OutText: string);
 var
   InSize, OutSize: DWord;
   PIn, POut: Pointer;
+  FOut, FIn: AnsiString;
 begin
+  FIn := AnsiString(InText);
   // get size of source
-  InSize := Length(InText);
+  InSize := Length(FIn);
   // calculate size for destination
-  PIn := @InText[1];
+  PIn := @FIn[1];
   OutSize := CalcDecodedSize(PIn, InSize);
 
   // prepare AnsiString length to fit result data
-  SetLength(OutText, OutSize);
+  SetLength(FOut, OutSize);
 
   if OutSize > 0 then
   begin
-    FillChar(OutText[1], OutSize, '.');
-    POut := @OutText[1];
+    FillChar(FOut[1], OutSize, '.');
+    POut := @FOut[1];
 
     // encode !
     Base64Decode(PIn^, InSize, POut^);
+    OutText := FOut;
   end;
 end;
 
@@ -247,3 +252,4 @@ begin
 end;
 
 end.
+

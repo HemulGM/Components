@@ -3,11 +3,12 @@ unit HGM.Controls.PanelExt;
 interface
 
 uses
-  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
-  System.Types, Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, Vcl.ExtCtrls, HGM.Common;
+  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants,
+  System.Classes, Vcl.Graphics, System.Types, Vcl.Controls, Vcl.Forms,
+  Vcl.Dialogs, Vcl.StdCtrls, Vcl.ExtCtrls, HGM.Common;
 
 type
-  TPanelExt = class(TCustomPanel)
+  TCustomPanelExt = class(TCustomPanel)
   private
     FOnPanel: Boolean;
     FDefaultPaint: Boolean;
@@ -36,16 +37,27 @@ type
     property OnPanel: Boolean read FOnPanel;
     property MouseCoord: TPoint read FMouseCoord;
     property MouseState: TShiftState read FMouseState;
-  published
-    property Caption;
+    property RepaintOnMouseMove: Boolean read FRepaintOnMouseMove write SetRepaintOnMouseMove;
     property DefaultPaint: Boolean read FDefaultPaint write SetDefaultPaint;
+    property OnPaint: TNotifyEvent read FOnPaint write FOnPaint;
     property OnMouseEnter: TNotifyEvent read FOnMouseEnter write FOnMouseEnter;
     property OnMouseLeave: TNotifyEvent read FOnMouseLeave write FOnMouseLeave;
     property OnMouseDown: TMouseEvent read FOnMouseDown write FOnMouseDown;
     property OnMouseMove: TMouseMoveEvent read FOnMouseMove write FOnMouseMove;
     property OnMouseUp: TMouseEvent read FOnMouseUp write FOnMouseUp;
-    property OnPaint: TNotifyEvent read FOnPaint write FOnPaint;
-    property RepaintOnMouseMove: Boolean read FRepaintOnMouseMove write SetRepaintOnMouseMove default False;
+  end;
+
+  TPanelExt = class(TCustomPanelExt)
+  published
+    property Caption;
+    property DefaultPaint;
+    property OnMouseEnter;
+    property OnMouseLeave;
+    property OnMouseDown;
+    property OnMouseMove;
+    property OnMouseUp;
+    property OnPaint;
+    property RepaintOnMouseMove default False;
     property Align;
     property Alignment;
     property Anchors;
@@ -115,7 +127,7 @@ type
     property OnMouseWheelUp;
   end;
 
-  TDrawPanel = class(TPanelExt)
+  TDrawPanel = class(TCustomPanelExt)
   public
     FOnPaint: TNotifyEvent;
     procedure Paint; override;
@@ -323,7 +335,7 @@ begin
     FOnPaint(Self);
 end;
 
-procedure TPanelExt.Paint;
+procedure TCustomPanelExt.Paint;
 begin
   if Brush.Bitmap <> nil then
     Canvas.Draw(0, 0, Brush.Bitmap);
@@ -331,18 +343,18 @@ begin
     FOnPaint(Self);
 end;
 
-procedure TPanelExt.SetDefaultPaint(const Value: Boolean);
+procedure TCustomPanelExt.SetDefaultPaint(const Value: Boolean);
 begin
   FDefaultPaint := Value;
   Paint;
 end;
 
-procedure TPanelExt.SetRepaintOnMouseMove(const Value: Boolean);
+procedure TCustomPanelExt.SetRepaintOnMouseMove(const Value: Boolean);
 begin
   FRepaintOnMouseMove := Value;
 end;
 
-procedure TPanelExt.WMNCPaint(var Message: TMessage);
+procedure TCustomPanelExt.WMNCPaint(var Message: TMessage);
 begin
   if FDefaultPaint then
     inherited;
@@ -350,21 +362,21 @@ begin
     FOnPaint(Self);
 end;
 
-procedure TPanelExt.CMMouseEnter(var message: TMessage);
+procedure TCustomPanelExt.CMMouseEnter(var message: TMessage);
 begin
   FOnPanel := True;
   if Assigned(FOnMouseEnter) then
     FOnMouseEnter(Self);
 end;
 
-procedure TPanelExt.CMMouseLeave(var message: TMessage);
+procedure TCustomPanelExt.CMMouseLeave(var message: TMessage);
 begin
   FOnPanel := False;
   if Assigned(FOnMouseLeave) then
     FOnMouseLeave(Self);
 end;
 
-procedure TPanelExt.CMMouseWheel(var Message: TCMMouseWheel);
+procedure TCustomPanelExt.CMMouseWheel(var Message: TCMMouseWheel);
 begin
   with Message do
   begin
@@ -377,7 +389,7 @@ begin
   end;
 end;
 
-constructor TPanelExt.Create(AOwner: TComponent);
+constructor TCustomPanelExt.Create(AOwner: TComponent);
 begin
   inherited;
   inherited OnMouseMove := FMouseMove;
@@ -385,14 +397,14 @@ begin
   inherited OnMouseUp := FMouseUp;
 end;
 
-procedure TPanelExt.FMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+procedure TCustomPanelExt.FMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 begin
   FMouseState := Shift;
   if Assigned(FOnMouseDown) then
     FOnMouseDown(Sender, Button, Shift, X, Y);
 end;
 
-procedure TPanelExt.FMouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
+procedure TCustomPanelExt.FMouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
 begin
   FMouseState := Shift;
   FMouseCoord := Point(X, Y);
@@ -402,7 +414,7 @@ begin
     Repaint;
 end;
 
-procedure TPanelExt.FMouseUp(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+procedure TCustomPanelExt.FMouseUp(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 begin
   FMouseState := Shift;
   if Assigned(FOnMouseUp) then
