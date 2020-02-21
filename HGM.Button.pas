@@ -3,9 +3,10 @@ unit HGM.Button;
 interface
 
 uses
-  Winapi.Windows, Winapi.Messages, System.Classes, Vcl.Graphics, Vcl.Controls, Vcl.StdCtrls,
-  System.Generics.Collections, Vcl.ExtCtrls, System.UITypes, System.Types, HGM.Controls.VirtualTable,
-  Vcl.Direct2D, Winapi.D2D1, HGM.Common, HGM.Common.Utils, Vcl.Menus, System.SysUtils;
+  Winapi.Windows, Winapi.Messages, System.Classes, Vcl.Graphics, Vcl.Controls,
+  Vcl.StdCtrls, System.Generics.Collections, Vcl.ExtCtrls, System.UITypes,
+  System.Types, HGM.Controls.VirtualTable, Vcl.Direct2D, Winapi.D2D1, HGM.Common,
+  HGM.Common.Utils, Vcl.Menus, System.SysUtils;
 
 type
   TButtonFlatState = (bfsNormal, bfsOver, bfsPressed);
@@ -590,6 +591,7 @@ var
   Target: TDirect2DCanvas;
   {$ENDIF}
 
+
 begin
   try
     if FDrawTimedText then
@@ -598,14 +600,11 @@ begin
       FText := FLabel;
     case FButtonState of
       bfsOver:
-        if Assigned(FontOver) then
-          Canvas.Font.Assign(FontOver);
+        Canvas.Font.Assign(FontOver);
       bfsPressed:
-        if Assigned(FontDown) then
-          Canvas.Font.Assign(FontDown);
+        Canvas.Font.Assign(FontDown);
       bfsNormal:
-        if Assigned(Font) then
-          Canvas.Font.Assign(Font);
+        Canvas.Font.Assign(Font);
     end;
     {$IFNDEF FORXP}
     Target := TDirect2DCanvas.Create(Canvas, ClientRect);
@@ -763,7 +762,7 @@ begin
         FRect := Rect(Round(X + W / (6.8 * d)), Round(Y + H / (6.8 / d)), Round(X + W - W / (6.8 * d)),
           Round(Y + H - H / (6.8 / d)));
     end;
-  //Изображение
+    //Изображение
     FRect.Offset(FImageIndentLeft, 0);
     FRect.Width := FRect.Width - FImageIndentLeft;
     if Assigned(FImages) and (FImageIndex >= 0) then
@@ -811,18 +810,9 @@ begin
           end;
       end;
     end;
-  // Текст
+    // Текст
     Canvas.Brush.Color := clWhite;
     Canvas.Brush.Style := bsClear;
-  //Уменьшим размер для доп текста
-    if FVisibleSubText then
-    begin
-      Canvas.Brush.Style := bsClear;
-      Canvas.Font.Color := clWhite;
-      FSubRect.Offset(0, -1);
-      Canvas.TextRect(FSubRect, FSubText, [tfSingleLine, tfCenter, tfVerticalCenter]);
-      FRect.Right := Min(FRect.Right, FSubRect.Left);
-    end;
 
     if FShowCaption then
     begin
@@ -838,6 +828,17 @@ begin
       end;
     end;
 
+    //Уменьшим размер для доп текста
+    if FVisibleSubText then
+    begin
+      Canvas.Font.Assign(FSubTextFont);
+      Canvas.Brush.Style := bsClear;
+      Canvas.Font.Color := clWhite;
+      FSubRect.Offset(0, -1);
+      Canvas.TextRect(FSubRect, FSubText, [tfSingleLine, tfCenter, tfVerticalCenter]);
+      FRect.Right := Min(FRect.Right, FSubRect.Left);
+    end;
+
     if Assigned(FOnPaint) then
       FOnPaint(Self);
 
@@ -845,8 +846,8 @@ begin
     begin
       DrawFocusRect(Canvas.Handle, ClientRect);
     end;
-  finally
-
+  except
+    //
   end;
 end;
 

@@ -137,11 +137,23 @@ function GetFromConsole(Caption: string; var Text: string): Boolean;
 
 procedure WaitTime(MS: Int64);
 
+function GetAppData: string;
+
 implementation
 
 uses
   Winapi.ShlObj, Winapi.ActiveX, PNGFunctions, PNGImageList, ClipBrd,
   System.Net.HttpClient, Winapi.RichEdit, System.Win.ComObj;
+
+function GetAppData: string;
+var
+  Path: array[0..MAX_PATH] of Char;
+begin
+  if SHGetFolderPath(0, CSIDL_APPDATA, 0, SHGFP_TYPE_CURRENT, Path) = S_OK then
+    Result := IncludeTrailingPathDelimiter(Path)
+  else
+    Result := '';
+end;
 
 procedure WaitTime(MS: Int64);
 var

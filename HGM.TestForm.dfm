@@ -19,7 +19,7 @@ object FormList: TFormList
     Left = 8
     Top = 8
     Width = 521
-    Height = 30
+    Height = 21
     Position = 100.000000000000000000
   end
 end
