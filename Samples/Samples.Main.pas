@@ -15,8 +15,10 @@ type
     hProgrsssBar1: ThProgrsssBar;
     TrackBar1: TTrackBar;
     Panel1: TPanel;
+    hChat1: ThChat;
     procedure DrawPanel1Paint(Sender: TObject);
     procedure TrackBar1Change(Sender: TObject);
+    procedure FormCreate(Sender: TObject);
   private
     { Private declarations }
   public
@@ -74,6 +76,28 @@ begin
   begin
     Brush.Color := $0020160F;
     FillRect(Panel.ClientRect);
+  end;
+end;
+
+procedure TForm8.FormCreate(Sender: TObject);
+begin
+  with hChat1.Items.AddInfo do
+  begin
+    Text := 'Начало чата';
+  end;
+
+  with hChat1.Items.AddMessage do
+  begin
+    From := 'От кого';
+    Text := 'Текст сообщения';
+    FromType := mtMe;
+  end;
+
+  with hChat1.Items.AddMessage do
+  begin
+    From := 'От кого';
+    Text := 'Текст сообщения';
+    FromType := mtOpponent;
   end;
 end;
 

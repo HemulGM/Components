@@ -54,6 +54,10 @@ type
     property IsUpdate: Boolean read GetIsUpdate;
   end;
 
+  TTableObjectData<T: class> = class(TTableData<T>)
+    procedure Clear; override;
+  end;
+
   TEditMode = (teText, teList, teDate, teMask, teTime, teInt, teFloat);
 
   TTableEditStruct = record
@@ -117,7 +121,7 @@ type
     property Width: Cardinal read FWidth write SetWidth default 100;
     property Format: TTextFormat read FTextFormat write SetTextFormat default[tfVerticalCenter, tfLeft, tfSingleLine];
     property FormatColumns: TTextFormat read FFormatColumns write SetFormatColumns default[tfVerticalCenter,
-      tfCenter, tfSingleLine];
+tfCenter, tfSingleLine];
     property MinWidth: Cardinal read FMinWidth write FMinWidth default 60;
     property AsButton: Boolean read FAsButton write FAsButton default False;
     property ShowButtonOnlySelect: Boolean read FShowButtonOnlySelect write FShowButtonOnlySelect default False;
@@ -278,6 +282,7 @@ type
     property RowHeights;
     property ColWidths;
     procedure DefineProperties(Filer: TFiler); override;
+    procedure TimedScroll(Direction: TGridScrollDirection); override;
   public
     function CreateColumn: TTableColumn;
     function CreateColumns: TTableColumns;
@@ -754,6 +759,12 @@ begin
   inherited Width := Value;
 end;
 
+procedure TTableEx.TimedScroll(Direction: TGridScrollDirection);
+begin
+  // inherited;
+  //Блочим автоскрол при зажатии мыши
+end;
+
 procedure TTableEx.UpdateColumnIndex;
 //var i:Integer;
 begin
@@ -1054,6 +1065,7 @@ begin
   inherited DefaultDrawing := False;
   inherited DrawingStyle := gdsGradient;
   inherited OnMouseWheel := FOnComboMouseWheel;
+
   FColumnsStream := nil;
   FActiveCursor := crHandPoint;
   FUpdatesCount := 0;
@@ -1152,7 +1164,7 @@ begin
   Width := 400;
  //DefaultColWidth:=200;
   DefaultRowHeight := 25;
-  Options := [goThumbTracking, goColSizing];
+  Options := [goThumbTracking, goColSizing, goRangeSelect];
   ColumnsHeight := 30;
   ShowColumns := True;
 end;
@@ -2271,6 +2283,17 @@ begin
     FTableEx.UpdateColumn(Item.Index)
   else
     FTableEx.UpdateColumns;
+end;
+
+{ TTableObjectData<T> }
+
+procedure TTableObjectData<T>.Clear;
+var
+  i: Integer;
+begin
+  for i := 0 to Count - 1 do
+    TObject(Items[i]).Free;
+  inherited;
 end;
 
 end.
