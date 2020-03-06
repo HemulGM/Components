@@ -3,13 +3,13 @@
 interface
 
 uses
-  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
-  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, System.Generics.Collections, Winapi.Dwmapi, Vcl.ValEdit,
-  System.DateUtils, System.Math, System.Rtti, Vcl.ComCtrls, Vcl.Imaging.jpeg, Vcl.Grids,
+  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants,
+  System.Classes, Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs,
+  System.Generics.Collections, Winapi.Dwmapi, Vcl.ValEdit, System.DateUtils,
+  System.Math, System.Rtti, Vcl.ComCtrls, Vcl.Imaging.jpeg, Vcl.Grids,
   Vcl.Imaging.pngimage, Vcl.StdCtrls, Vcl.Mask, Vcl.ExtCtrls, System.Types;
 
-function AdvSelectDirectory(const Caption: string; const Root: WideString; var Directory: string;
-  EditBox: Boolean = False; ShowFiles: Boolean = False; AllowCreateDirs: Boolean = True): Boolean;
+function AdvSelectDirectory(const Caption: string; const Root: WideString; var Directory: string; EditBox: Boolean = False; ShowFiles: Boolean = False; AllowCreateDirs: Boolean = True): Boolean;
 
 function Between(FMin, FValue, FMax: Integer): Boolean;
 
@@ -127,7 +127,7 @@ function ColorRedOrBlue(Precent: Byte): TColor;
 
 function ShowModalFor(Parent: TWinControl; Form: TForm): TModalResult;
 
-function SmoothStrechDraw(Source: TGraphic; Rect: TRect): TBitmap;
+function SmoothStrechDraw(Source: TGraphic; Rect: TRect; FillColor: TColor = clNone): TBitmap;
 
 procedure SmoothResizePNG(apng: TPngImage; NuWidth, NuHeight: integer);
 
@@ -142,8 +142,18 @@ function GetAppData: string;
 implementation
 
 uses
-  Winapi.ShlObj, Winapi.ActiveX, PNGFunctions, PNGImageList, ClipBrd, System.Net.HttpClient,
-  Winapi.RichEdit, System.Win.ComObj;
+  Winapi.ShlObj, Winapi.ActiveX, PNGFunctions, PNGImageList, ClipBrd,
+  System.Net.HttpClient, Winapi.RichEdit, System.Win.ComObj;
+
+function GetAppData: string;
+var
+  Path: array[0..MAX_PATH] of Char;
+begin
+  if SHGetFolderPath(0, CSIDL_APPDATA, 0, SHGFP_TYPE_CURRENT, Path) = S_OK then
+    Result := IncludeTrailingPathDelimiter(Path)
+  else
+    Result := '';
+end;
 
 function GetAppData: string;
 var
@@ -341,8 +351,7 @@ begin
     begin
       if VerQueryValue(Res.Memory, '\', Pointer(Info), InfoLen) then
       begin
-        Result := Format('%d.%d.%d.%d', [Info.dwFileVersionMS shr $10, Info.dwFileVersionMS and
-          $FFFF, Info.dwFileVersionLS shr $10, Info.dwFileVersionLS and $FFFF]);
+        Result := Format('%d.%d.%d.%d', [Info.dwFileVersionMS shr $10, Info.dwFileVersionMS and $FFFF, Info.dwFileVersionLS shr $10, Info.dwFileVersionLS and $FFFF]);
       end;
     end;
   finally
@@ -655,10 +664,7 @@ const
   RArrayL = 'абвгдеёжзийклмнопрстуфхцчшщьыъэюя';
   RArrayU = 'АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЬЫЪЭЮЯ';
   colChar = 33;
-  arr: array[1..2, 1..ColChar] of string = (('a', 'b', 'v', 'g', 'd', 'e', 'yo', 'zh', 'z', 'i', 'y',
-    'k', 'l', 'm', 'n', 'o', 'p', 'r', 's', 't', 'u', 'f', 'kh', 'ts', 'ch', 'sh', 'shch', '''', 'y',
-    '''', 'e', 'yu', 'ya'), ('A', 'B', 'V', 'G', 'D', 'E', 'Yo', 'Zh', 'Z', 'I', 'Y', 'K', 'L', 'M',
-    'N', 'O', 'P', 'R', 'S', 'T', 'U', 'F', 'Kh', 'Ts', 'Ch', 'Sh', 'Shch', '''', 'Y', '''', 'E', 'Yu', 'Ya'));
+  arr: array[1..2, 1..ColChar] of string = (('a', 'b', 'v', 'g', 'd', 'e', 'yo', 'zh', 'z', 'i', 'y', 'k', 'l', 'm', 'n', 'o', 'p', 'r', 's', 't', 'u', 'f', 'kh', 'ts', 'ch', 'sh', 'shch', '''', 'y', '''', 'e', 'yu', 'ya'), ('A', 'B', 'V', 'G', 'D', 'E', 'Yo', 'Zh', 'Z', 'I', 'Y', 'K', 'L', 'M', 'N', 'O', 'P', 'R', 'S', 'T', 'U', 'F', 'Kh', 'Ts', 'Ch', 'Sh', 'Shch', '''', 'Y', '''', 'E', 'Yu', 'Ya'));
 var
   i, p: Integer;
   d: Byte;
@@ -938,8 +944,7 @@ begin
  end;
 end;            }
 
-function AdvSelectDirectory(const Caption: string; const Root: WideString; var Directory: string;
-  EditBox: Boolean = False; ShowFiles: Boolean = False; AllowCreateDirs: Boolean = True): Boolean;
+function AdvSelectDirectory(const Caption: string; const Root: WideString; var Directory: string; EditBox: Boolean = False; ShowFiles: Boolean = False; AllowCreateDirs: Boolean = True): Boolean;
 
   function SelectDirCB(Wnd: HWND; uMsg: UINT; lParam, lpData: lParam): Integer; stdcall;
   begin
@@ -983,8 +988,7 @@ begin
         pidlRoot := RootItemIDList;
         pszDisplayName := Buffer;
         lpszTitle := PChar(Caption);
-        ulFlags := BIF_RETURNONLYFSDIRS or BIF_USENEWUI or BIF_EDITBOX * Ord(EditBox) or
-          BIF_BROWSEINCLUDEFILES * Ord(ShowFiles) or BIF_NOCREATEDIRS * Ord(not AllowCreateDirs);
+        ulFlags := BIF_RETURNONLYFSDIRS or BIF_USENEWUI or BIF_EDITBOX * Ord(EditBox) or BIF_BROWSEINCLUDEFILES * Ord(ShowFiles) or BIF_NOCREATEDIRS * Ord(not AllowCreateDirs);
         lpfn := @SelectDirCB;
         if Directory <> '' then
           lParam := Integer(PChar(Directory));
@@ -1017,8 +1021,7 @@ var
 begin
   ZeroMemory(@OSInfo, SizeOf(OSInfo));
   OSInfo.dwOSVersionInfoSize := SizeOf(TOSVERSIONINFO);
-  if (((not GetVersionEx(OSInfo)) and (OSInfo.dwPlatformId <> VER_PLATFORM_WIN32_NT) and (OSInfo.dwMajorVersion
-    < 5))) or (Winapi.Dwmapi.DwmGetColorizationColor(AColor, OpaqueBlend) = S_FALSE) then
+  if (((not GetVersionEx(OSInfo)) and (OSInfo.dwPlatformId <> VER_PLATFORM_WIN32_NT) and (OSInfo.dwMajorVersion < 5))) or (Winapi.Dwmapi.DwmGetColorizationColor(AColor, OpaqueBlend) = S_FALSE) then
   begin
     Result := clNone;
     Exit;
@@ -1425,29 +1428,46 @@ begin
   bTmp.Free;
 end;
 
-function SmoothStrechDraw(Source: TGraphic; Rect: TRect): TBitmap;
+function SmoothStrechDraw(Source: TGraphic; Rect: TRect; FillColor: TColor): TBitmap;
 var
   Pt: TPoint;
   Target: HDC;
   BMP: TBitmap;
+  p: Pointer;
 begin
   //!!! Главное юзать Vcl.Imaging.pngimage, если png будут, а не, например, acPNG от AlphaControls
   // В этот bitmap поместим наше изображение (любое)
   BMP := TBitmap.Create;
+  BMP.AlphaFormat := afDefined;
   BMP.PixelFormat := pf32bit;
+  BMP.HandleType := bmDIB;
   BMP.SetSize(Source.Width, Source.Height);
-  BMP.Assign(Source);
+  if FillColor = clNone then
+  begin
+    BMP.ignorepalette := true;
+    p := BMP.ScanLine[Source.Height - 1];
+    ZeroMemory(p, Source.Width * Source.Height * 4);
+    BMP.Assign(Source);
+  end
+  else
+  begin
+    BMP.Canvas.Brush.Color := FillColor;
+    BMP.Canvas.FillRect(TRect.Create(0, 0, Source.Width, Source.Height));
+    BMP.Canvas.Draw(0, 0, Source);
+  end;
+
+
   // А это - результат
   Result := TBitmap.Create;
   Result.PixelFormat := pf32bit;
   Result.SetSize(Rect.Width, Rect.Height);
+
   // Сглаженное растягивание (или сжатие)
   Target := Result.Canvas.Handle;
   GetBrushOrgEx(Target, Pt);
   SetStretchBltMode(Target, HALFTONE);
   SetBrushOrgEx(Target, Pt.X, Pt.Y, @Pt);
-  StretchBlt(Target, Rect.Left, Rect.Top, Rect.Width, Rect.Height, BMP.Canvas.Handle, 0, 0, BMP.Width,
-    BMP.Height, SRCCOPY);
+  StretchBlt(Target, Rect.Left, Rect.Top, Rect.Width, Rect.Height, BMP.Canvas.Handle, 0, 0, BMP.Width, BMP.Height, SRCCOPY);
   BMP.Free;
 end;
 
@@ -1468,8 +1488,7 @@ begin
       if DAS[dX + X] > 0 then
       begin
         DAS[dX + X] := Min(255, (SAS^[dX] + DAS^[dX + X]));
-        Dest.Canvas.Pixels[dX + X, dY + Y] := MixColorsValue(Src.Canvas.Pixels[dX, dY], Dest.Canvas.Pixels
-          [dX + X, dY + Y], DAS^[dX + X]);
+        Dest.Canvas.Pixels[dX + X, dY + Y] := MixColorsValue(Src.Canvas.Pixels[dX, dY], Dest.Canvas.Pixels[dX + X, dY + Y], DAS^[dX + X]);
       end
       else
       begin
@@ -1506,8 +1525,7 @@ begin
       if DAS[dX + X] > 0 then
       begin
         DAS[dX + X] := Min(255, (Line[dX].Alpha + DAS^[dX + X]));
-        Dest.Canvas.Pixels[dX + X, dY + Y] := MixColorsValue(Src.Canvas.Pixels[dX, dY], Dest.Canvas.Pixels
-          [dX + X, dY + Y], DAS^[dX + X]);
+        Dest.Canvas.Pixels[dX + X, dY + Y] := MixColorsValue(Src.Canvas.Pixels[dX, dY], Dest.Canvas.Pixels[dX + X, dY + Y], DAS^[dX + X]);
       end
       else
       begin

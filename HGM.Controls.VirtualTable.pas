@@ -3,9 +3,10 @@ unit HGM.Controls.VirtualTable;
 interface
 
 uses
-  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Classes, Vcl.Graphics, Vcl.Controls,
-  Vcl.Forms, Vcl.StdCtrls, System.Generics.Collections, Vcl.ComCtrls, Winapi.CommCtrl, Vcl.ExtCtrls,
-  System.UITypes, Vcl.Grids, Vcl.Mask, Direct2D, Winapi.D2D1, HGM.Common, HGM.Common.Utils;
+  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Classes, Vcl.Graphics,
+  Vcl.Controls, Vcl.Forms, Vcl.StdCtrls, System.Generics.Collections,
+  Vcl.ComCtrls, Winapi.CommCtrl, Vcl.ExtCtrls, System.UITypes, Vcl.Grids,
+  Vcl.Mask, Direct2D, Winapi.D2D1, HGM.Common, HGM.Common.Utils;
 
 type
   TOnTablePaint = procedure(Sender: TObject; Canvas: TCanvas) of object;
@@ -209,6 +210,7 @@ tfCenter, tfSingleLine];
     FCanClickToUnfocused: Boolean;
     FOnHotOver: TNotifyEvent;
     FActiveCursor: TCursor;
+    FShowScrollBar: Boolean;
     function DataRow: Integer;
     procedure CloseControl(Sender: TObject);
     procedure DoEditCancel;
@@ -222,9 +224,9 @@ tfCenter, tfSingleLine];
     procedure FMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
     procedure FMouseUp(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
     procedure FMouseLeave(Sender: TObject);
+    procedure FMouseEnter(Sender: TObject);
     procedure FOnEditChange(Sender: TObject);
-    procedure FOnComboMouseWheel(Sender: TObject; Shift: TShiftState; WheelDelta: Integer; MousePos:
-      TPoint; var Handled: Boolean);
+    procedure FOnComboMouseWheel(Sender: TObject; Shift: TShiftState; WheelDelta: Integer; MousePos: TPoint; var Handled: Boolean);
     procedure FMouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
     procedure SetRowCount(Value: Integer);
     function GetRowCount: Longint;
@@ -232,7 +234,6 @@ tfCenter, tfSingleLine];
     function GetWidth: Integer;
     procedure SetItemIndex(const Value: Integer);
     procedure SetShowScrollBar(const Value: Boolean);
-    function GetShowScrollBar: Boolean;
     procedure SetDefDrawing(const Value: Boolean);
     function GetColumnCount: Integer;
     procedure SetItemDowned(const Value: Boolean);
@@ -268,6 +269,7 @@ tfCenter, tfSingleLine];
     procedure UpdateColumnList;
     procedure SetCanClickToUnfocused(const Value: Boolean);
     procedure SetOnHotOver(const Value: TNotifyEvent);
+    procedure SetScrollVisible(const Value: Boolean);
     property ItemDowned: Boolean read FItemDowned write SetItemDowned;
     procedure UpdateColumnIndex;
     procedure FUpdateColumnsHeight;
@@ -392,7 +394,7 @@ tfCenter, tfSingleLine];
     property ProcEmpty: Boolean read FProcEmpty write SetProcEmpty default False;
     property Columns: TTableColumns read FColumns write FColumns;
     property DefaultDataDrawing: Boolean read FDefDrawing write SetDefDrawing default True;
-    property ShowScrollBar: Boolean read GetShowScrollBar write SetShowScrollBar default True;
+    property ShowScrollBar: Boolean read FShowScrollBar write SetShowScrollBar default True;
     property CanNoSelect: Boolean read FCanNoSelect write FCanNoSelect default True;
     property VisibleEdit: Boolean read FVisibleEdit write FVisibleEdit default True;
     property ItemCount: Integer read GetRowCount write SetRowCount default 5;
@@ -412,8 +414,7 @@ tfCenter, tfSingleLine];
     property DrawColumnBorded: Boolean read FDrawColumnBorded write SetDrawColumnBorded default True;
     property DrawColumnSections: Boolean read FDrawColumnSections write SetDrawColumnSections default True;
     property FlashSelectedCol: Boolean read FFlashSelectedCol write SetFlashSelectedCol default False;
-    property MouseRightClickTooClick: Boolean read FMouseRightClickTooClick write
-      FMouseRightClickTooClick default False;
+    property MouseRightClickTooClick: Boolean read FMouseRightClickTooClick write FMouseRightClickTooClick default False;
     property PaintGrid: Boolean read FPaintGrid write SetPaintGrid default False;
     property LastColumnAutoSize: Boolean read FLastColumnAutoSize write SetLastColumnAutoSize default True;
     property EditOnDblClick: Boolean read FEditOnDblClick write SetEditOnDblClick default True;
@@ -744,7 +745,7 @@ begin
   Repaint;
 end;
 
-procedure TTableEx.SetShowScrollBar(const Value: Boolean);
+procedure TTableEx.SetScrollVisible(const Value: Boolean);
 begin
   case Value of
     True:
@@ -752,6 +753,12 @@ begin
     False:
       ScrollBars := ssNone;
   end;
+end;
+
+procedure TTableEx.SetShowScrollBar(const Value: Boolean);
+begin
+  FShowScrollBar := Value;
+  SetScrollVisible(Value);
 end;
 
 procedure TTableEx.SetWidth(const Value: Integer);
@@ -1059,6 +1066,7 @@ begin
   inherited OnMouseUp := FMouseUp;
   inherited OnMouseDown := FMouseDown;
   inherited OnMouseLeave := FMouseLeave;
+  inherited OnMouseEnter := FMouseEnter;
   inherited OnDrawCell := FDrawCell;
   inherited OnKeyUp := FKeyUp;
   inherited OnKeyDown := FKeyDown;
@@ -1076,6 +1084,7 @@ begin
   FDrawColumnSections := True;
   FFlashSelectedCol := False;
   FLastColumnAutoSize := True;
+  FShowScrollBar := True;
 
   FFieldEdit := TFieldMaskEdit.Create(Self);
   with FFieldEdit do
@@ -1805,6 +1814,11 @@ begin
     FOnMouseDown(Sender, Button, Shift, X, Y);
 end;
 
+procedure TTableEx.FMouseEnter(Sender: TObject);
+begin
+  //
+end;
+
 procedure TTableEx.FMouseUp(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 var
   ACol, ARow, NewRow, OldRow: Integer;
@@ -1856,8 +1870,7 @@ begin
     FOnMouseUp(Sender, Button, Shift, X, Y);
 end;
 
-procedure TTableEx.FonComboMouseWheel(Sender: TObject; Shift: TShiftState; WheelDelta: Integer;
-  MousePos: TPoint; var Handled: Boolean);
+procedure TTableEx.FonComboMouseWheel(Sender: TObject; Shift: TShiftState; WheelDelta: Integer; MousePos: TPoint; var Handled: Boolean);
 begin
   Handled := FEditing;
 end;
@@ -1941,11 +1954,6 @@ end;
 function TTableEx.GetFocusedColumn: Integer;
 begin
   Result := Col;
-end;
-
-function TTableEx.GetShowScrollBar: Boolean;
-begin
-  Result := ScrollBars <> ssNone;
 end;
 
 function TTableEx.GetWidth: Integer;

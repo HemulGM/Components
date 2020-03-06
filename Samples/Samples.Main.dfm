@@ -27,6 +27,7 @@ object Form8: TForm8
     Top = 16
     Width = 129
     Height = 33
+    Align = alTop
     DoubleBuffered = True
     ColorScale = 10711881
     ColorBackground = 2102799
@@ -54,10 +55,15 @@ object Form8: TForm8
     Caption = 'Panel1'
     TabOrder = 3
   end
-  object hChat1: ThChat
-    Left = 480
-    Top = 16
-    Width = 505
-    Height = 432
+  object hTrackbar1: ThTrackbar
+    AlignWithMargins = True
+    Left = 3
+    Top = 42
+    Width = 572
+    Height = 102
+    Align = alClient
+    Position = 3.000000000000000000
+    OnChange = hTrackbar1Change
+    ExplicitHeight = 298
   end
 end

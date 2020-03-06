@@ -7,7 +7,7 @@ uses
   Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.Grids, HGM.Controls.ColorGrid, HGM.Controls.VirtualTable,
   System.Generics.Collections, Vcl.ExtCtrls, Vcl.StdCtrls, HGM.Controls.PanelExt, Direct2D, D2D1,
   HGM.AutoTextType, HGM.Controls.Edit, HGM.Controls.Chat, HGM.Button, Vcl.ComCtrls,
-  HGM.Controls.ProgressBar;
+  HGM.Controls.ProgressBar, HGM.Controls.TrackBar;
 
 type
   TForm8 = class(TForm)
@@ -15,10 +15,10 @@ type
     hProgrsssBar1: ThProgrsssBar;
     TrackBar1: TTrackBar;
     Panel1: TPanel;
-    hChat1: ThChat;
+    hTrackbar1: ThTrackbar;
     procedure DrawPanel1Paint(Sender: TObject);
     procedure TrackBar1Change(Sender: TObject);
-    procedure FormCreate(Sender: TObject);
+    procedure hTrackbar1Change(Sender: TObject; Position: Extended);
   private
     { Private declarations }
   public
@@ -79,26 +79,9 @@ begin
   end;
 end;
 
-procedure TForm8.FormCreate(Sender: TObject);
+procedure TForm8.hTrackbar1Change(Sender: TObject; Position: Extended);
 begin
-  with hChat1.Items.AddInfo do
-  begin
-    Text := 'Начало чата';
-  end;
-
-  with hChat1.Items.AddMessage do
-  begin
-    From := 'От кого';
-    Text := 'Текст сообщения';
-    FromType := mtMe;
-  end;
-
-  with hChat1.Items.AddMessage do
-  begin
-    From := 'От кого';
-    Text := 'Текст сообщения';
-    FromType := mtOpponent;
-  end;
+  hProgrsssBar1.Position := Round(Position);
 end;
 
 procedure TForm8.TrackBar1Change(Sender: TObject);
