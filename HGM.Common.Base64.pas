@@ -26,7 +26,6 @@ type
 
 function CalcEncodedSize(InSize: DWord): DWord;
 begin
-  // no buffers passed along, calculate outbuffer size needed
   Result := (InSize div 3) shl 2;
   if (InSize mod 3) > 0 then
     Inc(Result, 4);
@@ -186,12 +185,8 @@ var
   FOut, FIn: AnsiString;
 begin
   FIn := AnsiString(InText);
-  // get size of source
   InSize := Length(FIn);
-  // calculate size for destination
   OutSize := CalcEncodedSize(InSize);
-
-  // prepare AnsiString length to fit result data
   SetLength(FOut, OutSize);
 
   if OutSize > 0 then
@@ -199,9 +194,8 @@ begin
     PIn := @FIn[1];
     POut := @FOut[1];
 
-    // encode !
     Base64Encode(PIn^, InSize, POut^);
-    OutText := FOut;
+    OutText := string(FOut);
   end;
 end;
 
@@ -212,23 +206,17 @@ var
   FOut, FIn: AnsiString;
 begin
   FIn := AnsiString(InText);
-  // get size of source
   InSize := Length(FIn);
-  // calculate size for destination
   PIn := @FIn[1];
   OutSize := CalcDecodedSize(PIn, InSize);
-
-  // prepare AnsiString length to fit result data
   SetLength(FOut, OutSize);
-
   if OutSize > 0 then
   begin
     FillChar(FOut[1], OutSize, '.');
     POut := @FOut[1];
 
-    // encode !
     Base64Decode(PIn^, InSize, POut^);
-    OutText := FOut;
+    OutText := string(FOut);
   end;
 end;
 

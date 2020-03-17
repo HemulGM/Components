@@ -38,11 +38,12 @@ type
     constructor Create(AOwner: TTableEx); overload; virtual;
     constructor Create; overload; virtual;
     destructor Destroy; override;
-    function Add(Value: T): Integer; virtual;
+    function Add(Value: T): Integer;
     procedure Clear; virtual;
     procedure Delete(Index: Integer); virtual;
     //
     procedure AddTable(pTable: TTableEx);
+    procedure SelectInTable(Index: Integer);
     function IndexIn(Index: Integer): Boolean;
     procedure UnAssignTables;
     procedure UnAssignTable(pTable: TTableEx);
@@ -465,7 +466,14 @@ procedure TTableData<T>.InitNotif(Sender: TObject; const Item: T; Action: TColle
 begin
   UpdateTable;
 end;
-                   //0,1,2,3,4,5   3
+
+procedure TTableData<T>.SelectInTable(Index: Integer);
+var
+  i: Integer;
+begin
+  for i := 0 to FTables.Count - 1 do
+    FTables[i].ItemIndex := Index;
+end;
 
 procedure TTableData<T>.SetChecked(Index: Integer; const Value: Boolean);
 begin
@@ -1809,7 +1817,7 @@ end;
 
 procedure TTableEx.FMouseUp(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 var
-  ACol, ARow, NewRow, OldRow: Integer;
+  ACol, ARow, NewRow, OldRow, VarRow: Integer;
 begin
   if (Button = mbLeft) or (FMouseRightClickTooClick and (Button = mbRight)) then
   begin
@@ -1836,15 +1844,25 @@ begin
           NewRow := ARow;
         end;
         OldRow := ItemIndex;
+        VarRow := NewRow;
         if Assigned(FOnChangeItem) then
+        begin
           FOnChangeItem(Self, OldRow, NewRow);
+        end;
         ItemIndex := NewRow;
         if (OldRow = NewRow) or FCanClickToUnfocused then
         begin
           if Assigned(FOnItemColClick) then
             FOnItemColClick(Sender, Button, ACol);
         end;
-        DoItemClick;
+        //Если была выбрана другая строка
+        if (OldRow <> VarRow) then
+        begin
+          if NewRow <> OldRow then
+            DoItemClick;
+        end
+        else
+          DoItemClick;
       end;
     end
     else

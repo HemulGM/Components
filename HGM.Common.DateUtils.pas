@@ -17,7 +17,39 @@ type
     class function Create(DateBegin, DateEnd: TDateTime): TDatePeriod; static;
   end;
 
+function HumanDateTime(Value: TDateTime; ShowTime: Boolean = True; WeekDay: Boolean = False): string;
+
 implementation
+
+function HumanDateTime(Value: TDateTime; ShowTime: Boolean; WeekDay: Boolean): string;
+
+  function AddWeekDay: string;
+  begin
+    if WeekDay then
+      Result := FormatDateTime(', ddd', Value)
+    else
+      Result := '';
+  end;
+
+begin
+  if IsSameDay(Value, Today + 2) then
+    Result := 'Послезавтра' + AddWeekDay
+  else if IsSameDay(Value, Today + 1) then
+    Result := 'Завтра' + AddWeekDay
+  else if IsSameDay(Value, Today) then
+    Result := 'Сегодня' + AddWeekDay
+  else if IsSameDay(Value, Yesterday) then
+    Result := 'Вчера' + AddWeekDay
+  else if IsSameDay(Value, Yesterday - 1) then
+    Result := 'Позавчера' + AddWeekDay
+  else if YearOf(Value) = YearOf(Now) then
+    Result := FormatDateTime('DD mmm', Value) + AddWeekDay
+  else
+    Result := FormatDateTime('DD mmm YYYY', Value) + AddWeekDay;
+
+  if ShowTime then
+    Result := Result + FormatDateTime(' в HH:NN:SS', Value);
+end;
 
 { TDatePeriod }
 

@@ -54,10 +54,10 @@ type
     function SetParam(Section: string; AControl: TCustomComboBox): Boolean; overload;
     function SetParam(Section: string; AControl: TCheckBox): Boolean; overload;
     function SetParam(Section: string; AControl: TPageControl): Boolean; overload;
-    function GetParamWindow(Section: string; AWindow: Vcl.Forms.TForm; SaveItems: TWindowParamSave): Boolean; overload;
+    function GetParamWindow(Section: string; AWindow: Vcl.Forms.TForm; LoadItems: TWindowParamSave): Boolean; overload;
     function SetParamWindow(Section: string; AWindow: Vcl.Forms.TForm; SaveItems: TWindowParamSave): Boolean; overload;
     {$IFDEF NEEDFMX}
-    function GetParamWindow(Section: string; AWindow: FMX.Forms.TForm; SaveItems: TWindowParamSave): Boolean; overload;
+    function GetParamWindow(Section: string; AWindow: FMX.Forms.TForm; LoadItems: TWindowParamSave): Boolean; overload;
     function SetParamWindow(Section: string; AWindow: FMX.Forms.TForm; SaveItems: TWindowParamSave): Boolean; overload;
     {$ENDIF NEEDFMX}
 
@@ -661,26 +661,26 @@ begin
   Result := WriteInt(Section, AControl.Name, AControl.ActivePageIndex);
 end;
 
-function TSettings.GetParamWindow(Section: string; AWindow: Vcl.Forms.TForm; SaveItems: TWindowParamSave): Boolean;
+function TSettings.GetParamWindow(Section: string; AWindow: Vcl.Forms.TForm; LoadItems: TWindowParamSave): Boolean;
 var
   IValue: Integer;
 begin
   try
-    if (wpsCoord in SaveItems) or (wpsAll in SaveItems) then
+    if (wpsCoord in LoadItems) or (wpsAll in LoadItems) then
     begin
       if ReadInt(Section, AWindow.Name + '.Left', IValue, AWindow.Left) then
         AWindow.Left := IValue;
       if ReadInt(Section, AWindow.Name + '.Top', IValue, AWindow.Top) then
         AWindow.Top := IValue;
     end;
-    if (wpsSize in SaveItems) or (wpsAll in SaveItems) then
+    if (wpsSize in LoadItems) or (wpsAll in LoadItems) then
     begin
       if ReadInt(Section, AWindow.Name + '.Width', IValue, AWindow.Width) then
         AWindow.Width := IValue;
       if ReadInt(Section, AWindow.Name + '.Height', IValue, AWindow.Height) then
         AWindow.Height := IValue;
     end;
-    if (wpsState in SaveItems) or (wpsAll in SaveItems) then
+    if (wpsState in LoadItems) or (wpsAll in LoadItems) then
     begin
       if ReadInt(Section, AWindow.Name + '.WindowState', IValue, Ord(AWindow.WindowState)) then
         AWindow.WindowState := TWindowState(IValue);
@@ -720,26 +720,26 @@ begin
 end;
 {$IFDEF NEEDFMX}
 
-function TSettings.GetParamWindow(Section: string; AWindow: FMX.Forms.TForm; SaveItems: TWindowParamSave): Boolean;
+function TSettings.GetParamWindow(Section: string; AWindow: FMX.Forms.TForm; LoadItems: TWindowParamSave): Boolean;
 var
   IValue: Integer;
 begin
   try
-    if (wpsCoord in SaveItems) or (wpsAll in SaveItems) then
+    if (wpsCoord in LoadItems) or (wpsAll in LoadItems) then
     begin
       if ReadInt(Section, AWindow.Name + '.Left', IValue, AWindow.Left) then
         AWindow.Left := IValue;
       if ReadInt(Section, AWindow.Name + '.Top', IValue, AWindow.Top) then
         AWindow.Top := IValue;
     end;
-    if (wpsSize in SaveItems) or (wpsAll in SaveItems) then
+    if (wpsSize in LoadItems) or (wpsAll in LoadItems) then
     begin
       if ReadInt(Section, AWindow.Name + '.Width', IValue, AWindow.Width) then
         AWindow.Width := IValue;
       if ReadInt(Section, AWindow.Name + '.Height', IValue, AWindow.Height) then
         AWindow.Height := IValue;
     end;
-    if (wpsState in SaveItems) or (wpsAll in SaveItems) then
+    if (wpsState in LoadItems) or (wpsAll in LoadItems) then
     begin
       if ReadInt(Section, AWindow.Name + '.WindowState', IValue, Ord(AWindow.WindowState)) then
         AWindow.WindowState := TWindowState(IValue);

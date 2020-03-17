@@ -65,6 +65,7 @@ type
   public
     constructor Create(AOwner: TComponent); override;
     property MouseInButton: Boolean read FMouseInButton;
+    procedure InitChange;
   published
     property Align;
     property Position: Extended read GetPosition write SetPosition;
@@ -205,8 +206,7 @@ end;
 procedure ThTrackbar.DoSetPosition(Value: Extended);
 begin
   FPosition := Value;
-  if Assigned(FOnChange) then
-    FOnChange(Self, FPosition);
+  InitChange;
 end;
 
 function ThTrackbar.GetPosition: Extended;
@@ -217,6 +217,12 @@ end;
 function ThTrackbar.GetSecondPosition: Extended;
 begin
   Result := FSecondPosition;
+end;
+
+procedure ThTrackbar.InitChange;
+begin
+  if Assigned(FOnChange) then
+    FOnChange(Self, FPosition);
 end;
 
 procedure ThTrackbar.Paint;
@@ -383,7 +389,7 @@ end;
 
 procedure ThTrackbar.SetPosition(const Value: Extended);
 begin
-  FPosition := Value;
+  FPosition := Max(0, Min(100, Value));
   FScalePercent := FPosition;
   DoPaint;
 end;
