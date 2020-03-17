@@ -56,6 +56,10 @@ type
     property IsUpdate: Boolean read GetIsUpdate;
   end;
 
+  TTableObjectData<T: class> = class(TTableData<T>)
+    procedure Clear; override;
+  end;
+
   TEditMode = (teText, teList, teDate, teMask, teTime, teInt, teFloat);
 
   TTableEditStruct = record
@@ -281,6 +285,7 @@ tfCenter, tfSingleLine];
     property RowHeights;
     property ColWidths;
     procedure DefineProperties(Filer: TFiler); override;
+    procedure TimedScroll(Direction: TGridScrollDirection); override;
   public
     function CreateColumn: TTableColumn;
     function CreateColumns: TTableColumns;
@@ -769,6 +774,12 @@ begin
   inherited Width := Value;
 end;
 
+procedure TTableEx.TimedScroll(Direction: TGridScrollDirection);
+begin
+  // inherited;
+  //Блочим автоскрол при зажатии мыши
+end;
+
 procedure TTableEx.UpdateColumnIndex;
 //var i:Integer;
 begin
@@ -1070,6 +1081,7 @@ begin
   inherited DefaultDrawing := False;
   inherited DrawingStyle := gdsGradient;
   inherited OnMouseWheel := FOnComboMouseWheel;
+
   FColumnsStream := nil;
   FActiveCursor := crHandPoint;
   FUpdatesCount := 0;
@@ -1169,7 +1181,7 @@ begin
   Width := 400;
  //DefaultColWidth:=200;
   DefaultRowHeight := 25;
-  Options := [goThumbTracking, goColSizing];
+  Options := [goThumbTracking, goColSizing, goRangeSelect];
   ColumnsHeight := 30;
   ShowColumns := True;
 end;
@@ -2297,6 +2309,17 @@ begin
     FTableEx.UpdateColumn(Item.Index)
   else
     FTableEx.UpdateColumns;
+end;
+
+{ TTableObjectData<T> }
+
+procedure TTableObjectData<T>.Clear;
+var
+  i: Integer;
+begin
+  for i := 0 to Count - 1 do
+    TObject(Items[i]).Free;
+  inherited;
 end;
 
 end.

@@ -2,8 +2,8 @@ object Form8: TForm8
   Left = 0
   Top = 0
   Caption = 'Form8'
-  ClientHeight = 147
-  ClientWidth = 578
+  ClientHeight = 517
+  ClientWidth = 1014
   Color = clSilver
   DoubleBuffered = True
   Font.Charset = DEFAULT_CHARSET
@@ -12,20 +12,20 @@ object Form8: TForm8
   Font.Name = 'Tahoma'
   Font.Style = []
   OldCreateOrder = False
+  OnCreate = FormCreate
   PixelsPerInch = 96
   TextHeight = 13
   object ProgressBar1: TProgressBar
-    Left = 144
-    Top = 195
+    Left = 88
+    Top = 115
     Width = 150
     Height = 17
     TabOrder = 0
   end
   object hProgrsssBar1: ThProgrsssBar
-    AlignWithMargins = True
-    Left = 3
-    Top = 3
-    Width = 572
+    Left = 8
+    Top = 16
+    Width = 129
     Height = 33
     Align = alTop
     DoubleBuffered = True
@@ -38,8 +38,8 @@ object Form8: TForm8
     RoundRadius = 15
   end
   object TrackBar1: TTrackBar
-    Left = 96
-    Top = 144
+    Left = 40
+    Top = 64
     Width = 300
     Height = 45
     Max = 100
@@ -48,8 +48,8 @@ object Form8: TForm8
     OnChange = TrackBar1Change
   end
   object Panel1: TPanel
-    Left = 184
-    Top = 243
+    Left = 128
+    Top = 163
     Width = 185
     Height = 41
     Caption = 'Panel1'

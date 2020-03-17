@@ -3,10 +3,9 @@ unit HGM.Controls.Chat;
 interface
 
 uses
-  Winapi.Messages, Winapi.Windows, System.SysUtils, System.Classes,
-  System.Contnrs, System.Types, System.UITypes, Vcl.Controls, Vcl.Forms,
-  Vcl.Menus, Vcl.Graphics, Vcl.StdCtrls, Vcl.GraphUtil, Vcl.ImgList, Vcl.Themes,
-  Winapi.ShellAPI, System.Generics.Collections, HGM.Common, Vcl.Dialogs;
+  Winapi.Messages, Winapi.Windows, System.SysUtils, System.Classes, System.Contnrs, System.Types,
+  System.UITypes, Vcl.Controls, Vcl.Forms, Vcl.Menus, Vcl.Graphics, Vcl.StdCtrls, Vcl.GraphUtil,
+  Vcl.ImgList, Vcl.Themes, Winapi.ShellAPI, System.Generics.Collections, HGM.Common, Vcl.Dialogs;
 
 type
   TChatMessageType = (mtOpponent, mtMe);
@@ -32,6 +31,7 @@ type
     Text: string;
     Color: TColor;
     function DrawRect(Canvas: TCanvas; Rect: TRect): TRect; virtual;
+    function DrawImage(Canvas: TCanvas; Rect: TRect): TRect; virtual;
     function CalcRect(Canvas: TCanvas; Rect: TRect): TRect; virtual;
     constructor Create(AOwner: TChatItems); virtual;
     destructor Destroy; override;
@@ -39,30 +39,43 @@ type
     property Selected: Boolean read FSelected write SetSelected;
     property ImageIndex: Integer read FImageIndex write SetImageIndex;
     property Date: TDateTime read FDate write SetDate;
+    property NeedCalc: Boolean read FNeedCalc write FNeedCalc;
+    property CalcedRect: TRect read FCalcedRect write FCalcedRect;
   end;
 
   TChatMessage = class(TChatItem)
   private
     FCalcedFromHeight: Integer;
     FShowFrom: Boolean;
-    procedure SetShowFrom(const Value: Boolean);
+    FFrom: string;
+    FFromType: TChatMessageType;
+    FFromColor: TColor;
+    FFromColorSelect: TColor;
+    procedure SetCalcedFromHeight(const Value: Integer);
+    procedure SetFrom(const Value: string);
+    procedure SetFromColor(const Value: TColor);
+    procedure SetFromColorSelect(const Value: TColor);
+    procedure SetFromType(const Value: TChatMessageType);
+    procedure SetShowFrom(const Value: Boolean); virtual;
+    function GetFromType: TChatMessageType;
   public
-    From: string;
-    FromType: TChatMessageType;
-    FromColor: TColor;
-    FromColorSelect: TColor;
-    function CalcRect(Canvas: TCanvas; Rect: TRect): TRect; override;
-    function DrawRect(Canvas: TCanvas; Rect: TRect): TRect; override;
     constructor Create(AOwner: TChatItems); override;
     destructor Destroy; override;
+    function CalcRect(Canvas: TCanvas; Rect: TRect): TRect; override;
+    function DrawRect(Canvas: TCanvas; Rect: TRect): TRect; override;
     property ShowFrom: Boolean read FShowFrom write SetShowFrom;
+    property From: string read FFrom write SetFrom;
+    property FromType: TChatMessageType read GetFromType write SetFromType;
+    property FromColor: TColor read FFromColor write SetFromColor;
+    property FromColorSelect: TColor read FFromColorSelect write SetFromColorSelect;
+    property CalcedFromHeight: Integer read FCalcedFromHeight write SetCalcedFromHeight;
   end;
 
   TChatInfo = class(TChatItem)
   private
     FFillColor: TColor;
-    procedure SetFillColor(const Value: TColor);
   public
+    procedure SetFillColor(const Value: TColor);
     function CalcRect(Canvas: TCanvas; Rect: TRect): TRect; override;
     function DrawRect(Canvas: TCanvas; Rect: TRect): TRect; override;
     constructor Create(AOwner: TChatItems); override;
@@ -76,6 +89,8 @@ type
   public
     function AddMessage: TChatMessage; overload;
     function AddInfo: TChatInfo; overload;
+    function Add(Value: TChatItem): Integer; overload;
+    function Add<T: TChatItem>(): T; overload;
     function SelectCount: Integer;
     procedure Delete(Index: Integer);
     procedure Clear;
@@ -122,6 +137,7 @@ type
     FImageMargin: Integer;
     FPaddingSize: Integer;
     FBorderWidth: Integer;
+    FRevertAdding: Boolean;
     function GetItem(Index: Integer): TChatItem;
     procedure SetItem(Index: Integer; const Value: TChatItem);
     procedure SetItems(const Value: TChatItems);
@@ -154,6 +170,7 @@ type
     procedure SetBorderWidth(const Value: Integer);
     procedure SetImageMargin(const Value: Integer);
     procedure SetPaddingSize(const Value: Integer);
+    procedure SetRevertAdding(const Value: Boolean);
   protected
     procedure CreateParams(var Params: TCreateParams); override;
     procedure Paint; override;
@@ -181,6 +198,7 @@ type
     property BorderWidth: Integer read FBorderWidth write SetBorderWidth default 4;
     property PaddingSize: Integer read FPaddingSize write SetPaddingSize default 10;
     property ImageMargin: Integer read FImageMargin write SetImageMargin default 36;
+    property RevertAdding: Boolean read FRevertAdding write SetRevertAdding;
   end;
 
   ThChat = class(ThCustomChat)
@@ -253,6 +271,7 @@ begin
   OnMouseLeave := FOnMouseLeave;
   OnResize := FOnResize;
 
+  FRevertAdding := False;
   FColorOpponent := $00322519;
   FColorMe := $0078522B;
   FColorInfo := $003A2C1D;
@@ -563,11 +582,10 @@ begin
 
           if FNeedImage then
           begin
-            Brush.Color := (FItems[i] as TChatMessage).FromColor;
-            Pen.Color := Brush.Color;
             ImageRect := TRect.Create(0, 0, ImageMargin, ImageMargin);
-            ImageRect.Location := TPoint.Create(ItemRect.Left - ImageRect.Width - 3, ItemRect.Bottom - ImageRect.Height - 3);
-            Ellipse(ImageRect);
+            ImageRect.Location := TPoint.Create(ItemRect.Left - ImageRect.Width - 3, ItemRect.Bottom
+              - ImageRect.Height - 3);
+            FItems[i].DrawImage(Canvas, ImageRect);
           end;
         end
         else if FStartDraw then
@@ -763,6 +781,11 @@ begin
   end;
 end;
 
+procedure ThCustomChat.SetRevertAdding(const Value: Boolean);
+begin
+  FRevertAdding := Value;
+end;
+
 procedure ThCustomChat.SetScrollBarVisible(const Value: Boolean);
 begin
   FScrollBarVisible := Value;
@@ -770,6 +793,25 @@ begin
 end;
 
 { TChatItems }
+
+function TChatItems.Add(Value: TChatItem): Integer;
+begin
+  if not FOwner.RevertAdding then
+    Result := inherited Add(Value)
+  else
+  begin
+    Insert(0, Value);
+    Result := 0;
+  end;
+  FOwner.NeedRepaint;
+end;
+
+function TChatItems.Add<T>(): T;
+begin
+  Result := T.Create(Self);
+  Add(Result);
+  FOwner.NeedRepaint;
+end;
 
 function TChatItems.AddInfo: TChatInfo;
 begin
@@ -863,6 +905,16 @@ begin
   end
   else
     Result := FCalcedRect;
+end;
+
+function TChatItem.DrawImage(Canvas: TCanvas; Rect: TRect): TRect;
+begin
+  with Canvas do
+  begin
+    Brush.Color := (Self as TChatMessage).FromColor;
+    Pen.Color := Brush.Color;
+    Ellipse(Rect);
+  end;
 end;
 
 function TChatItem.DrawRect(Canvas: TCanvas; Rect: TRect): TRect;
@@ -984,6 +1036,36 @@ begin
   Rect.Height := Rect.Height + R.Height;
 
   Result := Rect;
+end;
+
+function TChatMessage.GetFromType: TChatMessageType;
+begin
+  Result := FFromType;
+end;
+
+procedure TChatMessage.SetCalcedFromHeight(const Value: Integer);
+begin
+  FCalcedFromHeight := Value;
+end;
+
+procedure TChatMessage.SetFrom(const Value: string);
+begin
+  FFrom := Value;
+end;
+
+procedure TChatMessage.SetFromColor(const Value: TColor);
+begin
+  FFromColor := Value;
+end;
+
+procedure TChatMessage.SetFromColorSelect(const Value: TColor);
+begin
+  FFromColorSelect := Value;
+end;
+
+procedure TChatMessage.SetFromType(const Value: TChatMessageType);
+begin
+  FFromType := Value;
 end;
 
 procedure TChatMessage.SetShowFrom(const Value: Boolean);

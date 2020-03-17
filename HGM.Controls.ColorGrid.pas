@@ -3,10 +3,9 @@ unit HGM.Controls.ColorGrid;
 interface
 
 uses
-  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants,
-  System.Classes, Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs,
-  Vcl.ExtCtrls, Vcl.Grids, Vcl.ComCtrls, System.Types, Vcl.StdCtrls,
-  System.Generics.Collections;
+  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
+  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.ExtCtrls, Vcl.Grids, Vcl.ComCtrls, System.Types,
+  Vcl.StdCtrls, System.Generics.Collections;
 
 type
   TColorItem = record
@@ -370,7 +369,8 @@ begin
   if CheckCell(FHotItem.X, FHotItem.Y) then
   begin
     SelectedItem := FHotItem;
-    FOnSelect(Self);
+    if Assigned(FOnSelect) then
+      FOnSelect(Self);
   end;
   if Assigned(FOnMouseDown) then
     FOnMouseDown(Sender, Button, Shift, X, Y);
