@@ -8,8 +8,13 @@ uses
   Vcl.ExtCtrls, Vcl.Imaging.pngimage;
 
 type
+  TFormPopup = class;
+
   TPopupStyles = (psShowArrow, psAnimate, psShadow, psFrame);
+
   TPopupStyle = set of TPopupStyles;
+
+  TFreeMethod = TProc<TFormPopup>;
 
   TFormPopup = class(TForm)
     imgUpArrow: TImage;
@@ -29,16 +34,11 @@ type
     FControl: TWinControl;
     FAnimate: Boolean;
     FClosing: Boolean;
-    FFreeMethod: TProc;
+    FFreeMethod: TFreeMethod;
     procedure DoRelease;
   public
-    constructor CreatePopup(AOwner: TForm; AControl: TWinControl; FreeMethod: TProc;
-                            X, Y: Integer;
-                            Style: TPopupStyle); overload;
-    constructor CreateDown(AOwner: TForm; AControl: TWinControl; FreeMethod: TProc;
-                           X, Y: Integer;
-                           Style: TPopupStyle;
-                           HideAfter: Integer = 0); overload;
+    constructor CreatePopup(AOwner: TForm; AControl: TWinControl; FreeMethod: TFreeMethod; X, Y: Integer; Style: TPopupStyle); overload;
+    constructor CreateDown(AOwner: TForm; AControl: TWinControl; FreeMethod: TFreeMethod; X, Y: Integer; Style: TPopupStyle; HideAfter: Integer = 0); overload;
   end;
 
 implementation
@@ -47,7 +47,7 @@ implementation
 
 { TFormPopup }
 
-constructor TFormPopup.CreateDown(AOwner: TForm; AControl: TWinControl; FreeMethod: TProc; X, Y: Integer; Style: TPopupStyle; HideAfter: Integer);
+constructor TFormPopup.CreateDown(AOwner: TForm; AControl: TWinControl; FreeMethod: TFreeMethod; X, Y: Integer; Style: TPopupStyle; HideAfter: Integer);
 begin
   CreatePopup(AOwner, AControl, FreeMethod, X, Y, Style);
   if HideAfter > 0 then
@@ -68,7 +68,7 @@ begin
   Release;
 end;
 
-constructor TFormPopup.CreatePopup(AOwner: TForm; AControl: TWinControl; FreeMethod: TProc; X, Y: Integer; Style: TPopupStyle);
+constructor TFormPopup.CreatePopup(AOwner: TForm; AControl: TWinControl; FreeMethod: TFreeMethod; X, Y: Integer; Style: TPopupStyle);
 const
   CS_DROPSHADOW = $00020000;
 begin
@@ -83,7 +83,8 @@ begin
   Top := Y;
   if psShowArrow in Style then
   begin
-    if psShadow in Style then SetClassLong(Handle, GCL_STYLE, GetWindowLong(Handle, GCL_STYLE) and CS_DROPSHADOW);
+    if psShadow in Style then
+      SetClassLong(Handle, GCL_STYLE, GetWindowLong(Handle, GCL_STYLE) and CS_DROPSHADOW);
     ClientWidth := FControl.Width;
     ClientHeight := FControl.Height + imgUpArrow.Height;
     FControl.Left := 0;
@@ -96,13 +97,13 @@ begin
   begin
     if psShadow in Style then
     begin
-     SetClassLong(Handle, GCL_STYLE, GetWindowLong(Handle, GCL_STYLE) or CS_DROPSHADOW);
-     Color := $00404040;
+      SetClassLong(Handle, GCL_STYLE, GetWindowLong(Handle, GCL_STYLE) or CS_DROPSHADOW);
+      Color := $00404040;
     end
     else
     begin
-     Shape1.Hide;
-     Color := clBtnFace;
+      Shape1.Hide;
+      Color := clBtnFace;
     end;
     ClientWidth := FControl.Width;
     ClientHeight := FControl.Height;
@@ -139,8 +140,8 @@ begin
     Action := caNone;
     Exit;
   end
-  else
-   if Assigned(FFreeMethod) then FFreeMethod;
+  else if Assigned(FFreeMethod) then
+    FFreeMethod(Self);
   FClosing := True;
 end;
 
@@ -181,3 +182,4 @@ begin
 end;
 
 end.
+
