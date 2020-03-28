@@ -175,7 +175,6 @@ type
     procedure CreateParams(var Params: TCreateParams); override;
     procedure Paint; override;
     procedure UpdateStyleElements; override;
-    property Color default $0020160F;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -188,6 +187,7 @@ type
     property OnSelectionStart: TOnSelectionEvent read FOnSelectionStart write SetOnSelectionStart;
     property OnSelectionChange: TOnSelectionEvent read FOnSelectionChange write SetOnSelectionChange;
     property OnSelectionEnd: TOnSelectionEvent read FOnSelectionEnd write SetOnSelectionEnd;
+    property Color default $0020160F;
     property ColorInfo: TColor read FColorInfo write SetColorInfo default $003A2C1D;
     property ColorOpponent: TColor read FColorOpponent write SetColorOpponent default $00322519;
     property ColorMe: TColor read FColorMe write SetColorMe default $0078522B;
@@ -507,7 +507,7 @@ begin
           begin
             if (FItems[i] as TChatMessage).FromType = mtOpponent then
               FNeedImage := True;
-            Limit.Width := Limit.Width - ImageMargin;
+            Limit.Width := Limit.Width - FImageMargin;
           end;
 
         Limit.Width := Min(500, Limit.Width);
@@ -541,7 +541,7 @@ begin
             Brush.Color := FColorMe;
           end
           else if FNeedImage then
-            ItemRect.Location := TPoint.Create(ItemRect.Left + ImageMargin, ItemRect.Top);
+            ItemRect.Location := TPoint.Create(ItemRect.Left + FImageMargin, ItemRect.Top);
         end
         else if (FItems[i] is TChatInfo) then
         begin

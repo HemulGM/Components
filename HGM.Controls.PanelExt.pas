@@ -3,9 +3,8 @@ unit HGM.Controls.PanelExt;
 interface
 
 uses
-  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants,
-  System.Classes, Vcl.Graphics, System.Types, Vcl.Controls, Vcl.Forms,
-  Vcl.Dialogs, Vcl.StdCtrls, Vcl.ExtCtrls, HGM.Common;
+  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
+  System.Types, Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, Vcl.ExtCtrls, HGM.Common;
 
 type
   TCustomPanelExt = class(TCustomPanel)
@@ -346,7 +345,8 @@ end;
 procedure TCustomPanelExt.SetDefaultPaint(const Value: Boolean);
 begin
   FDefaultPaint := Value;
-  Paint;
+  if not (csLoading in ComponentState) then
+    Paint;
 end;
 
 procedure TCustomPanelExt.SetRepaintOnMouseMove(const Value: Boolean);
@@ -467,7 +467,7 @@ begin
   TThread.CreateAnonymousThread(
     procedure
     begin
-      Sleep(3000);
+      Sleep(Interval);
       TThread.Synchronize(TThread.Current,
         procedure
         begin
