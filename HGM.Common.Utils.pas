@@ -17,6 +17,10 @@ function ColorDarker(Color: TColor; Percent: Byte = 40): TColor;
 
 function ColorLighter(Color: TColor; Percent: Byte = 40): TColor;
 
+function ColorDarkerOr(Color: TColor; Percent: Byte = 40): TColor;
+
+function ColorLighterOr(Color: TColor; Percent: Byte = 40): TColor;
+
 function CompareFileTimeOwn(t1, t2: FILETIME): Int64;
 
 function CPUUsage(preIdleTime, preUserTime, preKrnlTime: TFileTime; ProcInterval: Integer): Extended;
@@ -32,8 +36,6 @@ function GetMachineName: string;
 function GetSeconds(Time: TTime): Cardinal;
 
 function GetUserName: string;
-
-function HumanDateTime(Value: TDateTime; ShowTime: Boolean = True; WeekDay: Boolean = False): string;
 
 function PercentRound(Value: Extended): Extended;
 
@@ -575,36 +577,6 @@ begin
   preKrnlTime := krnl;
 end;
 
-function HumanDateTime(Value: TDateTime; ShowTime: Boolean; WeekDay: Boolean): string;
-
-  function AddWeekDay: string;
-  begin
-    if WeekDay then
-      Result := FormatDateTime(', ddd', Value)
-    else
-      Result := '';
-  end;
-
-begin
-  if IsSameDay(Value, Today + 2) then
-    Result := 'Послезавтра' + AddWeekDay
-  else if IsSameDay(Value, Today + 1) then
-    Result := 'Завтра' + AddWeekDay
-  else if IsSameDay(Value, Today) then
-    Result := 'Сегодня' + AddWeekDay
-  else if IsSameDay(Value, Yesterday) then
-    Result := 'Вчера' + AddWeekDay
-  else if IsSameDay(Value, Yesterday - 1) then
-    Result := 'Позавчера' + AddWeekDay
-  else if YearOf(Value) = YearOf(Now) then
-    Result := FormatDateTime('DD mmm', Value) + AddWeekDay
-  else
-    Result := FormatDateTime('DD mmm YYYY', Value) + AddWeekDay;
-
-  if ShowTime then
-    Result := Result + FormatDateTime(' в HH:NN:SS', Value);
-end;
-
 function SimpleStrCompare(const Str1, Str2: string): Double;
 var
   Len1, Len2, i, j, k, P1: Integer;
@@ -1027,6 +999,20 @@ begin
   Result := RGB(R, G, B);
 end;
 
+function ColorDarkerOr(Color: TColor; Percent: Byte = 40): TColor;
+begin
+  Result := ColorDarker(Color, Percent);
+  if Result = Color then
+    Result := ColorLighter(Color, Percent);
+end;
+
+function ColorLighterOr(Color: TColor; Percent: Byte = 40): TColor;
+begin
+  Result := ColorLighter(Color, Percent);
+  if Result = Color then
+    Result := ColorDarker(Color, Percent);
+end;
+
 function ColorDarker(Color: TColor; Percent: Byte): TColor;
 var
   R, G, B: Byte;
@@ -1370,6 +1356,9 @@ begin
   bTmp := TPngImage.CreateBlank(new_colortype, 8, NuWidth, NuHeight);
   xscale := bTmp.Width / (apng.Width - 1);
   yscale := bTmp.Height / (apng.Height - 1);
+  new_alpha := 0;
+  ali := nil;
+  alo := nil;
   for to_y := 0 to bTmp.Height - 1 do
   begin
     sfrom_y := to_y / yscale;

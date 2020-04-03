@@ -608,6 +608,8 @@ begin
     end;
     {$IFNDEF FORXP}
     Target := TDirect2DCanvas.Create(Canvas, ClientRect);
+    {$ELSE}
+    Target := Canvas;
     {$ENDIF}
     with Target do
     begin

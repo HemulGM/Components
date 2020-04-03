@@ -330,8 +330,9 @@ end;
 
 procedure TDrawPanel.Paint;
 begin
-  if Assigned(FOnPaint) then
-    FOnPaint(Self);
+  if Visible then
+    if Assigned(FOnPaint) then
+      FOnPaint(Self);
 end;
 
 procedure TCustomPanelExt.Paint;

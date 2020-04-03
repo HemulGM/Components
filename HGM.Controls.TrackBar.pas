@@ -36,6 +36,8 @@ type
     FMarginScaleUpdown: Integer;
     FColorBuf: TColor;
     FHotZoom: Boolean;
+    FOnChanged: TTrackbarEvent;
+    FShowEllipseHotOnly: Boolean;
     procedure DrawPanelTrackBarMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
     procedure DrawPanelTrackBarMouseEnter(Sender: TObject);
     procedure DrawPanelTrackBarMouseLeave(Sender: TObject);
@@ -60,20 +62,27 @@ type
     procedure SetMarginScaleSide(const Value: Integer);
     procedure SetMarginScaleUpdown(const Value: Integer);
     procedure SetHotZoom(const Value: Boolean);
+    procedure SetOnChanged(const Value: TTrackbarEvent);
+    procedure DoOnChanged;
+    procedure SetShowEllipseHotOnly(const Value: Boolean);
   protected
     procedure Paint; override;
   public
     constructor Create(AOwner: TComponent); override;
     property MouseInButton: Boolean read FMouseInButton;
+    procedure InitChange;
+    procedure Step(Value: Integer);
   published
     property Align;
     property Position: Extended read GetPosition write SetPosition;
     property SecondPosition: Extended read GetSecondPosition write SetSecondPosition;
     property OnChange: TTrackbarEvent read FOnChange write SetOnChange;
+    property OnChanged: TTrackbarEvent read FOnChanged write SetOnChanged;
     property CanChange: Boolean read FCanChange write SetCanChange default True;
     property OnAdvHint: TTrackbarOnHint read FOnAdvHint write SetOnAdvHint;
     property ShowHint;
     property ShowEllipse: Boolean read FShowEllipse write SetShowEllipse default True;
+    property ShowEllipseHotOnly: Boolean read FShowEllipseHotOnly write SetShowEllipseHotOnly default True;
     property Color;
     property ParentColor;
     property ParentBackground default False;
@@ -110,6 +119,7 @@ begin
   FSecondPosition := 0;
   FPosition := 0;
   FShowEllipse := True;
+  FShowEllipseHotOnly := True;
   FColorScale := $00A5A3A2;
   FColorPos := $00F1E7DD;
   FColorPosBtn := $00BEB8B0;
@@ -166,7 +176,8 @@ end;
 
 procedure ThTrackbar.DoPaint;
 begin
-  Repaint;
+  if not (csLoading in ComponentState) then
+    Repaint;
 end;
 
 procedure ThTrackbar.DrawPanelTrackBarMouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
@@ -205,8 +216,7 @@ end;
 procedure ThTrackbar.DoSetPosition(Value: Extended);
 begin
   FPosition := Value;
-  if Assigned(FOnChange) then
-    FOnChange(Self, FPosition);
+  InitChange;
 end;
 
 function ThTrackbar.GetPosition: Extended;
@@ -219,17 +229,39 @@ begin
   Result := FSecondPosition;
 end;
 
+procedure ThTrackbar.InitChange;
+begin
+  if Assigned(FOnChange) then
+    FOnChange(Self, FPosition);
+end;
+
 procedure ThTrackbar.Paint;
 var
   MRect, PosRect, PosScale: TRect;
   ScalePos, VisPos, BufPos: Integer;
   xNewRgn, xOldRgn: HRGN;
+  {$IFDEF FORXP}
+  Target: TCanvas;
+  {$ELSE}
+  Target: TDirect2DCanvas;
+  {$ENDIF}
+
+
 begin
   inherited;
   MRect := ClientRect;
-  with TDirect2DCanvas.Create(Canvas, MRect) do
+  {$IFDEF FORXP}
+  Target := Canvas;
+  {$ELSE}
+  Target := TDirect2DCanvas.Create(Canvas, MRect);
+  {$ENDIF}
+
+
+  with Target do
   begin
+    {$IFNDEF FORXP}
     BeginDraw;
+    {$ENDIF}
     Brush.Color := Color;
     FillRect(MRect);
 
@@ -289,14 +321,20 @@ begin
     RoundRect(FScaleRect, FScaleRect.Height, FScaleRect.Height);
 
     DeleteObject(xNewRgn);
-    EndDraw;
 
+    {$IFNDEF FORXP}
+    EndDraw;
+    {$ENDIF}
+
+    {$IFNDEF FORXP}
     BeginDraw;
+    {$ENDIF}
+
     xOldRgn := CreateRectRgn(ClientRect.Left, ClientRect.Top, ClientRect.Right, ClientRect.Bottom);
     SelectObject(Canvas.Handle, xOldRgn);
 
     //Ellipse
-    if FShowEllipse and FMouseInScale then
+    if FShowEllipse and (FMouseInScale or (not FShowEllipseHotOnly)) then
     begin
       Pen.Width := 1;
       Pen.Color := ColorPosBtn;
@@ -313,8 +351,10 @@ begin
     end;
 
     DeleteObject(xOldRgn);
+    {$IFNDEF FORXP}
     EndDraw;
     Free;
+    {$ENDIF}
   end;
 end;
 
@@ -381,10 +421,22 @@ begin
   FOnChange := Value;
 end;
 
+procedure ThTrackbar.SetOnChanged(const Value: TTrackbarEvent);
+begin
+  FOnChanged := Value;
+end;
+
+procedure ThTrackbar.DoOnChanged;
+begin
+  if Assigned(FOnChanged) then
+    FOnChanged(Self, FScalePercent);
+end;
+
 procedure ThTrackbar.SetPosition(const Value: Extended);
 begin
-  FPosition := Value;
+  FPosition := Max(0, Min(100, Value));
   FScalePercent := FPosition;
+  DoOnChanged;
   DoPaint;
 end;
 
@@ -397,6 +449,18 @@ end;
 procedure ThTrackbar.SetShowEllipse(const Value: Boolean);
 begin
   FShowEllipse := Value;
+  DoPaint;
+end;
+
+procedure ThTrackbar.SetShowEllipseHotOnly(const Value: Boolean);
+begin
+  FShowEllipseHotOnly := Value;
+  DoPaint;
+end;
+
+procedure ThTrackbar.Step(Value: Integer);
+begin
+  SetPosition(FScalePercent + Value);
 end;
 
 end.
