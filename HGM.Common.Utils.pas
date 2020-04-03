@@ -1359,6 +1359,9 @@ var
 begin
   if not (apng.Header.ColorType in [COLOR_RGBALPHA, COLOR_RGB]) then
     raise Exception.Create('Only COLOR_RGBALPHA and COLOR_RGB formats' + ' are supported');
+  new_alpha := 0;
+  ali := nil;
+  alo := nil;
   IsAlpha := apng.Header.ColorType in [COLOR_RGBALPHA];
   if IsAlpha then
     new_colortype := COLOR_RGBALPHA
