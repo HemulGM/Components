@@ -1371,14 +1371,29 @@ var
   end;
 
   procedure FillCell(ARect: TRect);
+  var
+  {$IFDEF FORXP}
+    Target: TCanvas;
+  {$ELSE}
+  Target: TDirect2DCanvas;
+  {$ENDIF}
+
   begin
     if RoundLineRect <= 0 then
       Canvas.Rectangle(ARect)
     else
     begin
-      with TDirect2DCanvas.Create(Canvas, ClientRect) do
+      {$IFDEF FORXP}
+      Target := Canvas;
+      {$ELSE}
+      Target := TDirect2DCanvas.Create(Canvas, ClientRect);
+      {$ENDIF}
+
+      with Target do
       begin
+        {$IFNDEF FORXP}
         BeginDraw;
+        {$ENDIF}
         ARect.Inflate(0, -2);
         if ColumnCount > 1 then
         begin
@@ -1402,8 +1417,10 @@ var
         begin
           RoundRect(ARect, FRoundLineRect, FRoundLineRect);
         end;
+        {$IFNDEF FORXP}
         EndDraw;
         Free;
+        {$ENDIF}
       end;
     end;
   end;

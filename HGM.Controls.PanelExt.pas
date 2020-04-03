@@ -331,8 +331,9 @@ end;
 
 procedure TDrawPanel.Paint;
 begin
-  if Assigned(FOnPaint) then
-    FOnPaint(Self);
+  if Visible then
+    if Assigned(FOnPaint) then
+      FOnPaint(Self);
 end;
 
 procedure TCustomPanelExt.Paint;
@@ -346,7 +347,8 @@ end;
 procedure TCustomPanelExt.SetDefaultPaint(const Value: Boolean);
 begin
   FDefaultPaint := Value;
-  Paint;
+  if not (csLoading in ComponentState) then
+    Paint;
 end;
 
 procedure TCustomPanelExt.SetRepaintOnMouseMove(const Value: Boolean);
