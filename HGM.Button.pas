@@ -424,6 +424,7 @@ begin
   ParentColor := False;
   TabStop := True;
   ParentBackground := False;
+  StyleElements := [];
 
   FColors[bfsNormal] := $00DFD3C4;
   FColors[bfsOver] := $00AD8D64;

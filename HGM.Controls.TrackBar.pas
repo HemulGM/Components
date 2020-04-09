@@ -3,9 +3,8 @@ unit HGM.Controls.TrackBar;
 interface
 
 uses
-  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants,
-  Vcl.Controls, System.Classes, Vcl.Graphics, Vcl.Forms, Vcl.Dialogs,
-  Vcl.StdCtrls, Vcl.ExtCtrls, HGM.Common, System.Types;
+  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, Vcl.Controls, System.Classes, Vcl.Graphics,
+  Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, Vcl.ExtCtrls, HGM.Common, System.Types;
 
 type
   TTrackbarEvent = procedure(Sender: TObject; Position: Extended) of object;
@@ -38,6 +37,7 @@ type
     FHotZoom: Boolean;
     FOnChanged: TTrackbarEvent;
     FShowEllipseHotOnly: Boolean;
+    FHotScroll: Boolean;
     procedure DrawPanelTrackBarMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
     procedure DrawPanelTrackBarMouseEnter(Sender: TObject);
     procedure DrawPanelTrackBarMouseLeave(Sender: TObject);
@@ -65,8 +65,10 @@ type
     procedure SetOnChanged(const Value: TTrackbarEvent);
     procedure DoOnChanged;
     procedure SetShowEllipseHotOnly(const Value: Boolean);
+    procedure SetHotScroll(const Value: Boolean);
   protected
     procedure Paint; override;
+    procedure WMNCPaint(var Message: TMessage); message WM_NCPAINT;
   public
     constructor Create(AOwner: TComponent); override;
     property MouseInButton: Boolean read FMouseInButton;
@@ -87,6 +89,7 @@ type
     property ParentColor;
     property ParentBackground default False;
     property DoubleBuffered;
+    property HotScroll: Boolean read FHotScroll write SetHotScroll default False;
     property ColorScale: TColor read FColorScale write SetColorScale default $00A5A3A2;
     property ColorPos: TColor read FColorPos write SetColorPos default $00F1E7DD;
     property ColorPosBtn: TColor read FColorPosBtn write SetColorPosBtn default $00BEB8B0;
@@ -118,6 +121,7 @@ begin
   FCanChange := True;
   FSecondPosition := 0;
   FPosition := 0;
+  FHotScroll := False;
   FShowEllipse := True;
   FShowEllipseHotOnly := True;
   FColorScale := $00A5A3A2;
@@ -186,6 +190,11 @@ var
 begin
   FMousePos := Point(X, Y);
   Cursor := crHandPoint;
+  if FMouseIsDown then
+  begin
+    if FHotScroll then
+      DoSetPosition(FScalePercent);
+  end;
   if ShowHint then
   begin
     if DoOnAdvHint(FUnderPrecent, HintText) then
@@ -246,7 +255,6 @@ var
   Target: TDirect2DCanvas;
   {$ENDIF}
 
-
 begin
   inherited;
   MRect := ClientRect;
@@ -293,7 +301,8 @@ begin
       VisPos := Round((FScaleRect.Width / 100) * FPosition);
     end;
 
-    xNewRgn := CreateRoundRectRgn(FScaleRect.Left, FScaleRect.Top, FScaleRect.Right, FScaleRect.Bottom, FScaleRect.Height, FScaleRect.Height);
+    xNewRgn := CreateRoundRectRgn(FScaleRect.Left, FScaleRect.Top, FScaleRect.Right, FScaleRect.Bottom, FScaleRect.Height,
+      FScaleRect.Height);
     SelectObject(Canvas.Handle, xNewRgn);
 
     //Buffering
@@ -325,7 +334,6 @@ begin
     {$IFNDEF FORXP}
     EndDraw;
     {$ENDIF}
-
     {$IFNDEF FORXP}
     BeginDraw;
     {$ENDIF}
@@ -385,6 +393,11 @@ procedure ThTrackbar.SetColorScale(const Value: TColor);
 begin
   FColorScale := Value;
   DoPaint;
+end;
+
+procedure ThTrackbar.SetHotScroll(const Value: Boolean);
+begin
+  FHotScroll := Value;
 end;
 
 procedure ThTrackbar.SetHotZoom(const Value: Boolean);
@@ -461,6 +474,11 @@ end;
 procedure ThTrackbar.Step(Value: Integer);
 begin
   SetPosition(FScalePercent + Value);
+end;
+
+procedure ThTrackbar.WMNCPaint(var Message: TMessage);
+begin
+  DoPaint;
 end;
 
 end.

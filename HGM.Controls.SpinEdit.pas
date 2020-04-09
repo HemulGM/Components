@@ -12,9 +12,8 @@ unit HGM.Controls.SpinEdit;
 interface
 
 uses
-  Winapi.Windows, System.Classes, Vcl.StdCtrls, Vcl.ExtCtrls, Vcl.Controls,
-  Winapi.Messages, System.SysUtils, HGM.Common, Vcl.Forms, Vcl.Graphics,
-  Vcl.Menus, Vcl.Buttons;
+  Winapi.Windows, System.Classes, Vcl.StdCtrls, Vcl.ExtCtrls, Vcl.Controls, Winapi.Messages, System.SysUtils, HGM.Common,
+  Vcl.Forms, Vcl.Graphics, Vcl.Menus, Vcl.Buttons;
 
 const
   InitRepeatPause = 400;  { pause before repeat timer (ms) }
@@ -187,6 +186,7 @@ type
     property OnMouseUp;
     property OnStartDrag;
     property LightButtons: Boolean read FLightButtons write SetLightButtons;
+    property StyleElements;
   end;
 
 { TTimerSpeedButton }
@@ -444,11 +444,8 @@ end;
 procedure TSpinButton.SetLightButtons(const Value: Boolean);
 begin
   FLightButtons := Value;
-  if FLightButtons then
-  begin
-    SetUpGlyph(nil);
-    SetDownGlyph(nil);
-  end;
+  SetUpGlyph(nil);
+  SetDownGlyph(nil);
 end;
 
 procedure TSpinButton.SetDownGlyph(Value: TBitmap);
@@ -582,7 +579,7 @@ begin
   else if FButton <> nil then
   begin
     if NewStyleControls and Ctl3D then
-      FButton.SetBounds(Width - FButton.Width - 5, 0, FButton.Width, Height - 5)
+      FButton.SetBounds(Width - FButton.Width - 2, 0, FButton.Width, Height - 2)
     else
       FButton.SetBounds(Width - FButton.Width - 1, 1, FButton.Width, Height - 3);
     SetEditRect;

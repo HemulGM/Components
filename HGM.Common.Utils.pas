@@ -1356,9 +1356,6 @@ begin
   bTmp := TPngImage.CreateBlank(new_colortype, 8, NuWidth, NuHeight);
   xscale := bTmp.Width / (apng.Width - 1);
   yscale := bTmp.Height / (apng.Height - 1);
-  new_alpha := 0;
-  ali := nil;
-  alo := nil;
   for to_y := 0 to bTmp.Height - 1 do
   begin
     sfrom_y := to_y / yscale;

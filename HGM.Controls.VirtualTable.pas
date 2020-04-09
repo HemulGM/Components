@@ -3,10 +3,9 @@ unit HGM.Controls.VirtualTable;
 interface
 
 uses
-  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Classes, Vcl.Graphics,
-  Vcl.Controls, Vcl.Forms, Vcl.StdCtrls, System.Generics.Collections,
-  Vcl.ComCtrls, Winapi.CommCtrl, Vcl.ExtCtrls, System.UITypes, Vcl.Grids,
-  Vcl.Mask, Direct2D, Winapi.D2D1, HGM.Common, HGM.Common.Utils;
+  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Classes, Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.StdCtrls,
+  System.Generics.Collections, Vcl.ComCtrls, Winapi.CommCtrl, Vcl.ExtCtrls, System.UITypes, Vcl.Grids, Vcl.Mask,
+  Direct2D, Winapi.D2D1, HGM.Common, HGM.Common.Utils;
 
 type
   TOnTablePaint = procedure(Sender: TObject; Canvas: TCanvas) of object;
@@ -43,13 +42,14 @@ type
     procedure Delete(Index: Integer); virtual;
     //
     procedure AddTable(pTable: TTableEx);
-    procedure SelectInTable(Index: Integer);
     function IndexIn(Index: Integer): Boolean;
+    function GetFirstTableSelectedIndex: Integer;
     procedure UnAssignTables;
     procedure UnAssignTable(pTable: TTableEx);
     procedure UpdateTable(Table: TTableEx = nil); virtual;
     procedure CheckAll; virtual;
     procedure UnCheckAll; virtual;
+    procedure SelectInTable(Index: Integer; Table: TTableEx = nil); virtual;
     property CheckedCount: Integer read GetCheckedCount;
     property Tables[Index: Integer]: TTableEx read GetTable;
     property Checked[Index: Integer]: Boolean read GetChecked write SetChecked;
@@ -227,7 +227,8 @@ tfCenter, tfSingleLine];
     procedure FMouseLeave(Sender: TObject);
     procedure FMouseEnter(Sender: TObject);
     procedure FOnEditChange(Sender: TObject);
-    procedure FOnComboMouseWheel(Sender: TObject; Shift: TShiftState; WheelDelta: Integer; MousePos: TPoint; var Handled: Boolean);
+    procedure FOnComboMouseWheel(Sender: TObject; Shift: TShiftState; WheelDelta: Integer; MousePos: TPoint; var Handled:
+      Boolean);
     procedure FMouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
     procedure SetRowCount(Value: Integer);
     function GetRowCount: Longint;
@@ -472,12 +473,13 @@ begin
   UpdateTable;
 end;
 
-procedure TTableData<T>.SelectInTable(Index: Integer);
+procedure TTableData<T>.SelectInTable(Index: Integer; Table: TTableEx);
 var
   i: Integer;
 begin
   for i := 0 to FTables.Count - 1 do
-    FTables[i].ItemIndex := Index;
+    if (Table = nil) or (Table = FTables[i]) then
+      FTables[i].ItemIndex := Index;
 end;
 
 procedure TTableData<T>.SetChecked(Index: Integer; const Value: Boolean);
@@ -559,6 +561,13 @@ begin
   for i := Low(FCheck) to High(FCheck) do
     if FCheck[i] then
       Inc(Result);
+end;
+
+function TTableData<T>.GetFirstTableSelectedIndex: Integer;
+begin
+  Result := -1;
+  if FTables.Count > 0 then
+    Result := FTables[0].ItemIndex;
 end;
 
 function TTableData<T>.GetIsUpdate: Boolean;
@@ -1184,6 +1193,7 @@ begin
   Options := [goThumbTracking, goColSizing, goRangeSelect];
   ColumnsHeight := 30;
   ShowColumns := True;
+  StyleElements := [seBorder];
 end;
 
 function TTableEx.DataRow: Integer;
@@ -1375,7 +1385,7 @@ var
   {$IFDEF FORXP}
     Target: TCanvas;
   {$ELSE}
-  Target: TDirect2DCanvas;
+    Target: TDirect2DCanvas;
   {$ENDIF}
 
   begin
@@ -1905,7 +1915,8 @@ begin
     FOnMouseUp(Sender, Button, Shift, X, Y);
 end;
 
-procedure TTableEx.FonComboMouseWheel(Sender: TObject; Shift: TShiftState; WheelDelta: Integer; MousePos: TPoint; var Handled: Boolean);
+procedure TTableEx.FonComboMouseWheel(Sender: TObject; Shift: TShiftState; WheelDelta: Integer; MousePos: TPoint; var
+  Handled: Boolean);
 begin
   Handled := FEditing;
 end;
