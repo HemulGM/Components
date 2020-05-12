@@ -3,10 +3,9 @@ unit HGM.Controls.Labels;
 interface
 
 uses
-  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants,
-  System.Classes, Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs,
-  System.Types, Vcl.StdCtrls, Vcl.ExtCtrls, System.UITypes, Vcl.Direct2D,
-  Winapi.D2D1, HGM.Common, HGM.Common.Utils, HGM.Controls.Labels.Base;
+  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics, Vcl.Controls,
+  Vcl.Forms, Vcl.Dialogs, System.Types, Vcl.StdCtrls, Vcl.ExtCtrls, System.UITypes, Vcl.Direct2D, Winapi.D2D1,
+  HGM.Common, HGM.Common.Utils, HGM.Controls.Labels.Base;
 
 type
   ThLink = class(TLabel)
@@ -179,8 +178,7 @@ begin
   LD2DCanvas := TDirect2DCanvas.Create(Canvas, ClientRect);
   with LD2DCanvas do
   begin
-    RenderTarget.BeginDraw;
-    RenderTarget.SetTransform(TD2DMatrix3x2F.Identity);
+    BeginDraw;
     Pen.Assign(Self.Pen);
     Brush.Assign(Self.Brush);
     X := Pen.Width div 2;
@@ -221,9 +219,9 @@ begin
       stCircle, stEllipse:
         Ellipse(X, Y, X + W, Y + H);
     end;
-    RenderTarget.EndDraw;
+    EndDraw;
+    Free;
   end;
-  LD2DCanvas.Free;
 
   Canvas.Font.Assign(FFont);
   Canvas.Brush.Style := bsClear;
@@ -233,9 +231,11 @@ begin
   begin
     d := 1.6; //6.8
     if FEllipseRectVertical then
-      FRect := Rect(Round(X + W / (6.8 / d)), Round(Y + H / (6.8 * d)), Round(X + W - W / (6.8 / d)), Round(Y + H - H / (6.8 * d)))
+      FRect := Rect(Round(X + W / (6.8 / d)), Round(Y + H / (6.8 * d)), Round(X + W - W / (6.8 / d)), Round(Y + H - H /
+        (6.8 * d)))
     else
-      FRect := Rect(Round(X + W / (6.8 * d)), Round(Y + H / (6.8 / d)), Round(X + W - W / (6.8 * d)), Round(Y + H - H / (6.8 / d)));
+      FRect := Rect(Round(X + W / (6.8 * d)), Round(Y + H / (6.8 / d)), Round(X + W - W / (6.8 * d)), Round(Y + H - H /
+        (6.8 / d)));
   end;
  //DF:=TTextFormatFlags(FTextFormat);
   Str := FLabel;

@@ -3,9 +3,8 @@ unit HGM.Button;
 interface
 
 uses
-  Winapi.Windows, Winapi.Messages, System.Classes, Vcl.Graphics, Vcl.Controls,
-  Vcl.StdCtrls, System.Generics.Collections, Vcl.ExtCtrls, System.UITypes,
-  System.Types, HGM.Controls.VirtualTable, Vcl.Direct2D, Winapi.D2D1, HGM.Common,
+  Winapi.Windows, Winapi.Messages, System.Classes, Vcl.Graphics, Vcl.Controls, Vcl.StdCtrls, System.Generics.Collections,
+  Vcl.ExtCtrls, System.UITypes, System.Types, HGM.Controls.VirtualTable, Vcl.Direct2D, Winapi.D2D1, HGM.Common,
   HGM.Common.Utils, Vcl.Menus, System.SysUtils;
 
 type
@@ -71,6 +70,8 @@ type
     FSubTextFont: TFont;
     FBorderWidth: Integer;
     FShowCaption: Boolean;
+    FSubTextColorBorder: TColor;
+    FSubTextColorBorderDepth: Integer;
     procedure FOnDblClick(Sender: TObject);
     function FGetTextWidth: Integer;
     procedure SetLabel(const Value: string);
@@ -124,6 +125,8 @@ type
     procedure SetShowCaption(const Value: Boolean);
     procedure SetOnMouseEnter(const Value: TNotifyEvent);
     procedure SetOnMouseLeave(const Value: TNotifyEvent);
+    procedure SetSubTextColorBorder(const Value: TColor);
+    procedure SetSubTextColorBorderDepth(const Value: Integer);
     property ButtonState: TButtonFlatState read FButtonState write SetButtonState;
     property StyledColor: TColor read FStyledColor write SetStyledColor;
     property FromColor: TColor read FFromColor write FFromColor;
@@ -201,6 +204,8 @@ type
     property SubText: string read FSubText write SetSubText;
     property SubTextFont: TFont read FSubTextFont write SetSubTextFont;
     property SubTextColor: TColor read FSubTextColor write SetSubTextColor default clGrayText;
+    property SubTextColorBorder: TColor read FSubTextColorBorder write SetSubTextColorBorder default clNone;
+    property SubTextColorBorderDepth: Integer read FSubTextColorBorderDepth write SetSubTextColorBorderDepth default 1;
     property VisibleSubText: Boolean read FVisibleSubText write SetVisibleSubText default False;
     property Touch;
     property Visible;
@@ -325,6 +330,15 @@ begin
   RegisterComponents(PackageName, [TCheckBoxFlat]);
 end;
 
+function GrayColor(AColor: TColor): TColor;
+var
+  Gr: Byte;
+begin
+  AColor := ColorToRGB(AColor);
+  Gr := Trunc((GetBValue(AColor) + GetGValue(AColor) + GetRValue(AColor)) / 3);
+  Result := RGB(Gr, Gr, Gr);
+end;
+
 { TLabelEx }
 
 procedure TButtonFlat.TimedText(Text: string; Delay: Cardinal);
@@ -402,6 +416,8 @@ begin
   FTimerAutoClick.Enabled := False;
   FTimerAutoClick.OnTimer := OnTimerAutoClickTime;
   FDrawTimedText := False;
+  FSubTextColorBorderDepth := 1;
+  FSubTextColorBorder := clNone;
   FAnimPerc := 0;
   FShowCaption := True;
   FGettingTextWidth := False;
@@ -585,6 +601,7 @@ var
   FRect, FSubRect: TRect;
   d: Double;
   FDrawImg: Integer;
+  PaintTag: tagPAINTSTRUCT;
   FText: string;
   {$IFDEF FORXP}
   Target: TCanvas;
@@ -592,8 +609,8 @@ var
   Target: TDirect2DCanvas;
   {$ENDIF}
 
-
 begin
+  BeginPaint(Handle, PaintTag);
   try
     if FDrawTimedText then
       FText := FTimedText
@@ -626,7 +643,10 @@ begin
       else
         Brush.Color := ColorNormal;
       FillRect(ClientRect);
-      Brush.Color := StyledColor;
+      if Enabled then
+        Brush.Color := StyledColor
+      else
+        Brush.Color := GrayColor(StyledColor);
       // Плоский стиль
       if Flat then
         Pen.Color := Brush.Color
@@ -743,7 +763,11 @@ begin
         FSubRect.Width := Max(FSubRect.Height, Canvas.TextWidth(FSubText) + 10);
         FSubRect.Offset(ClientRect.Right - FSubRect.Width - 10, 0);
         Brush.Color := FSubTextColor;
-        Pen.Color := FSubTextColor;
+        if FSubTextColorBorder = clNone then
+          Pen.Color := FSubTextColor
+        else
+          Pen.Color := FSubTextColorBorder;
+        Pen.Width := FSubTextColorBorderDepth;
         RoundRect(FSubRect, FSubRect.Height, FSubRect.Height);
       end;
       //
@@ -852,6 +876,7 @@ begin
   except
     //
   end;
+  EndPaint(Handle, PaintTag);
 end;
 
 procedure TButtonFlat.ShowPopup;
@@ -1073,6 +1098,18 @@ end;
 procedure TButtonFlat.SetSubTextColor(const Value: TColor);
 begin
   FSubTextColor := Value;
+  Repaint;
+end;
+
+procedure TButtonFlat.SetSubTextColorBorder(const Value: TColor);
+begin
+  FSubTextColorBorder := Value;
+  Repaint;
+end;
+
+procedure TButtonFlat.SetSubTextColorBorderDepth(const Value: Integer);
+begin
+  FSubTextColorBorderDepth := Value;
   Repaint;
 end;
 

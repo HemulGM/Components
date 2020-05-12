@@ -38,6 +38,9 @@ type
     FOnChanged: TTrackbarEvent;
     FShowEllipseHotOnly: Boolean;
     FHotScroll: Boolean;
+    FOnMouseMove: TMouseMoveEvent;
+    FOnMouseEnter: TNotifyEvent;
+    FOnMouseLeave: TNotifyEvent;
     procedure DrawPanelTrackBarMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
     procedure DrawPanelTrackBarMouseEnter(Sender: TObject);
     procedure DrawPanelTrackBarMouseLeave(Sender: TObject);
@@ -64,6 +67,7 @@ type
     procedure SetHotZoom(const Value: Boolean);
     procedure SetOnChanged(const Value: TTrackbarEvent);
     procedure DoOnChanged;
+    procedure DoOnChange;
     procedure SetShowEllipseHotOnly(const Value: Boolean);
     procedure SetHotScroll(const Value: Boolean);
   protected
@@ -82,6 +86,9 @@ type
     property OnChanged: TTrackbarEvent read FOnChanged write SetOnChanged;
     property CanChange: Boolean read FCanChange write SetCanChange default True;
     property OnAdvHint: TTrackbarOnHint read FOnAdvHint write SetOnAdvHint;
+    property OnMouseEnter: TNotifyEvent read FOnMouseEnter write FOnMouseEnter;
+    property OnMouseLeave: TNotifyEvent read FOnMouseLeave write FOnMouseLeave;
+    property OnMouseMove: TMouseMoveEvent read FOnMouseMove write FOnMouseMove;
     property ShowHint;
     property ShowEllipse: Boolean read FShowEllipse write SetShowEllipse default True;
     property ShowEllipseHotOnly: Boolean read FShowEllipseHotOnly write SetShowEllipseHotOnly default True;
@@ -159,12 +166,16 @@ procedure ThTrackbar.DrawPanelTrackBarMouseEnter(Sender: TObject);
 begin
   FMouseInScale := True;
   DoPaint;
+  if Assigned(FOnMouseEnter) then
+    FOnMouseEnter(Self);
 end;
 
 procedure ThTrackbar.DrawPanelTrackBarMouseLeave(Sender: TObject);
 begin
   FMouseInScale := False;
   DoPaint;
+  if Assigned(FOnMouseLeave) then
+    FOnMouseLeave(Self);
 end;
 
 function ThTrackbar.DoOnAdvHint(HintPosition: Extended; var Text: string): Boolean;
@@ -173,7 +184,10 @@ begin
   Result := False;
   if Assigned(FOnAdvHint) then
   begin
-    FOnAdvHint(Self, HintPosition, Text);
+    try
+      FOnAdvHint(Self, HintPosition, Text);
+    except
+    end;
     Result := not Text.IsEmpty;
   end;
 end;
@@ -193,7 +207,10 @@ begin
   if FMouseIsDown then
   begin
     if FHotScroll then
+    begin
       DoSetPosition(FScalePercent);
+      DoOnChange;
+    end;
   end;
   if ShowHint then
   begin
@@ -204,6 +221,8 @@ begin
     end;
   end;
   DoPaint;
+  if Assigned(FOnMouseMove) then
+    FOnMouseMove(Self, Shift, X, Y);
 end;
 
 procedure ThTrackbar.DrawPanelTrackBarMouseUp(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
@@ -214,6 +233,8 @@ begin
         if FMouseIsDown then
         begin
           DoSetPosition(FScalePercent);
+          DoOnChange;
+          DoOnChanged;
           FMouseIsDown := False;
           FMouseDownPos := Point(-1, -1);
         end;
@@ -224,8 +245,9 @@ end;
 
 procedure ThTrackbar.DoSetPosition(Value: Extended);
 begin
-  FPosition := Value;
-  InitChange;
+  FPosition := Max(0, Min(100, Value));
+  FScalePercent := FPosition;
+  DoPaint;
 end;
 
 function ThTrackbar.GetPosition: Extended;
@@ -240,8 +262,7 @@ end;
 
 procedure ThTrackbar.InitChange;
 begin
-  if Assigned(FOnChange) then
-    FOnChange(Self, FPosition);
+  DoOnChange;
 end;
 
 procedure ThTrackbar.Paint;
@@ -439,18 +460,27 @@ begin
   FOnChanged := Value;
 end;
 
+procedure ThTrackbar.DoOnChange;
+begin
+  if Assigned(FOnChange) then
+  try
+    FOnChange(Self, FPosition);
+  except
+  end;
+end;
+
 procedure ThTrackbar.DoOnChanged;
 begin
   if Assigned(FOnChanged) then
+  try
     FOnChanged(Self, FScalePercent);
+  except
+  end;
 end;
 
 procedure ThTrackbar.SetPosition(const Value: Extended);
 begin
-  FPosition := Max(0, Min(100, Value));
-  FScalePercent := FPosition;
-  DoOnChanged;
-  DoPaint;
+  DoSetPosition(Value);
 end;
 
 procedure ThTrackbar.SetSecondPosition(const Value: Extended);

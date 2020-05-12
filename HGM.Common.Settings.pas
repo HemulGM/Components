@@ -3,14 +3,13 @@ unit HGM.Common.Settings;
 interface
 
 uses
-  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants,
-  System.Classes, Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs,
-  Vcl.ComCtrls, Vcl.StdCtrls, IniFiles, Registry, Vcl.Samples.Spin, Vcl.Grids,
-  Vcl.ValEdit, Vcl.ExtCtrls, Vcl.ExtDlgs
+  Winapi.Windows, System.SysUtils, System.Variants, System.Classes, IniFiles, Registry, System.Generics.Collections,
   {$IFDEF NEEDFMX}
-    , FMX.Forms
+  FMX.Forms,
+  {$ELSE}
+  Vcl.Forms, Vcl.Samples.Spin, Vcl.Grids, Vcl.ValEdit, Vcl.ExtCtrls, Vcl.ComCtrls, Vcl.StdCtrls,
   {$ENDIF NEEDFMX}
-;
+  System.UITypes;
 
 type
   TRegRoot = (rrHKLM, rrHKCU);
@@ -32,6 +31,7 @@ type
     function FValueExists(Section, Param: string): Boolean; virtual; abstract;
     function FGetSections(Section: string; List: TStringList): Boolean; virtual; abstract;
   public
+    //function Get<T: TEnum>(Section, Param: string; Default: T): T;
     function GetInt(Section, Param: string; Default: Integer = 0): Integer;
     function GetStr(Section, Param: string; Default: string = ''): string;
     function GetBool(Section, Param: string; Default: Boolean = False): Boolean;
@@ -42,6 +42,10 @@ type
     function SetBool(Section, Param: string; Value: Boolean): Boolean;
     function SetDate(Section, Param: string; Value: TDateTime): Boolean;
     function SetFloat(Section, Param: string; Value: Extended): Boolean;
+    {$IFDEF NEEDFMX}
+    function GetParamWindow(Section: string; AWindow: FMX.Forms.TForm; LoadItems: TWindowParamSave): Boolean; overload;
+    function SetParamWindow(Section: string; AWindow: FMX.Forms.TForm; SaveItems: TWindowParamSave): Boolean; overload;
+    {$ELSE}
     function GetParam(Section: string; AControl: TEdit; Default: string = ''): Boolean; overload;
     function GetParam(Section: string; AControl: TLabel; Default: string = ''): Boolean; overload;
     function GetParam(Section: string; AControl: TSpinEdit; Default: Integer = 0): Boolean; overload;
@@ -56,9 +60,6 @@ type
     function SetParam(Section: string; AControl: TPageControl): Boolean; overload;
     function GetParamWindow(Section: string; AWindow: Vcl.Forms.TForm; LoadItems: TWindowParamSave): Boolean; overload;
     function SetParamWindow(Section: string; AWindow: Vcl.Forms.TForm; SaveItems: TWindowParamSave): Boolean; overload;
-    {$IFDEF NEEDFMX}
-    function GetParamWindow(Section: string; AWindow: FMX.Forms.TForm; LoadItems: TWindowParamSave): Boolean; overload;
-    function SetParamWindow(Section: string; AWindow: FMX.Forms.TForm; SaveItems: TWindowParamSave): Boolean; overload;
     {$ENDIF NEEDFMX}
 
     function ValueExists(Section, Param: string): Boolean;
@@ -522,6 +523,15 @@ begin
 end;
 
 { TSettings }
+   {
+function TSettings.Get<T>(Section, Param: string; Default: T): T;
+var Res: Integer;
+    It: System.TFloatSpecial;
+begin
+  ReadInt(Section, Param, Res, Ord(T));
+
+  Result := T(Res);
+end;   }
 
 function TSettings.GetBool(Section, Param: string; Default: Boolean): Boolean;
 begin
@@ -583,6 +593,7 @@ begin
   Result := FValueExists(Section, Param);
 end;
 
+{$IFNDEF NEEDFMX}
 function TSettings.GetParam(Section: string; AControl: TEdit; Default: string = ''): Boolean;
 var
   Str: string;
@@ -660,6 +671,68 @@ function TSettings.SetParam(Section: string; AControl: TPageControl): Boolean;
 begin
   Result := WriteInt(Section, AControl.Name, AControl.ActivePageIndex);
 end;
+{$ENDIF}
+
+{$IFDEF NEEDFMX}
+
+function TSettings.GetParamWindow(Section: string; AWindow: FMX.Forms.TForm; LoadItems: TWindowParamSave): Boolean;
+var
+  IValue: Integer;
+begin
+  try
+    if (wpsCoord in LoadItems) or (wpsAll in LoadItems) then
+    begin
+      if ReadInt(Section, AWindow.Name + '.Left', IValue, AWindow.Left) then
+        AWindow.Left := IValue;
+      if ReadInt(Section, AWindow.Name + '.Top', IValue, AWindow.Top) then
+        AWindow.Top := IValue;
+    end;
+    if (wpsSize in LoadItems) or (wpsAll in LoadItems) then
+    begin
+      if ReadInt(Section, AWindow.Name + '.Width', IValue, AWindow.Width) then
+        AWindow.Width := IValue;
+      if ReadInt(Section, AWindow.Name + '.Height', IValue, AWindow.Height) then
+        AWindow.Height := IValue;
+    end;
+    if (wpsState in LoadItems) or (wpsAll in LoadItems) then
+    begin
+      if ReadInt(Section, AWindow.Name + '.WindowState', IValue, Ord(AWindow.WindowState)) then
+        AWindow.WindowState := TWindowState(IValue);
+      if AWindow.WindowState = TWindowState.wsMinimized then
+        AWindow.WindowState := TWindowState.wsNormal;
+    end;
+    Result := True;
+  except
+    Result := False;
+  end;
+end;
+
+function TSettings.SetParamWindow(Section: string; AWindow: FMX.Forms.TForm; SaveItems: TWindowParamSave): Boolean;
+begin
+  try
+    if (wpsState in SaveItems) or (wpsAll in SaveItems) then
+    begin
+      WriteInt(Section, AWindow.Name + '.WindowState', Ord(AWindow.WindowState));
+    end;
+    if AWindow.WindowState = TWindowState.wsNormal then
+    begin
+      if (wpsCoord in SaveItems) or (wpsAll in SaveItems) then
+      begin
+        WriteInt(Section, AWindow.Name + '.Left', AWindow.Left);
+        WriteInt(Section, AWindow.Name + '.Top', AWindow.Top);
+      end;
+      if (wpsSize in SaveItems) or (wpsAll in SaveItems) then
+      begin
+        WriteInt(Section, AWindow.Name + '.Width', AWindow.Width);
+        WriteInt(Section, AWindow.Name + '.Height', AWindow.Height);
+      end;
+    end;
+    Result := True;
+  except
+    Result := False;
+  end;
+end;
+{$ELSE}
 
 function TSettings.GetParamWindow(Section: string; AWindow: Vcl.Forms.TForm; LoadItems: TWindowParamSave): Boolean;
 var
@@ -694,65 +767,6 @@ begin
 end;
 
 function TSettings.SetParamWindow(Section: string; AWindow: Vcl.Forms.TForm; SaveItems: TWindowParamSave): Boolean;
-begin
-  try
-    if (wpsState in SaveItems) or (wpsAll in SaveItems) then
-    begin
-      WriteInt(Section, AWindow.Name + '.WindowState', Ord(AWindow.WindowState));
-    end;
-    if AWindow.WindowState = wsNormal then
-    begin
-      if (wpsCoord in SaveItems) or (wpsAll in SaveItems) then
-      begin
-        WriteInt(Section, AWindow.Name + '.Left', AWindow.Left);
-        WriteInt(Section, AWindow.Name + '.Top', AWindow.Top);
-      end;
-      if (wpsSize in SaveItems) or (wpsAll in SaveItems) then
-      begin
-        WriteInt(Section, AWindow.Name + '.Width', AWindow.Width);
-        WriteInt(Section, AWindow.Name + '.Height', AWindow.Height);
-      end;
-    end;
-    Result := True;
-  except
-    Result := False;
-  end;
-end;
-{$IFDEF NEEDFMX}
-
-function TSettings.GetParamWindow(Section: string; AWindow: FMX.Forms.TForm; LoadItems: TWindowParamSave): Boolean;
-var
-  IValue: Integer;
-begin
-  try
-    if (wpsCoord in LoadItems) or (wpsAll in LoadItems) then
-    begin
-      if ReadInt(Section, AWindow.Name + '.Left', IValue, AWindow.Left) then
-        AWindow.Left := IValue;
-      if ReadInt(Section, AWindow.Name + '.Top', IValue, AWindow.Top) then
-        AWindow.Top := IValue;
-    end;
-    if (wpsSize in LoadItems) or (wpsAll in LoadItems) then
-    begin
-      if ReadInt(Section, AWindow.Name + '.Width', IValue, AWindow.Width) then
-        AWindow.Width := IValue;
-      if ReadInt(Section, AWindow.Name + '.Height', IValue, AWindow.Height) then
-        AWindow.Height := IValue;
-    end;
-    if (wpsState in LoadItems) or (wpsAll in LoadItems) then
-    begin
-      if ReadInt(Section, AWindow.Name + '.WindowState', IValue, Ord(AWindow.WindowState)) then
-        AWindow.WindowState := TWindowState(IValue);
-      if AWindow.WindowState = wsMinimized then
-        AWindow.WindowState := wsNormal;
-    end;
-    Result := True;
-  except
-    Result := False;
-  end;
-end;
-
-function TSettings.SetParamWindow(Section: string; AWindow: FMX.Forms.TForm; SaveItems: TWindowParamSave): Boolean;
 begin
   try
     if (wpsState in SaveItems) or (wpsAll in SaveItems) then
