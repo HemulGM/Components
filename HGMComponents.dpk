@@ -70,7 +70,8 @@ contains
   HGM.Controls.Labels.Base in 'HGM.Controls.Labels.Base.pas',
   HGM.Controls.Chat in 'HGM.Controls.Chat.pas',
   HGM.Controls.ProgressBar in 'HGM.Controls.ProgressBar.pas',
-  HGM.Controls.TrackBar in 'HGM.Controls.TrackBar.pas';
+  HGM.Controls.TrackBar in 'HGM.Controls.TrackBar.pas',
+  HGM.Common.Download in 'HGM.Common.Download.pas';
 
 end.
 
