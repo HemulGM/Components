@@ -32,7 +32,8 @@ type
     procedure Execute; override;
   public
     constructor Create(CreateSuspended: Boolean); overload;
-    constructor CreateAndStart(AUrl, AFileName: string; OnReceiveProc: TOnReceiveRef = nil; OnFinishProc: TOnFinishRef = nil); overload;
+    constructor CreateAndStart(AUrl, AFileName: string; OnReceiveProc: TOnReceiveRef = nil; OnFinishProc: TOnFinishRef =
+      nil); overload;
     destructor Destroy; override;
     property URL: string read FURL write FURL;
     property FileName: string read FFileName write FFileName;
@@ -73,6 +74,8 @@ var
 begin
   Result := False;
   Mem.Clear;
+  if URL.IsEmpty then
+    Exit;
   HTTP := THTTPClient.Create;
   HTTP.HandleRedirects := True;
   try
@@ -92,6 +95,9 @@ var
   HTTP: THTTPClient;
   FS: TFileStream;
 begin
+  Result := False;
+  if URL.IsEmpty then
+    Exit;
   HTTP := THTTPClient.Create;
   HTTP.HandleRedirects := True;
   try
@@ -118,14 +124,17 @@ var
   FS: TFileStream;
 begin
   FResponseCode := -1;
-  try
-    FS := TFileStream.Create(FileName, fmCreate or fmShareDenyNone);
+  if not FURL.IsEmpty then
+  begin
     try
-      FResponseCode := FHTTP.Get(FURL, FS).StatusCode;
-    finally
-      FS.Free;
+      FS := TFileStream.Create(FileName, fmCreate or fmShareDenyNone);
+      try
+        FResponseCode := FHTTP.Get(FURL, FS).StatusCode;
+      finally
+        FS.Free;
+      end;
+    except
     end;
-  except
   end;
   Synchronize(DoNotifyFinish);
 end;
