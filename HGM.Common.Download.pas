@@ -16,6 +16,8 @@ type
 
   TOnFinishRef = reference to procedure(Sender: TDownload; ResponseCode: Integer);
 
+  TOnFinishRefStream = reference to procedure(Sender: TDownload; Stream: TMemoryStream; ResponseCode: Integer);
+
   TDownload = class(TThread)
   private
     FHTTP: THTTPClient;
@@ -26,14 +28,19 @@ type
     FFileName: string;
     FLength: Integer;
     FCount: Integer;
+    FOnFinishStream: TOnFinishRefStream;
     procedure InternalOnReceive(const Sender: TObject; AContentLength: Int64; AReadCount: Int64; var Abort: Boolean);
     procedure DoNotifyFinish;
+    procedure DoNotifyFinishStream(Stream: TMemoryStream);
+    procedure SetOnFinishStream(const Value: TOnFinishRefStream);
   protected
     procedure Execute; override;
   public
     constructor Create(CreateSuspended: Boolean); overload;
     constructor CreateAndStart(AUrl, AFileName: string; OnReceiveProc: TOnReceiveRef = nil; OnFinishProc: TOnFinishRef =
       nil); overload;
+    constructor CreateAndStart(AUrl: string; OnReceiveProc: TOnReceiveRef = nil; OnFinishProc: TOnFinishRefStream = nil);
+      overload;
     destructor Destroy; override;
     property URL: string read FURL write FURL;
     property FileName: string read FFileName write FFileName;
@@ -41,6 +48,7 @@ type
     property Count: Integer read FCount;
     property OnReceive: TOnReceiveRef read FOnReceive write FOnReceive;
     property OnFinish: TOnFinishRef read FOnFinish write FOnFinish;
+    property OnFinishStream: TOnFinishRefStream read FOnFinishStream write SetOnFinishStream;
     class function Get(URL: string; const Mem: TMemoryStream): Boolean; overload;
     class function Get(URL, FileName: string): Boolean; overload;
   end;
@@ -113,6 +121,18 @@ begin
   end;
 end;
 
+constructor TDownload.CreateAndStart(AUrl: string; OnReceiveProc: TOnReceiveRef; OnFinishProc: TOnFinishRefStream);
+begin
+  inherited Create(False);
+  FreeOnTerminate := True;
+  FHTTP := THTTPClient.Create;
+  FHTTP.OnReceiveData := InternalOnReceive;
+  URL := AUrl;
+  FileName := '';
+  FOnFinishStream := OnFinishProc;
+  FOnReceive := OnReceiveProc;
+end;
+
 destructor TDownload.Destroy;
 begin
   FHTTP.Free;
@@ -122,27 +142,62 @@ end;
 procedure TDownload.Execute;
 var
   FS: TFileStream;
+  Mem: TMemoryStream;
 begin
   FResponseCode := -1;
   if not FURL.IsEmpty then
   begin
-    try
-      FS := TFileStream.Create(FileName, fmCreate or fmShareDenyNone);
-      try
-        FResponseCode := FHTTP.Get(FURL, FS).StatusCode;
-      finally
-        FS.Free;
+    if not FileName.IsEmpty then
+    begin
+      if not FURL.IsEmpty then
+      begin
+        try
+          FS := TFileStream.Create(FileName, fmCreate or fmShareDenyNone);
+          try
+            FResponseCode := FHTTP.Get(FURL, FS).StatusCode;
+          finally
+            FS.Free;
+          end;
+        except
+        end;
       end;
-    except
+      Synchronize(DoNotifyFinish);
+    end
+    else
+    begin
+      if not FURL.IsEmpty then
+      begin
+        try
+          Mem := TMemoryStream.Create;
+          try
+            FResponseCode := FHTTP.Get(FURL, Mem).StatusCode;
+            Mem.Position := 0;
+          finally
+
+          end;
+        except
+          Mem.Free;
+        end;
+      end;
+      TThread.Synchronize(nil,
+        procedure
+        begin
+          DoNotifyFinishStream(Mem);
+        end);
     end;
   end;
-  Synchronize(DoNotifyFinish);
 end;
 
 procedure TDownload.DoNotifyFinish;
 begin
   if Assigned(FOnFinish) then
     FOnFinish(Self, FResponseCode);
+end;
+
+procedure TDownload.DoNotifyFinishStream(Stream: TMemoryStream);
+begin
+  if Assigned(FOnFinishStream) then
+    FOnFinishStream(Self, Stream, FResponseCode);
 end;
 
 procedure TDownload.InternalOnReceive(const Sender: TObject; AContentLength: Int64; AReadCount: Int64; var Abort: Boolean);
@@ -158,6 +213,11 @@ begin
         FOnReceive(Self, AContentLength, AReadCount, Cancel);
     end);
   Abort := Cancel;
+end;
+
+procedure TDownload.SetOnFinishStream(const Value: TOnFinishRefStream);
+begin
+  FOnFinishStream := Value;
 end;
 
 end.
