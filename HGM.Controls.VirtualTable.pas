@@ -204,6 +204,7 @@ tfCenter, tfSingleLine];
     FProcEmpty: Boolean;
     FDrawColumnSections: Boolean;
     FMouseRightClickTooClick: Boolean;
+    FItIsDblClick: Boolean;
     FPaintGrid: Boolean;
     FLastColumnAutoSize: Boolean;
     FEditOnDblClick: Boolean;
@@ -1835,6 +1836,7 @@ end;
 
 procedure TTableEx.FMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 begin
+  FItIsDblClick := ssDouble in Shift;
   if ((Button = mbLeft) or (FMouseRightClickTooClick and (Button = mbRight))) and (ssDouble in Shift) then
     if FEditOnDblClick then
     begin
@@ -1858,7 +1860,7 @@ procedure TTableEx.FMouseUp(Sender: TObject; Button: TMouseButton; Shift: TShift
 var
   ACol, ARow, NewRow, OldRow, VarRow: Integer;
 begin
-  if (Button = mbLeft) or (FMouseRightClickTooClick and (Button = mbRight)) then
+  if ((Button = mbLeft) or (FMouseRightClickTooClick and (Button = mbRight))) and (not FItIsDblClick) then
   begin
     MouseToCell(X, Y, ACol, ARow);
     if ARow >= 0 then

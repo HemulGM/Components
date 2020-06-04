@@ -70,6 +70,7 @@ begin
   FreeOnTerminate := True;
   FHTTP := THTTPClient.Create;
   FHTTP.OnReceiveData := InternalOnReceive;
+  FHTTP.HandleRedirects := True;
   URL := AUrl;
   FileName := AFileName;
   FOnFinish := OnFinishProc;
@@ -127,6 +128,7 @@ begin
   FreeOnTerminate := True;
   FHTTP := THTTPClient.Create;
   FHTTP.OnReceiveData := InternalOnReceive;
+  FHTTP.HandleRedirects := True;
   URL := AUrl;
   FileName := '';
   FOnFinishStream := OnFinishProc;
@@ -184,6 +186,8 @@ begin
         begin
           DoNotifyFinishStream(Mem);
         end);
+      if Assigned(Mem) then
+        Mem.Free;
     end;
   end;
 end;

@@ -35,10 +35,10 @@ requires
   xmlrtl,
   vclimg,
   VclSmp,
+  PngComponentsD,
   IndySystem,
   IndyProtocols,
-  IndyCore,
-  PngComponentsD;
+  IndyCore;
 
 contains
   HGM.Autorun in 'HGM.Autorun.pas',
