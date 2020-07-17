@@ -205,6 +205,7 @@ tfCenter, tfSingleLine];
     FDrawColumnSections: Boolean;
     FMouseRightClickTooClick: Boolean;
     FItIsDblClick: Boolean;
+    FLastTimeClick: Integer;
     FPaintGrid: Boolean;
     FLastColumnAutoSize: Boolean;
     FEditOnDblClick: Boolean;
@@ -1092,6 +1093,7 @@ begin
   inherited DrawingStyle := gdsGradient;
   inherited OnMouseWheel := FOnComboMouseWheel;
 
+  FLastTimeClick := 0;
   FColumnsStream := nil;
   FActiveCursor := crHandPoint;
   FUpdatesCount := 0;
@@ -1837,7 +1839,12 @@ end;
 procedure TTableEx.FMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 begin
   FItIsDblClick := ssDouble in Shift;
-  if ((Button = mbLeft) or (FMouseRightClickTooClick and (Button = mbRight))) and (ssDouble in Shift) then
+  if FLastTimeClick > 0 then
+    if Abs(FLastTimeClick - GetTickCount) <= 500 then
+      FItIsDblClick := True;
+  FLastTimeClick := GetTickCount;
+
+  if ((Button = mbLeft) or (FMouseRightClickTooClick and (Button = mbRight))) and (FItIsDblClick) then
     if FEditOnDblClick then
     begin
       if (FCordHot.X = Col) and (FCordHot.Y = Row) then

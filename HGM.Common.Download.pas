@@ -10,13 +10,13 @@ type
 
   TOnReceive = procedure(const Sender: TObject; AContentLength: Int64; AReadCount: Int64; var Abort: Boolean) of object;
 
-  TOnFinish = procedure(Sender: TDownload; ResponseCode: Integer) of object;
+  TOnFinish = procedure(const Sender: TDownload; ResponseCode: Integer) of object;
 
-  TOnReceiveRef = reference to procedure(const Sender: TObject; AContentLength: Int64; AReadCount: Int64; var Abort: Boolean);
+  TOnReceiveRef = reference to procedure(const Sender: TDownload; AContentLength: Int64; AReadCount: Int64; var Abort: Boolean);
 
-  TOnFinishRef = reference to procedure(Sender: TDownload; ResponseCode: Integer);
+  TOnFinishRef = reference to procedure(const Sender: TDownload; ResponseCode: Integer);
 
-  TOnFinishRefStream = reference to procedure(Sender: TDownload; Stream: TMemoryStream; ResponseCode: Integer);
+  TOnFinishRefStream = reference to procedure(const Sender: TDownload; Stream: TMemoryStream; ResponseCode: Integer);
 
   TDownload = class(TThread)
   private
@@ -36,7 +36,7 @@ type
   protected
     procedure Execute; override;
   public
-    constructor Create(CreateSuspended: Boolean); overload;
+    constructor Create(CreateSuspended: Boolean = True); overload;
     constructor CreateAndStart(AUrl, AFileName: string; OnReceiveProc: TOnReceiveRef = nil; OnFinishProc: TOnFinishRef =
       nil); overload;
     constructor CreateAndStart(AUrl: string; OnReceiveProc: TOnReceiveRef = nil; OnFinishProc: TOnFinishRefStream = nil);
@@ -51,6 +51,7 @@ type
     property OnFinishStream: TOnFinishRefStream read FOnFinishStream write SetOnFinishStream;
     class function Get(URL: string; const Mem: TMemoryStream): Boolean; overload;
     class function Get(URL, FileName: string): Boolean; overload;
+    class function Get(URL: string): TMemoryStream; overload;
   end;
 
 implementation
@@ -93,6 +94,26 @@ begin
       Mem.Position := 0;
     except
       Result := False;
+    end;
+  finally
+    HTTP.Free;
+  end;
+end;
+
+class function TDownload.Get(URL: string): TMemoryStream;
+var
+  HTTP: THTTPClient;
+begin
+  Result := TMemoryStream.Create;
+  if URL.IsEmpty then
+    Exit;
+  HTTP := THTTPClient.Create;
+  HTTP.HandleRedirects := True;
+  try
+    try
+      if (HTTP.Get(URL, Result).StatusCode = 200) and (Result.Size > 0) then
+        Result.Position := 0;
+    except
     end;
   finally
     HTTP.Free;

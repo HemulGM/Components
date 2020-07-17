@@ -3,7 +3,7 @@ unit HGM.Common.DateUtils;
 interface
 
 uses
-  System.SysUtils, Vcl.Graphics, Vcl.Dialogs, System.DateUtils;
+  System.SysUtils, System.DateUtils;
 
 type
   TDatePeriod = record
