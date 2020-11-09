@@ -92,11 +92,11 @@ begin
     try
       Result := (HTTP.Get(URL, Mem).StatusCode = 200) and (Mem.Size > 0);
       Mem.Position := 0;
-    except
-      Result := False;
+    finally
+      HTTP.Free;
     end;
-  finally
-    HTTP.Free;
+  except
+    Result := False;
   end;
 end;
 
@@ -113,10 +113,10 @@ begin
     try
       if (HTTP.Get(URL, Result).StatusCode = 200) and (Result.Size > 0) then
         Result.Position := 0;
-    except
+    finally
+      HTTP.Free;
     end;
-  finally
-    HTTP.Free;
+  except
   end;
 end;
 

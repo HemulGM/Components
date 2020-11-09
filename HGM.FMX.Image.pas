@@ -3,7 +3,8 @@ unit HGM.FMX.Image;
 interface
 
 uses
-  System.Classes, System.Types, System.SysUtils, FMX.Forms, FMX.Graphics, FMX.Objects, System.Generics.Collections;
+  System.Classes, System.Types, System.SysUtils, FMX.Forms, FMX.Graphics, FMX.Objects, System.Threading,
+  System.Generics.Collections;
 
 type
   TBitmapCacheItem = class
@@ -39,7 +40,7 @@ type
       CacheSize: Integer;
       GlobalUseCache: Boolean;
     procedure LoadFromUrl(const Url: string; UseCache: Boolean = True);
-    procedure LoadFromUrlAsync(const Url: string; UseCache: Boolean = True);
+    procedure LoadFromUrlAsync(const Url: string; UseCache: Boolean = True; AfterLoaded: TProc<TBitmap> = nil);
     procedure LoadFromResource(ResName: string);
     class procedure DropCache;
     class procedure SetLoaded(Url: string);
@@ -50,7 +51,8 @@ type
   end;
 
   TImageHelper = class helper for TImage
-    procedure LoadFromUrl(const Url: string; AfterLoaded: TProc<TImage> = nil);
+    procedure LoadFromUrl(const Url: string; AfterLoaded: TProc<TImage> = nil); overload;
+    class procedure LoadFromUrl(Image: TImage; const Url: string; AfterLoaded: TProc<TImage> = nil); overload;
   end;
 
 implementation
@@ -234,20 +236,28 @@ begin
   end;
 end;
 
-procedure TBitmapHelper.LoadFromUrlAsync(const Url: string; UseCache: Boolean);
+procedure TBitmapHelper.LoadFromUrlAsync(const Url: string; UseCache: Boolean; AfterLoaded: TProc<TBitmap>);
 begin
-  Inc(LoadCounter);
-  TThread.CreateAnonymousThread(
+  TTask.Run(
     procedure
     begin
       while LoadCounter > LoadCounterLimit do
         TThread.Sleep(500);
+      Inc(LoadCounter);
       try
         Self.LoadFromUrl(Url, UseCache);
       except
       end;
       Dec(LoadCounter);
-    end).Start;
+      if Assigned(AfterLoaded) then
+      begin
+        TThread.ForceQueue(nil,
+          procedure
+          begin
+            AfterLoaded(Self);
+          end);
+      end;
+    end);
 end;
 
 class procedure TBitmapHelper.SetLoaded(Url: string);
@@ -261,6 +271,52 @@ end;
 
 { TImageHelper }
 
+class procedure TImageHelper.LoadFromUrl(Image: TImage; const Url: string; AfterLoaded: TProc<TImage>);
+var
+  Thread: TThread;
+begin
+  Thread := TThread.CreateAnonymousThread(
+    procedure
+    var
+      BMP: TBitmap;
+    begin
+      try
+        BMP := TBitmap.CreateFromUrl(Url);
+        TThread.Synchronize(nil,
+          procedure
+          begin
+            //TMonitor.Enter(Image, 100);
+            if Assigned(Image) and not (csDestroying in Image.ComponentState) then
+            begin
+              Image.Bitmap.Assign(BMP);
+            end;
+            //TMonitor.Exit(Image);
+          end);
+       { if Assigned(Self) and not (csDestroying in Self.ComponentState) then
+        begin
+          if Self.Bitmap.IsEmpty then
+          begin
+            if TBitmap.GlobalUseCache then
+              TBitmap.DeleteCache(Url);
+            BMP.LoadFromUrl(Url);
+            TThread.Synchronize(nil,
+              procedure
+              begin
+                if Assigned(Self) then
+                  Self.Bitmap.Assign(BMP);
+              end);
+          end;
+        end;      }
+        if not TBitmap.GlobalUseCache then
+          BMP.Free;
+      except
+      end;
+      if Assigned(AfterLoaded) then
+        AfterLoaded(Image);
+    end);
+  Thread.Start;
+end;
+
 procedure TImageHelper.LoadFromUrl(const Url: string; AfterLoaded: TProc<TImage>);
 var
   Thread: TThread;
@@ -271,37 +327,34 @@ begin
       BMP: TBitmap;
     begin
       try
-        if not TThread.Current.CheckTerminated then
-        begin
-          BMP := TBitmap.CreateFromUrl(Url);
-          if not TThread.Current.CheckTerminated then
+        BMP := TBitmap.CreateFromUrl(Url);
+        TThread.Synchronize(nil,
+          procedure
           begin
+            TMonitor.Enter(Self, 100);
+            if Assigned(Self) and not (csDestroying in Self.ComponentState) then
+            begin
+              Self.Bitmap.Assign(BMP);
+            end;
+            TMonitor.Exit(Self);
+          end);
+       { if Assigned(Self) and not (csDestroying in Self.ComponentState) then
+        begin
+          if Self.Bitmap.IsEmpty then
+          begin
+            if TBitmap.GlobalUseCache then
+              TBitmap.DeleteCache(Url);
+            BMP.LoadFromUrl(Url);
             TThread.Synchronize(nil,
               procedure
               begin
-                Self.Bitmap.Assign(BMP);
+                if Assigned(Self) then
+                  Self.Bitmap.Assign(BMP);
               end);
-            if not TThread.Current.CheckTerminated then
-            begin
-              if Self.Bitmap.IsEmpty then
-              begin
-                if TBitmap.GlobalUseCache then
-                  TBitmap.DeleteCache(Url);
-                BMP.LoadFromUrl(Url);
-                if not TThread.Current.CheckTerminated then
-                begin
-                  TThread.Synchronize(nil,
-                    procedure
-                    begin
-                      Self.Bitmap.Assign(BMP);
-                    end);
-                end;
-              end;
-            end;
           end;
-          if not TBitmap.GlobalUseCache then
-            BMP.Free;
-        end;
+        end;      }
+        if not TBitmap.GlobalUseCache then
+          BMP.Free;
       except
       end;
       if Assigned(AfterLoaded) then
@@ -322,8 +375,10 @@ end;
 
 destructor TBitmapCacheItem.Destroy;
 begin
+  {$IFNDEF AUTOREFCOUNT}
   if Assigned(Image) then
     Image.Free;
+  {$ENDIF}
   inherited;
 end;
 

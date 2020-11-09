@@ -37,7 +37,7 @@ type
     constructor Create(AOwner: TTableEx); overload; virtual;
     constructor Create; overload; virtual;
     destructor Destroy; override;
-    function Add(Value: T): Integer;
+    function Add(Value: T): Integer; virtual;
     procedure Clear; virtual;
     procedure Delete(Index: Integer); virtual;
     //
@@ -205,7 +205,7 @@ tfCenter, tfSingleLine];
     FDrawColumnSections: Boolean;
     FMouseRightClickTooClick: Boolean;
     FItIsDblClick: Boolean;
-    FLastTimeClick: Integer;
+    FLastTimeClick: Cardinal;
     FPaintGrid: Boolean;
     FLastColumnAutoSize: Boolean;
     FEditOnDblClick: Boolean;
@@ -1840,7 +1840,7 @@ procedure TTableEx.FMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShi
 begin
   FItIsDblClick := ssDouble in Shift;
   if FLastTimeClick > 0 then
-    if Abs(FLastTimeClick - GetTickCount) <= 500 then
+    if Abs(FLastTimeClick - GetTickCount) <= 300 then
       FItIsDblClick := True;
   FLastTimeClick := GetTickCount;
 
