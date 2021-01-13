@@ -73,7 +73,8 @@ contains
   HGM.Controls.ProgressBar in 'HGM.Controls.ProgressBar.pas',
   HGM.Controls.TrackBar in 'HGM.Controls.TrackBar.pas',
   HGM.Common.Download in 'HGM.Common.Download.pas',
-  HGM.FMX.Image in 'HGM.FMX.Image.pas';
+  HGM.FMX.Image in 'HGM.FMX.Image.pas',
+  HGM.FMX.ImageLoader in 'HGM.FMX.ImageLoader.pas';
 
 end.
 
