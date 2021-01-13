@@ -107,12 +107,16 @@ type
     function FGetSections(Section: string; List: TStringList): Boolean; override;
   public
     constructor Create(AFileName: string);
+    constructor CreateDefault(const AppName: string);
     property FileName: string read FFileName write FFileName;
   end;
 
 function RegRootToHKEY(Value: TRegRoot): HKEY;
 
 implementation
+
+uses
+  System.IOUtils;
 
 function RegRootToHKEY(Value: TRegRoot): HKEY;
 begin
@@ -333,6 +337,15 @@ constructor TSettingsIni.Create(AFileName: string);
 begin
   inherited Create;
   FFileName := AFileName;
+end;
+
+constructor TSettingsIni.CreateDefault(const AppName: string);
+var
+  Dir: string;
+begin
+  Dir := TPath.Combine(TPath.GetHomePath, AppName);
+  TDirectory.CreateDirectory(Dir);
+  Create(TPath.Combine(Dir, 'settings.ini'));
 end;
 
 function TSettingsIni.CreateIni: TIniFile;
