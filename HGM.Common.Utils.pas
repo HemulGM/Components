@@ -3,13 +3,9 @@
 interface
 
 uses
-  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants,
-  System.Classes, Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs,
-  System.Generics.Collections, Winapi.Dwmapi, Vcl.ValEdit, System.DateUtils,
-  System.Math, System.Rtti, Vcl.ComCtrls, Vcl.Imaging.jpeg, Vcl.Grids,
-  Vcl.Imaging.pngimage, Vcl.StdCtrls, Vcl.Mask, Vcl.ExtCtrls, System.Types;
-
-function AdvSelectDirectory(const Caption: string; const Root: WideString; var Directory: string; EditBox: Boolean = False; ShowFiles: Boolean = False; AllowCreateDirs: Boolean = True): Boolean;
+  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics, Vcl.Controls,
+  Vcl.Forms, Vcl.Dialogs, System.Generics.Collections, Vcl.ValEdit, System.DateUtils, System.Math, Vcl.ComCtrls,
+  Vcl.Imaging.jpeg, Vcl.Grids, Vcl.Imaging.pngimage, Vcl.StdCtrls, Vcl.Mask, Vcl.ExtCtrls, System.Types;
 
 function Between(FMin, FValue, FMax: Integer): Boolean;
 
@@ -21,21 +17,13 @@ function ColorDarkerOr(Color: TColor; Percent: Byte = 40): TColor;
 
 function ColorLighterOr(Color: TColor; Percent: Byte = 40): TColor;
 
-function CompareFileTimeOwn(t1, t2: FILETIME): Int64;
-
-function CPUUsage(preIdleTime, preUserTime, preKrnlTime: TFileTime; ProcInterval: Integer): Extended;
-
-function GetAeroColor: TColor;
-
 function GetGroupID(LV: TListView; GrName: string): Integer;
 
 function GetJPGFromDll(LibName, ResName: string): TJPEGImage;
 
-function GetMachineName: string;
-
 function GetSeconds(Time: TTime): Cardinal;
 
-function GetUserName: string;
+function HumanDateTime(Value: TDateTime): string;
 
 function PercentRound(Value: Extended): Extended;
 
@@ -48,6 +36,8 @@ function SecondsToStr(Value: Cardinal): string;
 function SimpleStrCompare(const Str1, Str2: string): Double;
 
 function TranslitRus2Lat(const Str: string): string;
+
+function GetLastDir(Path: string): string;
 
 procedure AddToValueEdit(VE: TValueListEditor; Key, Value, ValueBU: string);
 
@@ -111,15 +101,9 @@ function DownloadURL(URL: string): TMemoryStream; overload;
 
 function DownloadURL(URL: string; FileName: string): Boolean; overload;
 
-function GetVersion: string;
-
 function Reverse(s: string): string;
 
 function GetFileNameWoE(FileName: TFileName): string;
-
-function GetFileNameFromLink(LinkFileName: string): string;
-
-function GetFileDescription(const FileName, ExceptText: string): string;
 
 function GetGroup(LV: TListView; GroupName: string; Expand: Boolean): Word;
 
@@ -127,34 +111,25 @@ procedure ApplyMask(X, Y: Integer; Mask, Target: TPngImage);
 
 function ColorRedOrBlue(Precent: Byte): TColor;
 
-function ShowModalFor(Parent: TWinControl; Form: TForm): TModalResult;
-
 function SmoothStrechDraw(Source: TGraphic; Rect: TRect; FillColor: TColor = clNone): TBitmap;
 
 procedure SmoothResizePNG(apng: TPngImage; NuWidth, NuHeight: integer);
 
 procedure DrawBitmapTo(X, Y: Integer; Src: TBitmap; Dest: TPngImage);
 
-function GetFromConsole(Caption: string; var Text: string): Boolean;
-
 procedure WaitTime(MS: Int64);
-
-function GetAppData: string;
 
 implementation
 
 uses
-  Winapi.ShlObj, Winapi.ActiveX, PNGFunctions, PNGImageList, ClipBrd,
-  System.Net.HttpClient, Winapi.RichEdit, System.Win.ComObj;
+  PNGFunctions, PNGImageList, ClipBrd, System.Net.HttpClient, Winapi.RichEdit;
 
-function GetAppData: string;
-var
-  Path: array[0..MAX_PATH] of Char;
+function GetLastDir(Path: string): string;
 begin
-  if SHGetFolderPath(0, CSIDL_APPDATA, 0, SHGFP_TYPE_CURRENT, Path) = S_OK then
-    Result := IncludeTrailingPathDelimiter(Path)
-  else
-    Result := '';
+  Result := Path;
+  if Result[Length(Result)] = PathDelim then
+    Delete(Result, Length(Result), 1);
+  Delete(Result, 1, LastDelimiter(PathDelim, Result));
 end;
 
 procedure WaitTime(MS: Int64);
@@ -173,37 +148,18 @@ begin
     Application.ProcessMessages;
 end;
 
-function GetFromConsole(Caption: string; var Text: string): Boolean;
+function HumanDateTime(Value: TDateTime): string;
 begin
-  try
-    AllocConsole;
-    Write(Caption);
-    Readln(Text);
-    Result := True;
-  finally
-    FreeConsole;
-  end;
-end;
+  if IsSameDay(Value, Today) then
+    Result := 'Сегодня'
+  else if IsSameDay(Value, Yesterday) then
+    Result := 'Вчера'
+  else if IsSameDay(Value, Yesterday - 1) then
+    Result := 'Позавчера'
+  else
+    Result := DateToStr(Value);
 
-function ShowModalFor(Parent: TWinControl; Form: TForm): TModalResult;
-begin
-  Form.Show;
-  //Parent.Enabled := False;
-  try
-    SendMessage(Form.Handle, CM_ACTIVATE, 0, 0);
-    Form.ModalResult := 0;
-    Form.BringToFront;
-    repeat
-      Application.HandleMessage;
-      if Application.Terminated then
-        Form.ModalResult := mrCancel;
-    until Form.ModalResult <> 0;
-    Result := Form.ModalResult;
-    SendMessage(Form.Handle, CM_DEACTIVATE, 0, 0);
-  finally
-    Form.Hide;
-    //Parent.Enabled := True;
-  end;
+  Result := Result + FormatDateTime(' в HH:NN:SS', Value);
 end;
 
 function ColorRedOrBlue(Precent: Byte): TColor;
@@ -243,25 +199,6 @@ begin
   end;
 end;
 
-function GetFileNameFromLink(LinkFileName: string): string;
-var
-  MyObject: IUnknown;
-  MySLink: IShellLink;
-  MyPFile: IPersistFile;
-  FileInfo: TWin32FINDDATA;
-  Buff: array[0..MAX_PATH] of Char;
-begin
-  Result := '';
-  if not FileExists(LinkFileName) then
-    Exit;
-  MyObject := CreateComObject(CLSID_ShellLink);
-  MyPFile := MyObject as IPersistFile;
-  MySLink := MyObject as IShellLink;
-  MyPFile.Load(PWideChar(LinkFileName), STGM_READ);
-  MySLink.GetPath(Buff, MAX_PATH, FileInfo, SLGP_UNCPRIORITY);
-  Result := Buff;
-end;
-
 function Reverse(s: string): string;
 var
   i: Word;
@@ -270,51 +207,6 @@ begin
     Exit(s);
   for i := Length(s) downto 1 do
     Result := Result + s[i];
-end;
-
-function GetFileDescription(const FileName, ExceptText: string): string;
-type
-  TLangRec = array[0..1] of Word;
-var
-  InfoSize, zero: Cardinal;
-  pbuff: Pointer;
-  pk: Pointer;
-  nk: Cardinal;
-  lang_hex_str: string;
-  LangID: Word;
-  LangCP: Word;
-begin
-  pbuff := nil;
-  Result := '';
-  InfoSize := Winapi.Windows.GetFileVersionInfoSize(PChar(FileName), zero);
-  if InfoSize <> 0 then
-  try
-    GetMem(pbuff, InfoSize);
-    if Winapi.Windows.GetFileVersionInfo(PChar(FileName), 0, InfoSize, pbuff) then
-    begin
-      if VerQueryValue(pbuff, '\VarFileInfo\Translation', pk, nk) then
-      begin
-        LangID := TLangRec(pk^)[0];
-        LangCP := TLangRec(pk^)[1];
-        lang_hex_str := Format('%.4x', [LangID]) + Format('%.4x', [LangCP]);  //FileDescription
-        if VerQueryValue(pbuff, PChar('\\StringFileInfo\\' + lang_hex_str + '\\FileDescription'), pk, nk) then
-          Result := string(PChar(pk))
-        else if VerQueryValue(pbuff, PChar('\\StringFileInfo\\' + lang_hex_str + '\\CompanyName'), pk, nk) then
-          Result := string(PChar(pk));
-      end;
-    end;
-  finally
-    if pbuff <> nil then
-      FreeMem(pbuff);
-  end;
-  if Result = '' then
-    if (ExceptText <> '') then
-      if (ExceptText <> '/') then
-        Result := ExceptText
-      else
-        Exit('')
-    else
-      Result := GetFileNameWoE(FileName);
 end;
 
 function GetFileNameWoE(FileName: TFileName): string;
@@ -328,27 +220,6 @@ begin
   PPos := Pos('.', Reverse(str));
   if PPos > 0 then
     Result := Copy(str, 1, Length(str) - PPos);
-end;
-
-function GetVersion: string;
-var
-  Res: TResourceStream;
-  Info: PVSFixedFileInfo;
-  InfoLen: Cardinal;
-begin
-  Result := '';
-  Res := TResourceStream.Create(HInstance, '#1', RT_VERSION);
-  try
-    if Res.Size > 0 then
-    begin
-      if VerQueryValue(Res.Memory, '\', Pointer(Info), InfoLen) then
-      begin
-        Result := Format('%d.%d.%d.%d', [Info.dwFileVersionMS shr $10, Info.dwFileVersionMS and $FFFF, Info.dwFileVersionLS shr $10, Info.dwFileVersionLS and $FFFF]);
-      end;
-    end;
-  finally
-    Res.Free;
-  end;
 end;
 
 function DownloadURL(URL: string): TMemoryStream;
@@ -562,21 +433,6 @@ begin
   Result := (V1 div 2) - (V2 div 2);
 end;
 
-function CPUUsage(preIdleTime, preUserTime, preKrnlTime: TFileTime; ProcInterval: Integer): Extended;
-var
-  idle, user, krnl: TFileTime;
-  i, u: int64;
-begin
-  GetSystemTimes(idle, krnl, user);
-  i := Abs(CompareFileTimeOwn(idle, preIdleTime));
-  u := Abs(CompareFileTimeOwn(user, preUserTime)) + Abs(CompareFileTimeOwn(krnl, preKrnlTime));
-  Result := ((u - i) / ProcInterval) / 100;
-  Result := Max(0, Min(Result, 100));
-  preIdleTime := idle;
-  preUserTime := user;
-  preKrnlTime := krnl;
-end;
-
 function SimpleStrCompare(const Str1, Str2: string): Double;
 var
   Len1, Len2, i, j, k, P1: Integer;
@@ -614,11 +470,6 @@ end;
 function PercentRound(Value: Extended): Extended;
 begin
   Result := Max(0, Min(100, Value));
-end;
-
-function CompareFileTimeOwn(t1, t2: FILETIME): Int64;
-begin
-  Result := ((t2.dwHighDateTime shl 32) or (t2.dwLowDateTime)) - ((t1.dwHighDateTime shl 32) or (t1.dwLowDateTime));
 end;
 
 function TranslitRus2Lat(const Str: string): string;
@@ -687,39 +538,6 @@ end;
 function Between(FMin, FValue, FMax: Integer): Boolean;
 begin
   Result := (FValue >= FMin) and (FValue <= FMax);
-end;
-
-function GetMachineName: string;
-var
-  Size: Cardinal;
-  PRes: PChar;
-  BRes: Boolean;
-begin
-  Result := 'Не определено';
-  try
-    Size := MAX_COMPUTERNAME_LENGTH + 1;
-    PRes := StrAlloc(Size);
-    BRes := GetComputerName(PRes, Size);
-    if BRes then
-      Result := StrPas(PRes);
-  except
-    Exit;
-  end;
-end;
-
-function GetUserName: string;
-var
-  a: array[0..254] of Char;
-  lenBuf: Cardinal;
-begin
-  Result := 'Не определено';
-  try
-    lenBuf := 255;
-    Winapi.Windows.GetUserName(a, lenBuf);
-    Result := StrPas(a);
-  except
-    Exit;
-  end;
 end;
 
 procedure SetImageListColor(ImgList: TImageList; Color: TColor);
@@ -878,127 +696,6 @@ begin
       StringGrid.Cells[i, j] := '';
 end;
 
-
-// BotToken ='377291178:AAFp-s5BqhaCCRuez1ludpJBbnc8Qw7A5B8'
-// Chat_ID = '-181582579'
-// SendText = YourText
-{function SendTelegram(BotToken, Chat_ID, SendText:string):Boolean;
-var lHttp: THTTPClient;
-    lHttpResponse: IHTTPResponse;
-    LParamToDate: TMultipartFormData;
-begin
- LParamToDate:=TMultipartFormData.Create;
- try
-  LParamToDate.AddField('chat_id', Chat_ID);
-  LParamToDate.AddField('text', SendText);
-  LParamToDate.AddField('disable_web_page_preview', 'false');
-  LParamToDate.AddField('disable_notification', 'false');
-  LParamToDate.AddField('reply_to_message_id', '0');
-  lHttp:= THTTPClient.Create;
-  try
-   lHttpResponse:= lHttp.Post('https://api.telegram.org/bot' + BotToken + '/sendMessage', LParamToDate);
-   Result:=lHttpResponse.StatusCode = 200;
-  finally
-   FreeAndNil(lHttp);
-  end;
- finally
-  LParamToDate.Free;
- end;
-end;            }
-
-function AdvSelectDirectory(const Caption: string; const Root: WideString; var Directory: string; EditBox: Boolean = False; ShowFiles: Boolean = False; AllowCreateDirs: Boolean = True): Boolean;
-
-  function SelectDirCB(Wnd: HWND; uMsg: UINT; lParam, lpData: lParam): Integer; stdcall;
-  begin
-    case uMsg of
-      BFFM_INITIALIZED:
-        SendMessage(Wnd, BFFM_SETSELECTION, Ord(True), Integer(lpData));
-    end;
-    Result := 0;
-  end;
-
-var
-  WindowList: Pointer;
-  BrowseInfo: TBrowseInfo;
-  Buffer: PChar;
-  RootItemIDList, ItemIDList: PItemIDList;
-  ShellMalloc: IMalloc;
-  IDesktopFolder: IShellFolder;
-  Eaten, Flags: LongWord;
-const
-  BIF_USENEWUI = $0040;
-  BIF_NOCREATEDIRS = $0200;
-begin
-  Result := False;
-  if not DirectoryExists(Directory) then
-    Directory := '';
-  FillChar(BrowseInfo, SizeOf(BrowseInfo), 0);
-  if (ShGetMalloc(ShellMalloc) = S_OK) and (ShellMalloc <> nil) then
-  begin
-    Buffer := ShellMalloc.Alloc(MAX_PATH);
-    try
-      RootItemIDList := nil;
-      if Root <> '' then
-      begin
-        SHGetDesktopFolder(IDesktopFolder);
-        IDesktopFolder.ParseDisplayName(Application.Handle, nil, POleStr(Root), Eaten, RootItemIDList, Flags);
-      end;
-      OleInitialize(nil);
-      with BrowseInfo do
-      begin
-        hwndOwner := Application.Handle;
-        pidlRoot := RootItemIDList;
-        pszDisplayName := Buffer;
-        lpszTitle := PChar(Caption);
-        ulFlags := BIF_RETURNONLYFSDIRS or BIF_USENEWUI or BIF_EDITBOX * Ord(EditBox) or BIF_BROWSEINCLUDEFILES * Ord(ShowFiles) or BIF_NOCREATEDIRS * Ord(not AllowCreateDirs);
-        lpfn := @SelectDirCB;
-        if Directory <> '' then
-          lParam := Integer(PChar(Directory));
-      end;
-      WindowList := DisableTaskWindows(0);
-      try
-        ItemIDList := ShBrowseForFolder(BrowseInfo);
-      finally
-        EnableTaskWindows(WindowList);
-      end;
-      Result := ItemIDList <> nil;
-      if Result then
-      begin
-        ShGetPathFromIDList(ItemIDList, Buffer);
-        ShellMalloc.Free(ItemIDList);
-        Directory := Buffer;
-      end;
-    finally
-      ShellMalloc.Free(Buffer);
-    end;
-  end;
-end;
-
-function GetAeroColor: TColor;
-var
-  OpaqueBlend: Bool;
-  AColor: DWord;
-  A, R, G, B: Integer;
-  OSInfo: TOSVersionInfo;
-begin
-  ZeroMemory(@OSInfo, SizeOf(OSInfo));
-  OSInfo.dwOSVersionInfoSize := SizeOf(TOSVERSIONINFO);
-  if (((not GetVersionEx(OSInfo)) and (OSInfo.dwPlatformId <> VER_PLATFORM_WIN32_NT) and (OSInfo.dwMajorVersion < 5))) or (Winapi.Dwmapi.DwmGetColorizationColor(AColor, OpaqueBlend) = S_FALSE) then
-  begin
-    Result := clNone;
-    Exit;
-  end;
-  A := (AColor and $FF000000) shr 24;
-  R := (AColor and $00FF0000) shr 16;
-  G := (AColor and $0000FF00) shr 8;
-  B := (AColor and $000000FF);
-
-  R := Max(0, Min(R + (255 - A - 40), 255));
-  G := Max(0, Min(G + (255 - A - 40), 255));
-  B := Max(0, Min(B + (255 - A - 40), 255));
-  Result := RGB(R, G, B);
-end;
-
 function ColorDarkerOr(Color: TColor; Percent: Byte = 40): TColor;
 begin
   Result := ColorDarker(Color, Percent);
@@ -1052,7 +749,7 @@ var
       Result := ID;
       TitleImage := 0;
       State := [lgsCollapsible];
-   //Footer:='Количество элементов: 1';
+      //Footer:='Количество элементов: 1';
       Header := GrName;
     end;
   end;
@@ -1066,7 +763,7 @@ begin
       with LV.Groups[i] do
       begin
         TitleImage := TitleImage + 1;
-      //Footer:='Количество элементов: '+IntToStr(TitleImage);
+        //Footer:='Количество элементов: '+IntToStr(TitleImage);
       end;
       Exit(i);
     end;
