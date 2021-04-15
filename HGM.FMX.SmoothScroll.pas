@@ -18,8 +18,11 @@ type
     procedure SetScroll(const Value: TCustomScrollBox);
     procedure SetMaxSpeed(const Value: Integer);
     procedure SetScrollDelta(const Value: Integer);
+    procedure FOverMouseWheel(Sender: TObject; Shift: TShiftState;
+      WheelDelta: Integer; var Handled: Boolean);
   public
     constructor Create(AOwner: TComponent); override;
+    constructor CreateFor(AScroll: TCustomScrollBox);
     procedure ScrollEvent(WheelDelta: Single);
     property Scroll: TCustomScrollBox read FScroll write SetScroll;
     property MaxSpeed: Integer read FMaxSpeed write SetMaxSpeed;
@@ -45,6 +48,19 @@ begin
     Interval := 10;
     OnTimer := TimerUpdateScrollTimer;
   end;
+end;
+
+constructor TSmoothScroll.CreateFor(AScroll: TCustomScrollBox);
+begin
+  Create(AScroll);
+  FScroll := AScroll;
+  AScroll.OnMouseWheel := FOverMouseWheel;
+end;
+
+procedure TSmoothScroll.FOverMouseWheel(Sender: TObject; Shift: TShiftState; WheelDelta: Integer; var Handled: Boolean);
+begin
+  Handled := True;
+  ScrollEvent(WheelDelta);
 end;
 
 procedure TSmoothScroll.FDoScroll(Delta: Single);
