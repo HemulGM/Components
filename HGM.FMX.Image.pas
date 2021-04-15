@@ -52,6 +52,40 @@ type
     class function CreateFromResource(ResName: string; Url: string = ''): TBitmap;
   end;
 
+  TBitmapExt = class(TBitmap)
+  private
+    FTask: ITask;
+    class var
+      Pool: TThreadPool;
+    class var
+      DroppingCache: Boolean;
+    class function AppendCache: TBitmapCacheItem;
+    class procedure DropCacheLimit;
+    class function ExistsCache(const Url: string; var Target: TBitmap): Boolean;
+  public
+    class var
+      PictureCache: TBitmapCache;
+      LoadCounter: Integer;
+      LoadCounterLimit: Integer;
+      CacheSize: Integer;
+      GlobalUseCache: Boolean;
+    procedure LoadFromUrl(const Url: string; UseCache: Boolean = True);
+    procedure LoadFromUrlAsync(const Url: string; UseCache: Boolean = True; AfterLoaded: TProc<TBitmap> = nil);
+    procedure LoadFromStreamAsync(Stream: TStream; AfterLoaded: TProc<TBitmap> = nil);
+    procedure LoadFromFileAsync(const AFileName: string; AfterLoaded: TProc<TBitmap> = nil);
+    procedure LoadThumbnailFromFileAsync(const AFileName: string; const AFitWidth, AFitHeight: Single; const UseEmbedded: Boolean = True; AfterLoaded: TProc<TBitmap> = nil);
+    procedure LoadFromResource(ResName: string);
+    procedure WaitFor;
+    class procedure DropCache;
+    class procedure SetLoaded(Url: string);
+    class procedure DeleteCache(Url: string);
+    class function CreateFromUrl(const Url: string; UseCache: Boolean = True): TBitmap;
+    class function CreateLazy(const Url: string; FirstAsDefault: Boolean = False; UseCache: Boolean = True): TBitmap;
+    class function CreateFromResource(ResName: string; Url: string = ''): TBitmap;
+    class constructor Create;
+    class destructor Destroy;
+  end;
+
   TImageHelper = class helper for TImage
     procedure LoadFromUrlAsync(const Url: string; AfterLoaded: TProc<TImage> = nil); overload;
     procedure LoadFromUrl(const Url: string); overload;
@@ -270,6 +304,324 @@ begin
   for i := Low(PictureCache) to High(PictureCache) do
     if PictureCache[i].Url = Url then
       PictureCache[i].Loaded := True;
+end;
+
+{ TBitmapExt }
+
+class constructor TBitmapExt.Create;
+begin
+  Pool := TThreadPool.Create;
+  DroppingCache := False;
+  CacheSize := 60;
+  LoadCounterLimit := 20;
+  GlobalUseCache := False;
+end;
+
+class destructor TBitmapExt.Destroy;
+begin
+  DropCache;
+  Pool.Free;
+end;
+
+class function TBitmapExt.AppendCache: TBitmapCacheItem;
+begin
+  DropCacheLimit;
+  Result := TBitmapCacheItem.Create;
+  SetLength(PictureCache, Length(PictureCache) + 1);
+  PictureCache[High(PictureCache)] := Result;
+end;
+
+class procedure TBitmapExt.DropCache;
+var
+  i: Integer;
+begin
+  for i := Low(PictureCache) to High(PictureCache) do
+    PictureCache[i].Free;
+  SetLength(PictureCache, 0);
+end;
+
+class procedure TBitmapExt.DropCacheLimit;
+begin
+  if GlobalUseCache and not DroppingCache then
+  begin
+    DroppingCache := True;
+    try
+      while Length(PictureCache) > CacheSize do
+      begin
+        PictureCache[0].Free;
+        Delete(PictureCache, 0, 1);
+      end;
+    except
+    end;
+    DroppingCache := False;
+  end;
+end;
+
+class function TBitmapExt.CreateFromResource(ResName, Url: string): TBitmap;
+var
+  Item: TBitmapCacheItem;
+begin
+  if GlobalUseCache then
+  begin
+    Item := AppendCache;
+    Item.Image := TBitmap.Create;
+    Item.Loaded := True;
+    Item.Url := Url;
+    Item.Image.LoadFromResource(ResName);
+    Result := Item.Image;
+  end
+  else
+  begin
+    Result := TBitmap.Create;
+    Result.LoadFromResource(ResName);
+  end;
+end;
+
+class function TBitmapExt.CreateFromUrl(const Url: string; UseCache: Boolean): TBitmap;
+var
+  Item: TBitmapCacheItem;
+begin
+  if GlobalUseCache and UseCache and ExistsCache(Url, Result) then
+    Exit;
+  if GlobalUseCache then
+  begin
+    Item := AppendCache;
+    Item.Image := TBitmap.Create;
+    Item.Loaded := True;
+    Item.Url := Url;
+    Item.Image.LoadFromUrl(Url, False);
+    Result := Item.Image;
+  end
+  else
+  begin
+    Result := TBitmap.Create;
+    Result.LoadFromUrl(Url, False);
+  end;
+end;
+
+class function TBitmapExt.CreateLazy(const Url: string; FirstAsDefault: Boolean; UseCache: Boolean): TBitmap;
+var
+  Item: TBitmapCacheItem;
+begin
+  if GlobalUseCache and UseCache and ExistsCache(Url, Result) then
+    Exit;
+  Item := AppendCache;
+  Item.Image := TBitmap.Create;
+  Item.Url := Url;
+  if FirstAsDefault then
+  begin
+    if Length(PictureCache) > 1 then
+      Item.Image.Assign(PictureCache[0].Image);
+  end;
+  Result := Item.Image;
+end;
+
+class procedure TBitmapExt.DeleteCache(Url: string);
+var
+  i: Integer;
+begin
+  for i := Low(PictureCache) to High(PictureCache) do
+  begin
+    if PictureCache[i].Url = Url then
+    begin
+      PictureCache[i].Free;
+      Delete(PictureCache, i, 1);
+      Exit;
+    end;
+  end;
+end;
+
+class function TBitmapExt.ExistsCache(const Url: string; var Target: TBitmap): Boolean;
+var
+  i: Integer;
+begin
+  Result := False;
+  for i := Low(PictureCache) to High(PictureCache) do
+  begin
+    if PictureCache[i].Url = Url then
+    begin
+      Target := PictureCache[i].Image;
+      Exit(True);
+    end;
+  end;
+end;
+
+procedure TBitmapExt.LoadFromFileAsync(const AFileName: string; AfterLoaded: TProc<TBitmap>);
+var
+  FileName: string;
+begin
+  FileName := AFileName;
+  FTask := TTask.Run(
+    procedure
+    begin
+      while LoadCounter > LoadCounterLimit do
+        TThread.Sleep(500);
+      Inc(LoadCounter);
+      try
+        Self.LoadFromFile(FileName);
+      except
+      end;
+      Dec(LoadCounter);
+      if Assigned(AfterLoaded) then
+      begin
+        TThread.ForceQueue(nil,
+          procedure
+          begin
+            AfterLoaded(Self);
+          end);
+      end;
+      FTask := nil;
+    end);
+end;
+
+procedure TBitmapExt.LoadFromResource(ResName: string);
+var
+  Mem: TResourceStream;
+begin
+  Mem := TResourceStream.Create(HInstance, ResName, RT_RCDATA);
+  try
+    Self.LoadFromStream(Mem);
+  finally
+    Mem.Free;
+  end;
+end;
+
+procedure TBitmapExt.LoadFromStreamAsync(Stream: TStream; AfterLoaded: TProc<TBitmap>);
+var
+  Clone: TStream;
+begin
+  Clone := TMemoryStream.Create;
+  Clone.CopyFrom(Stream, Stream.Size);
+  FTask := TTask.Run(
+    procedure
+    begin
+      while LoadCounter > LoadCounterLimit do
+        TThread.Sleep(500);
+      Inc(LoadCounter);
+      try
+        TThread.Synchronize(nil,
+          procedure
+          begin
+            Self.LoadFromStream(Clone);
+          end);
+      except
+      end;
+      Dec(LoadCounter);
+      if Assigned(AfterLoaded) then
+      begin
+        TThread.ForceQueue(nil,
+          procedure
+          begin
+            AfterLoaded(Self);
+          end);
+      end;
+      FTask := nil;
+      Clone.Free;
+    end);
+end;
+
+procedure TBitmapExt.LoadFromUrl(const Url: string; UseCache: Boolean);
+var
+  Mem: TMemoryStream;
+  Item: TBitmapCacheItem;
+  Cache: TBitmap;
+begin
+  if GlobalUseCache and UseCache and ExistsCache(Url, Cache) then
+  begin
+    Self.Assign(Cache);
+    Exit;
+  end;
+  Mem := TDownload.Get(Url);
+  try
+    try
+      if Mem.Size > 0 then
+      begin
+        TThread.Synchronize(nil,
+          procedure
+          begin
+            try
+              Self.LoadFromStream(Mem);
+            except
+            end;
+          end);
+        if GlobalUseCache and UseCache then
+        begin
+          Item := AppendCache;
+          Item.Image := Self;
+          Item.Url := Url;
+          Item.Loaded := True;
+        end;
+      end;
+    finally
+      Mem.Free;
+    end;
+  except
+  end;
+end;
+
+procedure TBitmapExt.LoadFromUrlAsync(const Url: string; UseCache: Boolean; AfterLoaded: TProc<TBitmap>);
+begin
+  FTask := TTask.Run(
+    procedure
+    begin
+      while LoadCounter > LoadCounterLimit do
+        TThread.Sleep(500);
+      Inc(LoadCounter);
+      try
+        Self.LoadFromUrl(Url, UseCache);
+      except
+      end;
+      Dec(LoadCounter);
+      if Assigned(AfterLoaded) then
+      begin
+        TThread.ForceQueue(nil,
+          procedure
+          begin
+            AfterLoaded(Self);
+          end);
+      end;
+      FTask := nil;
+    end);
+end;
+
+procedure TBitmapExt.LoadThumbnailFromFileAsync(const AFileName: string; const AFitWidth, AFitHeight: Single; const UseEmbedded: Boolean; AfterLoaded: TProc<TBitmap>);
+begin
+  FTask := TTask.Run(
+    procedure
+    begin
+      while LoadCounter > LoadCounterLimit do
+        TThread.Sleep(100);
+      Inc(LoadCounter);
+      try
+        Self.LoadThumbnailFromFile(AFileName, AFitWidth, AFitHeight, UseEmbedded);
+      except
+      end;
+      Dec(LoadCounter);
+      if Assigned(AfterLoaded) then
+      begin
+        TThread.ForceQueue(nil,
+          procedure
+          begin
+            AfterLoaded(Self);
+          end);
+      end;
+      FTask := nil;
+    end);
+end;
+
+class procedure TBitmapExt.SetLoaded(Url: string);
+var
+  i: Integer;
+begin
+  for i := Low(PictureCache) to High(PictureCache) do
+    if PictureCache[i].Url = Url then
+      PictureCache[i].Loaded := True;
+end;
+
+procedure TBitmapExt.WaitFor;
+begin
+  if Assigned(FTask) then
+    FTask.Wait;
 end;
 
 { TImageHelper }

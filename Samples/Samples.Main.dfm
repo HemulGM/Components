@@ -2,8 +2,8 @@ object Form8: TForm8
   Left = 0
   Top = 0
   Caption = 'Form8'
-  ClientHeight = 517
-  ClientWidth = 1014
+  ClientHeight = 67
+  ClientWidth = 617
   Color = clSilver
   DoubleBuffered = True
   Font.Charset = DEFAULT_CHARSET
@@ -12,7 +12,6 @@ object Form8: TForm8
   Font.Name = 'Tahoma'
   Font.Style = []
   OldCreateOrder = False
-  OnCreate = FormCreate
   PixelsPerInch = 96
   TextHeight = 13
   object ProgressBar1: TProgressBar
@@ -23,19 +22,20 @@ object Form8: TForm8
     TabOrder = 0
   end
   object hProgrsssBar1: ThProgrsssBar
-    Left = 8
-    Top = 16
-    Width = 129
+    Left = 0
+    Top = 0
+    Width = 617
     Height = 33
     Align = alTop
     DoubleBuffered = True
     ColorScale = 10711881
     ColorBackground = 2102799
     ParentBackground = False
-    Position = 3
+    Position = 25
     ParentColor = True
     Kind = pbkRoundRect
     RoundRadius = 15
+    ExplicitWidth = 1014
   end
   object TrackBar1: TTrackBar
     Left = 40
@@ -58,12 +58,15 @@ object Form8: TForm8
   object hTrackbar1: ThTrackbar
     AlignWithMargins = True
     Left = 3
-    Top = 42
-    Width = 572
-    Height = 102
+    Top = 36
+    Width = 611
+    Height = 28
     Align = alClient
-    Position = 3.000000000000000000
+    Position = 6.560000000000000000
     OnChange = hTrackbar1Change
-    ExplicitHeight = 298
+    Color = 6901811
+    ParentColor = False
+    ExplicitWidth = 1008
+    ExplicitHeight = 478
   end
 end
