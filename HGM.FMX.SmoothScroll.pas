@@ -13,6 +13,7 @@ type
     FScroll: TCustomScrollBox;
     FMaxSpeed: Integer;
     FScrollDelta: Integer;
+    FIncrement: Single;
     procedure FDoScroll(Delta: Single);
     procedure TimerUpdateScrollTimer(Sender: TObject);
     procedure SetScroll(const Value: TCustomScrollBox);
@@ -20,12 +21,17 @@ type
     procedure SetScrollDelta(const Value: Integer);
     procedure FOverMouseWheel(Sender: TObject; Shift: TShiftState;
       WheelDelta: Integer; var Handled: Boolean);
+    procedure SetIncrement(const Value: Single);
+    procedure SetUpdateInterval(const Value: Cardinal);
+    function GetUpdateInterval: Cardinal;
   public
     constructor Create(AOwner: TComponent); override;
     constructor CreateFor(AScroll: TCustomScrollBox);
     procedure ScrollEvent(WheelDelta: Single);
     property Scroll: TCustomScrollBox read FScroll write SetScroll;
     property MaxSpeed: Integer read FMaxSpeed write SetMaxSpeed;
+    property Increment: Single read FIncrement write SetIncrement;
+    property UpdateInterval: Cardinal read GetUpdateInterval write SetUpdateInterval;
     property ScrollDelta: Integer read FScrollDelta write SetScrollDelta;
   end;
 
@@ -42,9 +48,11 @@ begin
   FMaxSpeed := 40;
   FScrollImpulse := 0;
   FScrollDelta := 9;
+  FIncrement := 1;
   FTimerUpdateScroll := TTimer.Create(Self);
   with FTimerUpdateScroll do
   begin
+    Enabled := False;
     Interval := 10;
     OnTimer := TimerUpdateScrollTimer;
   end;
@@ -63,6 +71,11 @@ begin
   ScrollEvent(WheelDelta);
 end;
 
+function TSmoothScroll.GetUpdateInterval: Cardinal;
+begin
+  Result := FTimerUpdateScroll.Interval;
+end;
+
 procedure TSmoothScroll.FDoScroll(Delta: Single);
 begin
   if not FTimerUpdateScroll.Enabled then
@@ -73,6 +86,11 @@ end;
 procedure TSmoothScroll.ScrollEvent(WheelDelta: Single);
 begin
   FDoScroll(WheelDelta / FScrollDelta);
+end;
+
+procedure TSmoothScroll.SetIncrement(const Value: Single);
+begin
+  FIncrement := Value;
 end;
 
 procedure TSmoothScroll.SetMaxSpeed(const Value: Integer);
@@ -90,6 +108,11 @@ begin
   FScrollDelta := Value;
 end;
 
+procedure TSmoothScroll.SetUpdateInterval(const Value: Cardinal);
+begin
+  FTimerUpdateScroll.Interval := Value;
+end;
+
 procedure TSmoothScroll.TimerUpdateScrollTimer(Sender: TObject);
 var
   Old: TPointF;
@@ -99,12 +122,12 @@ begin
     FTimerUpdateScroll.Enabled := False;
     Exit;
   end;
-  if Abs(FScrollImpulse) > 2 then
+  if Abs(FScrollImpulse) > (FIncrement * 2) then
   begin
     if FScrollImpulse < 0 then
-      FScrollImpulse := FScrollImpulse + 1
+      FScrollImpulse := FScrollImpulse + FIncrement
     else
-      FScrollImpulse := FScrollImpulse - 1;
+      FScrollImpulse := FScrollImpulse - FIncrement;
 
     Old := FScroll.ViewportPosition;
     FScroll.ViewportPosition := TPointF.Create(0, FScroll.ViewportPosition.Y + FScrollImpulse);
