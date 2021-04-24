@@ -9,18 +9,21 @@ type
   TSmoothScroll = class(TComponent)
   private
     FTimerUpdateScroll: TTimer;
+    FTimerAutoScroll: TTimer;
     FScrollImpulse: Single;
     FScroll: TCustomScrollBox;
     FMaxSpeed: Integer;
     FScrollDelta: Integer;
     FIncrement: Single;
+    FAutoScrollDown: Boolean;
+    FAutoScrollOldPos: Single;
     procedure FDoScroll(Delta: Single);
     procedure TimerUpdateScrollTimer(Sender: TObject);
+    procedure TimerAutoScrollTimer(Sender: TObject);
     procedure SetScroll(const Value: TCustomScrollBox);
     procedure SetMaxSpeed(const Value: Integer);
     procedure SetScrollDelta(const Value: Integer);
-    procedure FOverMouseWheel(Sender: TObject; Shift: TShiftState;
-      WheelDelta: Integer; var Handled: Boolean);
+    procedure FOverMouseWheel(Sender: TObject; Shift: TShiftState; WheelDelta: Integer; var Handled: Boolean);
     procedure SetIncrement(const Value: Single);
     procedure SetUpdateInterval(const Value: Cardinal);
     function GetUpdateInterval: Cardinal;
@@ -28,6 +31,8 @@ type
     constructor Create(AOwner: TComponent); override;
     constructor CreateFor(AScroll: TCustomScrollBox);
     procedure ScrollEvent(WheelDelta: Single);
+    procedure Boost(Value: Single);
+    procedure ScrollDown;
     property Scroll: TCustomScrollBox read FScroll write SetScroll;
     property MaxSpeed: Integer read FMaxSpeed write SetMaxSpeed;
     property Increment: Single read FIncrement write SetIncrement;
@@ -42,9 +47,16 @@ uses
 
 { TSmoothScroll }
 
+procedure TSmoothScroll.Boost(Value: Single);
+begin
+  ScrollEvent(Value);
+end;
+
 constructor TSmoothScroll.Create(AOwner: TComponent);
 begin
   inherited;
+  FAutoScrollDown := True;
+  FAutoScrollOldPos := 0;
   FMaxSpeed := 40;
   FScrollImpulse := 0;
   FScrollDelta := 9;
@@ -55,6 +67,13 @@ begin
     Enabled := False;
     Interval := 10;
     OnTimer := TimerUpdateScrollTimer;
+  end;
+  FTimerAutoScroll := TTimer.Create(Self);
+  with FTimerAutoScroll do
+  begin
+    Enabled := False;
+    Interval := 100;
+    OnTimer := TimerAutoScrollTimer;
   end;
 end;
 
@@ -68,6 +87,7 @@ end;
 procedure TSmoothScroll.FOverMouseWheel(Sender: TObject; Shift: TShiftState; WheelDelta: Integer; var Handled: Boolean);
 begin
   Handled := True;
+  FTimerAutoScroll.Enabled := False;
   ScrollEvent(WheelDelta);
 end;
 
@@ -81,6 +101,14 @@ begin
   if not FTimerUpdateScroll.Enabled then
     FTimerUpdateScroll.Enabled := True;
   FScrollImpulse := Max(-FMaxSpeed, Min(FScrollImpulse - Delta, FMaxSpeed));
+end;
+
+procedure TSmoothScroll.ScrollDown;
+begin
+  FAutoScrollDown := True;
+  FTimerAutoScroll.Enabled := True;
+  FTimerUpdateScroll.Enabled := True;
+  TimerAutoScrollTimer(nil);
 end;
 
 procedure TSmoothScroll.ScrollEvent(WheelDelta: Single);
@@ -111,6 +139,19 @@ end;
 procedure TSmoothScroll.SetUpdateInterval(const Value: Cardinal);
 begin
   FTimerUpdateScroll.Interval := Value;
+end;
+
+procedure TSmoothScroll.TimerAutoScrollTimer(Sender: TObject);
+begin
+  if not FTimerUpdateScroll.Enabled then
+  begin
+    FTimerAutoScroll.Enabled := False;
+    Exit;
+  end;
+  if FAutoScrollDown then
+    ScrollEvent(-100)
+  else
+    ScrollEvent(+100);
 end;
 
 procedure TSmoothScroll.TimerUpdateScrollTimer(Sender: TObject);
