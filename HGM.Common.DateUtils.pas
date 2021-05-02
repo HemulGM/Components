@@ -19,7 +19,30 @@ type
 
 function HumanDateTime(Value: TDateTime; ShowTime: Boolean = True; WeekDay: Boolean = False): string;
 
+function SecondsToTime(Value: Integer): TTime;
+
+function HumanTime(Value: TTime): string;
+
 implementation
+
+function HumanTime(Value: TTime): string;
+var
+  H, M, S, Ms: Word;
+begin
+  DecodeTime(Value, H, M, S, Ms);
+  Result := '';
+  if H > 0 then
+    Result := Result + H.ToString + ' ч. ';
+  if M > 0 then
+    Result := Result + M.ToString + ' мин. ';
+  if S > 0 then
+    Result := Result + S.ToString + ' сек. ';
+end;
+
+function SecondsToTime(Value: Integer): TTime;
+begin
+  Result := Value / SecsPerDay;
+end;
 
 function HumanDateTime(Value: TDateTime; ShowTime: Boolean; WeekDay: Boolean): string;
 
