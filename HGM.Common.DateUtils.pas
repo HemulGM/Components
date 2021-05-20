@@ -23,6 +23,8 @@ function SecondsToTime(Value: Integer): TTime;
 
 function HumanTime(Value: TTime): string;
 
+function HumanDate(Value: TDate): string;
+
 implementation
 
 function HumanTime(Value: TTime): string;
@@ -37,6 +39,16 @@ begin
     Result := Result + M.ToString + ' мин. ';
   if S > 0 then
     Result := Result + S.ToString + ' сек. ';
+end;
+
+function HumanDate(Value: TDate): string;
+var
+  D: Integer;
+begin
+  Result := '';
+  D := Trunc(Value);
+  if D > 0 then
+    Result := Result + D.ToString + ' д. ';
 end;
 
 function SecondsToTime(Value: Integer): TTime;
