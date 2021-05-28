@@ -592,10 +592,14 @@ begin
       while LoadCounter > LoadCounterLimit do
         TThread.Sleep(100);
       Inc(LoadCounter);
-      try
-        Self.LoadThumbnailFromFile(AFileName, AFitWidth, AFitHeight, UseEmbedded);
-      except
-      end;
+      TThread.Synchronize(nil,
+        procedure
+        begin
+          try
+            Self.LoadThumbnailFromFile(AFileName, AFitWidth, AFitHeight, UseEmbedded);
+          except
+          end;
+        end);
       Dec(LoadCounter);
       if Assigned(AfterLoaded) then
       begin

@@ -3,9 +3,9 @@ unit HGM.Controls.Chat;
 interface
 
 uses
-  Winapi.Messages, Winapi.Windows, System.SysUtils, System.Classes, System.Contnrs, System.Types,
-  System.UITypes, Vcl.Controls, Vcl.Forms, Vcl.Menus, Vcl.Graphics, Vcl.StdCtrls, Vcl.GraphUtil,
-  Vcl.ImgList, Vcl.Themes, Winapi.ShellAPI, System.Generics.Collections, HGM.Common, Vcl.Dialogs;
+  Winapi.Messages, Winapi.Windows, System.SysUtils, System.Classes, System.Contnrs, System.Types, System.UITypes,
+  Vcl.Controls, Vcl.Forms, Vcl.Menus, Vcl.Graphics, Vcl.StdCtrls, Vcl.GraphUtil, Vcl.ImgList, Vcl.Themes,
+  Winapi.ShellAPI, System.Generics.Collections, HGM.Common, Vcl.Dialogs;
 
 type
   TChatMessageType = (mtOpponent, mtMe);
@@ -212,8 +212,7 @@ type
     property ColorOpponent: TColor read FColorOpponent write SetColorOpponent default $00322519;
     property ColorMe: TColor read FColorMe write SetColorMe default $0078522B;
     property ColorSelection: TColor read FColorSelection write SetColorSelection default $00A5702E;
-    property ColorScrollInactive: TColor read FColorScrollInactive write SetColorScrollInactive
-      default $00332A24;
+    property ColorScrollInactive: TColor read FColorScrollInactive write SetColorScrollInactive default $00332A24;
     property ColorScrollActive: TColor read FColorScrollActive write SetColorScrollActive default $003C342E;
     property ColorScrollButton: TColor read FColorScrollButton write SetColorScrollButton default $00605B56;
     property BorderWidth: Integer read FBorderWidth write SetBorderWidth default 4;
@@ -511,16 +510,14 @@ begin
   end;
 end;
 
-procedure ThCustomChat.FOnMouseWheelDown(Sender: TObject; Shift: TShiftState; MousePos: TPoint; var
-  Handled: Boolean);
+procedure ThCustomChat.FOnMouseWheelDown(Sender: TObject; Shift: TShiftState; MousePos: TPoint; var Handled: Boolean);
 begin
   FOffset := FOffset - 50;
   CheckOffset;
   NeedRepaint;
 end;
 
-procedure ThCustomChat.FOnMouseWheelUp(Sender: TObject; Shift: TShiftState; MousePos: TPoint; var
-  Handled: Boolean);
+procedure ThCustomChat.FOnMouseWheelUp(Sender: TObject; Shift: TShiftState; MousePos: TPoint; var Handled: Boolean);
 begin
   FOffset := FOffset + 50;
   CheckOffset;
@@ -768,7 +765,10 @@ begin
   finally
     FCalcOnly := False;
   end;
-  FOffset := Round((FScrollPos / (FScrollLentgh / 100)) / (100 / FMaxOffset));
+  if FScrollLentgh > 0 then
+    FOffset := Round((FScrollPos / (FScrollLentgh / 100)) / (100 / FMaxOffset))
+  else
+    FOffset := 0;
   CheckOffset;
   NeedRepaint;
   inherited;
