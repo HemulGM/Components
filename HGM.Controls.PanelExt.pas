@@ -3,8 +3,8 @@ unit HGM.Controls.PanelExt;
 interface
 
 uses
-  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
-  System.Types, Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, Vcl.ExtCtrls, HGM.Common;
+  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics, System.Types,
+  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, Vcl.ExtCtrls, HGM.Common;
 
 type
   TCustomPanelExt = class(TCustomPanel)
@@ -301,6 +301,7 @@ type
     FOwner: TControl;
     FPanel: TPanel;
     FOpening: Boolean;
+    FCancelClose: Boolean;
   public
     constructor Create(AOwner: TControl; APanel: TPanel; AOpen: Boolean = False);
     procedure Close;
@@ -469,18 +470,20 @@ begin
     procedure
     begin
       Sleep(Interval);
-      TThread.Synchronize(TThread.Current,
-        procedure
-        begin
-          Close;
-          if Assigned(FProc) then
-            FProc;
-        end);
+      if not FCancelClose then
+        TThread.Synchronize(TThread.Current,
+          procedure
+          begin
+            Close;
+            if Assigned(FProc) then
+              FProc;
+          end);
     end).Start;
 end;
 
 constructor TDecoratePanel.Create(AOwner: TControl; APanel: TPanel; AOpen: Boolean);
 begin
+  FCancelClose := False;
   FOwner := AOwner;
   FPanel := APanel;
   FOpening := False;
@@ -494,6 +497,7 @@ end;
 procedure TDecoratePanel.Open(Animate: Boolean);
 begin
   UpdateSize;
+  FCancelClose := True;
   FOpening := True;
   FPanel.Show;
   FPanel.BringToFront;
