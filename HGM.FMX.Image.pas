@@ -3,8 +3,8 @@ unit HGM.FMX.Image;
 interface
 
 uses
-  System.Classes, System.Types, System.SysUtils, FMX.Forms, FMX.Graphics, FMX.Objects, System.Threading,
-  System.Generics.Collections;
+  System.Classes, System.Types, System.SysUtils, FMX.Forms, FMX.Graphics,
+  FMX.Objects, System.Threading, System.Generics.Collections;
 
 type
   TBitmapCacheItem = class
@@ -41,7 +41,7 @@ type
       LoadCounterLimit: Integer;
       CacheSize: Integer;
       GlobalUseCache: Boolean;
-    procedure LoadFromUrl(const Url: string; UseCache: Boolean = True);
+    function LoadFromUrl(const Url: string; UseCache: Boolean = True): Boolean;
     procedure LoadFromUrlAsync(const Url: string; UseCache: Boolean = True; AfterLoaded: TProc<TBitmap> = nil);
     procedure LoadFromResource(ResName: string);
     class procedure DropCache;
@@ -234,16 +234,18 @@ begin
   end;
 end;
 
-procedure TBitmapHelper.LoadFromUrl(const Url: string; UseCache: Boolean);
+function TBitmapHelper.LoadFromUrl(const Url: string; UseCache: Boolean): Boolean;
 var
   Mem: TMemoryStream;
   Item: TBitmapCacheItem;
   Cache: TBitmap;
+  FLoaded: Boolean;
 begin
+  Result := False;
   if GlobalUseCache and UseCache and ExistsCache(Url, Cache) then
   begin
     Self.Assign(Cache);
-    Exit;
+    Exit(True);
   end;
   Mem := TDownload.Get(Url);
   try
@@ -255,9 +257,12 @@ begin
           begin
             try
               Self.LoadFromStream(Mem);
+              FLoaded := True;
             except
+              FLoaded := False;
             end;
           end);
+        Result := FLoaded;
         if GlobalUseCache and UseCache then
         begin
           Item := AppendCache;
