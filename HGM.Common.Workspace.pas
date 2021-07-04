@@ -75,7 +75,9 @@ begin
   end;
   if not TFile.Exists(FConfig.FileName) then
   try
+    {$HINTS OFF}
     TFile.Create(FConfig.FileName).Free;
+    {$HINTS ON}
   except
     Exit;
   end;
