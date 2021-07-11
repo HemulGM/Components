@@ -17,10 +17,14 @@ type
     procedure Clear;
     constructor Create;
     destructor Destroy; override;
-    function ReadString(const Key: string; const Default: string = ''): string;
-    function ReadInteger(const Key: string; const Default: Integer = -1): Integer;
-    function ReadBoolean(const Key: string; const Default: Boolean = False): Boolean;
-    function ReadValue<T>(const Key: string; const Default: T): T;
+    function ReadStringDef(const Key: string; const Default: string = ''): string;
+    function ReadIntegerDef(const Key: string; const Default: Integer = -1): Integer;
+    function ReadBooleanDef(const Key: string; const Default: Boolean = False): Boolean;
+    function ReadString(const Key: string; var Value: string): Boolean;
+    function ReadInteger(const Key: string; var Value: Integer): Boolean;
+    function ReadBoolean(const Key: string; var Value: Boolean): Boolean;
+    function ReadValueDef<T>(const Key: string; const Default: T): T;
+    function ReadValue<T>(const Key: string; var Value: T): Boolean;
     function Write(const Key: string; const Value: TValue): Boolean;
     function WriteString(const Key: string; const Value: string): Boolean;
     function WriteInteger(const Key: string; const Value: Integer): Boolean;
@@ -136,22 +140,42 @@ begin
     FJSON := TJSONObject.Create;
 end;
 
-function TConfig.ReadBoolean(const Key: string; const Default: Boolean): Boolean;
+function TConfig.ReadBoolean(const Key: string; var Value: Boolean): Boolean;
 begin
-  Result := ReadValue(Key, Default);
+  Result := ReadValue(Key, Value);
 end;
 
-function TConfig.ReadInteger(const Key: string; const Default: Integer): Integer;
+function TConfig.ReadBooleanDef(const Key: string; const Default: Boolean): Boolean;
 begin
-  Result := ReadValue(Key, Default);
+  Result := ReadValueDef(Key, Default);
 end;
 
-function TConfig.ReadString(const Key, Default: string): string;
+function TConfig.ReadInteger(const Key: string; var Value: Integer): Boolean;
 begin
-  Result := ReadValue(Key, Default);
+  Result := ReadValue(Key, Value);
 end;
 
-function TConfig.ReadValue<T>(const Key: string; const Default: T): T;
+function TConfig.ReadIntegerDef(const Key: string; const Default: Integer): Integer;
+begin
+  Result := ReadValueDef(Key, Default);
+end;
+
+function TConfig.ReadString(const Key: string; var Value: string): Boolean;
+begin
+  Result := ReadValue(Key, Value);
+end;
+
+function TConfig.ReadStringDef(const Key, Default: string): string;
+begin
+  Result := ReadValueDef(Key, Default);
+end;
+
+function TConfig.ReadValue<T>(const Key: string; var Value: T): Boolean;
+begin
+  Result := JSON.TryGetValue<T>(Key, Value);
+end;
+
+function TConfig.ReadValueDef<T>(const Key: string; const Default: T): T;
 begin
   Result := Default;
   if Assigned(FJSON) then

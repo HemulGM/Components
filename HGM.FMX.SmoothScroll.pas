@@ -27,17 +27,20 @@ type
     procedure SetIncrement(const Value: Single);
     procedure SetUpdateInterval(const Value: Cardinal);
     function GetUpdateInterval: Cardinal;
+    function GetIsEnd: Boolean;
   public
     constructor Create(AOwner: TComponent); override;
     constructor CreateFor(AScroll: TCustomScrollBox);
     procedure ScrollEvent(WheelDelta: Single);
     procedure Boost(Value: Single);
     procedure ScrollDown;
+    procedure ToEnd;
     property Scroll: TCustomScrollBox read FScroll write SetScroll;
     property MaxSpeed: Integer read FMaxSpeed write SetMaxSpeed;
     property Increment: Single read FIncrement write SetIncrement;
     property UpdateInterval: Cardinal read GetUpdateInterval write SetUpdateInterval;
     property ScrollDelta: Integer read FScrollDelta write SetScrollDelta;
+    property IsEnd: Boolean read GetIsEnd;
   end;
 
 implementation
@@ -91,6 +94,11 @@ begin
   ScrollEvent(WheelDelta);
 end;
 
+function TSmoothScroll.GetIsEnd: Boolean;
+begin
+  Result := FScroll.ViewportPosition.Y + FScroll.ClientHeight = FScroll.ContentBounds.Height;
+end;
+
 function TSmoothScroll.GetUpdateInterval: Cardinal;
 begin
   Result := FTimerUpdateScroll.Interval;
@@ -109,6 +117,11 @@ begin
   FTimerAutoScroll.Enabled := True;
   FTimerUpdateScroll.Enabled := True;
   TimerAutoScrollTimer(nil);
+end;
+
+procedure TSmoothScroll.ToEnd;
+begin
+  FScroll.ViewportPosition := TPointF.Create(FScroll.ViewportPosition.X, FScroll.ContentBounds.Height - FScroll.ClientHeight);
 end;
 
 procedure TSmoothScroll.ScrollEvent(WheelDelta: Single);

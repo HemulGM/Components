@@ -42,7 +42,7 @@ type
       CacheSize: Integer;
       GlobalUseCache: Boolean;
     function LoadFromUrl(const Url: string; UseCache: Boolean = True): Boolean;
-    procedure LoadFromUrlAsync(const Url: string; UseCache: Boolean = True; AfterLoaded: TProc<TBitmap> = nil);
+    function LoadFromUrlAsync(const Url: string; UseCache: Boolean = True; AfterLoaded: TProc<TBitmap> = nil): Boolean;
     procedure LoadFromResource(ResName: string);
     class procedure DropCache;
     class procedure SetLoaded(Url: string);
@@ -226,6 +226,7 @@ procedure TBitmapHelper.LoadFromResource(ResName: string);
 var
   Mem: TResourceStream;
 begin
+
   Mem := TResourceStream.Create(HInstance, ResName, RT_RCDATA);
   try
     Self.LoadFromStream(Mem);
@@ -278,8 +279,16 @@ begin
   end;
 end;
 
-procedure TBitmapHelper.LoadFromUrlAsync(const Url: string; UseCache: Boolean; AfterLoaded: TProc<TBitmap>);
+function TBitmapHelper.LoadFromUrlAsync(const Url: string; UseCache: Boolean; AfterLoaded: TProc<TBitmap>): Boolean;
+var
+  Cache: TBitmap;
 begin
+  if GlobalUseCache and UseCache and ExistsCache(Url, Cache) then
+  begin
+    Self.Assign(Cache);
+    Exit(True);
+  end;
+  Result := False;
   TTask.Run(
     procedure
     begin
