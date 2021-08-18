@@ -6,9 +6,9 @@ uses
   System.Generics.Collections;
 
 type
-  TArrayWalker<T> = reference to procedure(const Item: T; Index: Integer);
+  TArrayWalker<T> = reference to procedure(const Item: T; Index: Integer; var Cancel: Boolean);
 
-  TArrayWalkerWrite<T> = reference to procedure(var Item: T; Index: Integer);
+  TArrayWalkerWrite<T> = reference to procedure(var Item: T; Index: Integer; var Cancel: Boolean);
 
   TFuncCompare<T> = reference to function(const Left, Right: T): Integer;
 
@@ -86,12 +86,16 @@ class procedure TArrayHelp.Walk<T>(var Target: array of T; Proc: TArrayWalkerWri
 var
   i: Integer;
   Item: T;
+  Cancel: Boolean;
 begin
+  Cancel := False;
   for i := Low(Target) + Offset to High(Target) do
   begin
     Item := Target[i];
-    Proc(Item, i);
+    Proc(Item, i, Cancel);
     Target[i] := Item;
+    if Cancel then
+      Break;
   end;
 end;
 
@@ -105,29 +109,45 @@ class procedure TArrayHelp.Walk<T>(var Target: TArray<T>; Proc: TArrayWalkerWrit
 var
   i: Integer;
   Item: T;
+  Cancel: Boolean;
 begin
+  Cancel := False;
   for i := Low(Target) + Offset to High(Target) do
   begin
     Item := Target[i];
-    Proc(Item, i);
+    Proc(Item, i, Cancel);
     Target[i] := Item;
+    if Cancel then
+      Break;
   end;
 end;
 
 class procedure TArrayHelp.Walk<T>(const Target: TArray<T>; Proc: TArrayWalker<T>; Offset: Integer);
 var
   i: Integer;
+  Cancel: Boolean;
 begin
+  Cancel := False;
   for i := Low(Target) + Offset to High(Target) do
-    Proc(Target[i], i);
+  begin
+    Proc(Target[i], i, Cancel);
+    if Cancel then
+      Break;
+  end;
 end;
 
 class procedure TArrayHelp.Walk<T>(const Target: array of T; Proc: TArrayWalker<T>; Offset: Integer);
 var
   i: Integer;
+  Cancel: Boolean;
 begin
+  Cancel := False;
   for i := Low(Target) + Offset to High(Target) do
-    Proc(Target[i], i);
+  begin
+    Proc(Target[i], i, Cancel);
+    if Cancel then
+      Break;
+  end;
 end;
 
 class function TArrayHelp.Add<T>(var Target: TArray<T>; const Item: T): Integer;

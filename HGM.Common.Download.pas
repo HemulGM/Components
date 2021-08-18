@@ -37,10 +37,8 @@ type
     procedure Execute; override;
   public
     constructor Create(CreateSuspended: Boolean = True); overload;
-    constructor CreateAndStart(AUrl, AFileName: string; OnReceiveProc: TOnReceiveRef = nil; OnFinishProc: TOnFinishRef =
-      nil); overload;
-    constructor CreateAndStart(AUrl: string; OnReceiveProc: TOnReceiveRef = nil; OnFinishProc: TOnFinishRefStream = nil);
-      overload;
+    constructor CreateAndStart(AUrl, AFileName: string; OnReceiveProc: TOnReceiveRef = nil; OnFinishProc: TOnFinishRef = nil); overload;
+    constructor CreateAndStart(AUrl: string; OnReceiveProc: TOnReceiveRef = nil; OnFinishProc: TOnFinishRefStream = nil); overload;
     destructor Destroy; override;
     property URL: string read FURL write FURL;
     property FileName: string read FFileName write FFileName;
@@ -49,14 +47,15 @@ type
     property OnReceive: TOnReceiveRef read FOnReceive write FOnReceive;
     property OnFinish: TOnFinishRef read FOnFinish write FOnFinish;
     property OnFinishStream: TOnFinishRefStream read FOnFinishStream write SetOnFinishStream;
-    class function Get(URL: string; const Mem: TMemoryStream): Boolean; overload;
+    class function Get(URL: string; const Stream: TStream): Boolean; overload;
     class function Get(URL, FileName: string): Boolean; overload;
     class function Get(URL: string): TMemoryStream; overload;
+    class function GetText(URL: string; var Text: string): Boolean; overload;
   end;
 
 implementation
 
-{TDownThread}
+{ TDownThread }
 
 constructor TDownload.Create(CreateSuspended: Boolean);
 begin
@@ -78,25 +77,42 @@ begin
   FOnReceive := OnReceiveProc;
 end;
 
-class function TDownload.Get(URL: string; const Mem: TMemoryStream): Boolean;
+class function TDownload.Get(URL: string; const Stream: TStream): Boolean;
 var
   HTTP: THTTPClient;
 begin
   Result := False;
-  Mem.Clear;
+  Stream.Size := 0;
   if URL.IsEmpty then
     Exit;
   HTTP := THTTPClient.Create;
   HTTP.HandleRedirects := True;
   try
     try
-      Result := (HTTP.Get(URL, Mem).StatusCode = 200) and (Mem.Size > 0);
-      Mem.Position := 0;
+      Result := (HTTP.Get(URL, Stream).StatusCode = 200) and (Stream.Size > 0);
+      Stream.Position := 0;
     finally
       HTTP.Free;
     end;
   except
     Result := False;
+  end;
+end;
+
+class function TDownload.GetText(URL: string; var Text: string): Boolean;
+var
+  Stream: TStringStream;
+begin
+  Result := False;
+  Stream := TStringStream.Create;
+  try
+    if Get(URL, Stream) then
+    begin
+      Text := Stream.DataString;
+      Result := True;
+    end;
+  finally
+    Stream.Free;
   end;
 end;
 
