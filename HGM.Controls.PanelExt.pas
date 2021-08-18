@@ -470,7 +470,7 @@ begin
     procedure
     begin
       Sleep(Interval);
-      if not FCancelClose then
+      if FCancelClose then
         TThread.Synchronize(TThread.Current,
           procedure
           begin
