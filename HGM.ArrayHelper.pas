@@ -3,7 +3,7 @@ unit HGM.ArrayHelper;
 interface
 
 uses
-  System.Generics.Collections;
+  System.Generics.Collections, System.Generics.Defaults;
 
 type
   TArrayWalker<T> = reference to procedure(const Item: T; Index: Integer; var Cancel: Boolean);
@@ -29,9 +29,6 @@ type
   end;
 
 implementation
-
-uses
-  System.Generics.Defaults;
 
 { TArrayHelp }
 

@@ -47,6 +47,7 @@ type
     property OnReceive: TOnReceiveRef read FOnReceive write FOnReceive;
     property OnFinish: TOnFinishRef read FOnFinish write FOnFinish;
     property OnFinishStream: TOnFinishRefStream read FOnFinishStream write SetOnFinishStream;
+    class function GetRequest(URL: string): Boolean; overload;
     class function Get(URL: string; const Stream: TStream): Boolean; overload;
     class function Get(URL, FileName: string): Boolean; overload;
     class function Get(URL: string): TMemoryStream; overload;
@@ -99,6 +100,26 @@ begin
   end;
 end;
 
+class function TDownload.GetRequest(URL: string): Boolean;
+var
+  HTTP: THTTPClient;
+begin
+  Result := False;
+  if URL.IsEmpty then
+    Exit;
+  HTTP := THTTPClient.Create;
+  HTTP.HandleRedirects := True;
+  try
+    try
+      Result := HTTP.Get(URL).StatusCode = 200;
+    finally
+      HTTP.Free;
+    end;
+  except
+    Result := False;
+  end;
+end;
+
 class function TDownload.GetText(URL: string; var Text: string): Boolean;
 var
   Stream: TStringStream;
@@ -133,6 +154,7 @@ begin
       HTTP.Free;
     end;
   except
+    //
   end;
 end;
 

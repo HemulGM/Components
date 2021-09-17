@@ -3,7 +3,8 @@ unit HGM.Utils.Color;
 interface
 
 uses
-  System.Types, System.StrUtils, System.SysUtils, System.UIConsts, System.UITypes;
+  System.Types, System.StrUtils, System.SysUtils, System.UIConsts,
+  System.UITypes;
 
 type
   TRGB = record
@@ -115,6 +116,9 @@ function ColorToString(Color: TColor): string;
 implementation
 
 uses
+  {$IFDEF MSWINDOWS}
+  Winapi.Windows,
+  {$ENDIF}
   System.Math;
 
 function ColorToString(Color: TColor): string;
@@ -160,7 +164,7 @@ end;
 
 function GetAValue(RGB: Cardinal): Byte;
 begin
-  Result := Byte(RGB shr 32);
+  Result := Byte(RGB shr 24);
 end;
 
 function ColorToRGB(Color: TColor): TRGB;
@@ -349,7 +353,12 @@ end;
 
 class operator TRGB.Implicit(const Color: TColor): TRGB;
 begin
-  Result.Color := Color;
+  {$IFDEF MSWINDOWS}
+  if Color < 0 then
+    Result.Color := GetSysColor(Color and $000000FF)
+  else
+  {$ENDIF}
+    Result.Color := Color;
 end;
 
 class function TRGB.Create(const RGB: Cardinal): TRGB;
