@@ -63,14 +63,14 @@ var
   i, j: Integer;
   Buf: T;
 begin
-  for j := 0 to High(Target) - 1 do
-    for i := 0 to High(Target) - j do
-      if Compare(Target[i], Target[i + 1]) <> 0 then
-      begin
-        Buf := Target[i];
-        Target[i] := Target[i + 1];
-        Target[i + 1] := Buf;
-      end;
+  for i := 1 to High(Target) - 1 do
+    for j := 0 to High(Target) - i do
+      if Compare(Target[j], Target[j + 1]) <> 0 then
+        begin
+          Buf := Target[j];
+          Target[j] := Target[j + 1];
+          Target[j + 1] := Buf;
+        end;
 end;
 
 class function TArrayHelp.Sorted<T>(const Target: TArray<T>; Compare: TFuncCompare<T>): TArray<T>;
