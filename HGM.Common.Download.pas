@@ -48,6 +48,7 @@ type
     property OnFinish: TOnFinishRef read FOnFinish write FOnFinish;
     property OnFinishStream: TOnFinishRefStream read FOnFinishStream write SetOnFinishStream;
     class function GetRequest(URL: string): Boolean; overload;
+    class function PostRequest(URL: string; const Stream: TStream): Boolean; overload;
     class function Get(URL: string; const Stream: TStream): Boolean; overload;
     class function Get(URL, FileName: string): Boolean; overload;
     class function Get(URL: string): TMemoryStream; overload;
@@ -55,6 +56,9 @@ type
   end;
 
 implementation
+
+uses
+  System.Net.Mime;
 
 { TDownThread }
 
@@ -113,6 +117,30 @@ begin
     try
       Result := HTTP.Get(URL).StatusCode = 200;
     finally
+      HTTP.Free;
+    end;
+  except
+    Result := False;
+  end;
+end;
+
+class function TDownload.PostRequest(URL: string; const Stream: TStream): Boolean;
+var
+  HTTP: THTTPClient;
+  Form: TMultipartFormData;
+begin
+  Result := False;
+  if URL.IsEmpty then
+    Exit;
+  HTTP := THTTPClient.Create;
+  Form := TMultipartFormData.Create;
+  try
+    HTTP.HandleRedirects := True;
+    Form.AddStream('photo', Stream, 'image.bmp');
+    try
+      Result := HTTP.Post(URL, Form).StatusCode = 200;
+    finally
+      Form.Free;
       HTTP.Free;
     end;
   except
