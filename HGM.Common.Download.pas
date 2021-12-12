@@ -53,12 +53,13 @@ type
     class function Get(URL, FileName: string): Boolean; overload;
     class function Get(URL: string): TMemoryStream; overload;
     class function GetText(URL: string; var Text: string): Boolean; overload;
+    class function PostJson(URL, Json: string; var Text: string): Boolean; overload;
   end;
 
 implementation
 
 uses
-  System.Net.Mime;
+  System.Net.Mime, System.Net.URLClient, System.NetConsts;
 
 { TDownThread }
 
@@ -161,6 +162,36 @@ begin
       Result := True;
     end;
   finally
+    Stream.Free;
+  end;
+end;
+
+class function TDownload.PostJson(URL, Json: string; var Text: string): Boolean;
+var
+  HTTP: THTTPClient;
+  Form: TStringStream;
+  Stream: TStringStream;
+begin
+  Result := False;
+  if URL.IsEmpty then
+    Exit;
+  HTTP := THTTPClient.Create;
+  Form := TStringStream.Create;
+  Stream := TStringStream.Create;
+  try
+    try
+      Form.WriteString(Json);
+      Form.Position := 0;
+      HTTP.ContentType := 'application/json';
+      HTTP.HandleRedirects := True;
+      Result := HTTP.Post(URL, Form, Stream).StatusCode = 200;
+      Text := Stream.DataString;
+    except
+      Result := False;
+    end;
+  finally
+    Form.Free;
+    HTTP.Free;
     Stream.Free;
   end;
 end;

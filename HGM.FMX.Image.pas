@@ -43,7 +43,8 @@ type
       GlobalUseCache: Boolean;
     function LoadFromUrl(const Url: string; UseCache: Boolean = True): Boolean;
     function LoadFromUrlAsync(const Url: string; UseCache: Boolean = True; AfterLoaded: TProc<TBitmap> = nil): Boolean;
-    procedure LoadFromResource(ResName: string);
+    procedure LoadFromResource(ResName: string); overload;
+    procedure LoadFromResource(Instanse: NativeUInt; ResName: string); overload;
     class procedure DropCache;
     class procedure SetLoaded(Url: string);
     class procedure DeleteCache(Url: string);
@@ -223,11 +224,15 @@ begin
 end;
 
 procedure TBitmapHelper.LoadFromResource(ResName: string);
+begin
+  LoadFromResource(HInstance, ResName);
+end;
+
+procedure TBitmapHelper.LoadFromResource(Instanse: NativeUInt; ResName: string);
 var
   Mem: TResourceStream;
 begin
-
-  Mem := TResourceStream.Create(HInstance, ResName, RT_RCDATA);
+  Mem := TResourceStream.Create(Instanse, ResName, RT_RCDATA);
   try
     Self.LoadFromStream(Mem);
   finally
