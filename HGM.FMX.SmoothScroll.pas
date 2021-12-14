@@ -17,6 +17,7 @@ type
     FIncrement: Single;
     FAutoScrollDown: Boolean;
     FAutoScrollOldPos: Single;
+    FEnableSmoothScroll: Boolean;
     procedure FDoScroll(Delta: Single);
     procedure TimerUpdateScrollTimer(Sender: TObject);
     procedure TimerAutoScrollTimer(Sender: TObject);
@@ -28,6 +29,7 @@ type
     procedure SetUpdateInterval(const Value: Cardinal);
     function GetUpdateInterval: Cardinal;
     function GetIsEnd: Boolean;
+    procedure SetEnableSmoothScroll(const Value: Boolean);
   public
     constructor Create(AOwner: TComponent); override;
     constructor CreateFor(AScroll: TCustomScrollBox);
@@ -35,12 +37,14 @@ type
     procedure Boost(Value: Single);
     procedure ScrollDown;
     procedure ToEnd;
+    procedure Stop;
     property Scroll: TCustomScrollBox read FScroll write SetScroll;
     property MaxSpeed: Integer read FMaxSpeed write SetMaxSpeed;
     property Increment: Single read FIncrement write SetIncrement;
     property UpdateInterval: Cardinal read GetUpdateInterval write SetUpdateInterval;
     property ScrollDelta: Integer read FScrollDelta write SetScrollDelta;
     property IsEnd: Boolean read GetIsEnd;
+    property EnableSmoothScroll: Boolean read FEnableSmoothScroll write SetEnableSmoothScroll;
   end;
 
 implementation
@@ -58,9 +62,10 @@ end;
 constructor TSmoothScroll.Create(AOwner: TComponent);
 begin
   inherited;
-  FAutoScrollDown := True;
+  FEnableSmoothScroll := True;
+  FAutoScrollDown := False;
   FAutoScrollOldPos := 0;
-  FMaxSpeed := 40;
+  FMaxSpeed := 80;
   FScrollImpulse := 0;
   FScrollDelta := 9;
   FIncrement := 1;
@@ -89,14 +94,15 @@ end;
 
 procedure TSmoothScroll.FOverMouseWheel(Sender: TObject; Shift: TShiftState; WheelDelta: Integer; var Handled: Boolean);
 begin
-  Handled := True;
   FTimerAutoScroll.Enabled := False;
+  Handled := True;
   ScrollEvent(WheelDelta);
 end;
 
 function TSmoothScroll.GetIsEnd: Boolean;
 begin
-  Result := FScroll.ViewportPosition.Y + FScroll.ClientHeight = FScroll.ContentBounds.Height;
+  Result := (Abs(FScroll.ViewportPosition.Y + FScroll.ClientHeight - FScroll.ContentBounds.Height) < 2) or
+    (FScroll.ContentBounds.Height < FScroll.ClientHeight);
 end;
 
 function TSmoothScroll.GetUpdateInterval: Cardinal;
@@ -106,9 +112,16 @@ end;
 
 procedure TSmoothScroll.FDoScroll(Delta: Single);
 begin
-  if not FTimerUpdateScroll.Enabled then
-    FTimerUpdateScroll.Enabled := True;
-  FScrollImpulse := Max(-FMaxSpeed, Min(FScrollImpulse - Delta, FMaxSpeed));
+  if FEnableSmoothScroll or FTimerAutoScroll.Enabled then
+  begin
+    if not FTimerUpdateScroll.Enabled then
+      FTimerUpdateScroll.Enabled := True;
+    FScrollImpulse := Max(-FMaxSpeed, Min(FScrollImpulse - Delta, FMaxSpeed));
+  end
+  else
+  begin
+    FScroll.ViewportPosition := TPointF.Create(0, FScroll.ViewportPosition.Y - Delta);
+  end;
 end;
 
 procedure TSmoothScroll.ScrollDown;
@@ -121,12 +134,17 @@ end;
 
 procedure TSmoothScroll.ToEnd;
 begin
-  FScroll.ViewportPosition := TPointF.Create(FScroll.ViewportPosition.X, FScroll.ContentBounds.Height - FScroll.ClientHeight);
+  FScroll.ViewportPosition := TPointF.Create(FScroll.ViewportPosition.X, FScroll.ContentBounds.Bottom - FScroll.ClientHeight);
 end;
 
 procedure TSmoothScroll.ScrollEvent(WheelDelta: Single);
 begin
   FDoScroll(WheelDelta / FScrollDelta);
+end;
+
+procedure TSmoothScroll.SetEnableSmoothScroll(const Value: Boolean);
+begin
+  FEnableSmoothScroll := Value;
 end;
 
 procedure TSmoothScroll.SetIncrement(const Value: Single);
@@ -152,6 +170,13 @@ end;
 procedure TSmoothScroll.SetUpdateInterval(const Value: Cardinal);
 begin
   FTimerUpdateScroll.Interval := Value;
+end;
+
+procedure TSmoothScroll.Stop;
+begin
+  FTimerUpdateScroll.Enabled := False;
+  FTimerAutoScroll.Enabled := False;
+  FScrollImpulse := 0;
 end;
 
 procedure TSmoothScroll.TimerAutoScrollTimer(Sender: TObject);
