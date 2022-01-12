@@ -48,12 +48,13 @@ type
     property OnFinish: TOnFinishRef read FOnFinish write FOnFinish;
     property OnFinishStream: TOnFinishRefStream read FOnFinishStream write SetOnFinishStream;
     class function GetRequest(URL: string): Boolean; overload;
-    class function PostRequest(URL: string; const Stream: TStream): Boolean; overload;
-    class function Get(URL: string; const Stream: TStream): Boolean; overload;
+    class function Get(URL: string; Stream: TStream): Boolean; overload;
     class function Get(URL, FileName: string): Boolean; overload;
     class function Get(URL: string): TMemoryStream; overload;
     class function GetText(URL: string; var Text: string): Boolean; overload;
+    class function Post(URL: string; Stream: TStream; Response: TStream = nil): Boolean; overload;
     class function PostJson(URL, Json: string; var Text: string): Boolean; overload;
+    class function PostFile(URL: string; const Field, FileName: TArray<string>; Stream: TArray<TStream>; Response: TStream = nil): Boolean; static;
   end;
 
 implementation
@@ -83,7 +84,7 @@ begin
   FOnReceive := OnReceiveProc;
 end;
 
-class function TDownload.Get(URL: string; const Stream: TStream): Boolean;
+class function TDownload.Get(URL: string; Stream: TStream): Boolean;
 var
   HTTP: THTTPClient;
 begin
@@ -125,7 +126,30 @@ begin
   end;
 end;
 
-class function TDownload.PostRequest(URL: string; const Stream: TStream): Boolean;
+class function TDownload.Post(URL: string; Stream, Response: TStream): Boolean;
+var
+  HTTP: THTTPClient;
+begin
+  Result := False;
+  if URL.IsEmpty then
+    Exit;
+  HTTP := THTTPClient.Create;
+  try
+    HTTP.HandleRedirects := True;
+    try
+      if Assigned(Response) then
+        Result := HTTP.Post(URL, Stream, Response).StatusCode = 200
+      else
+        Result := HTTP.Post(URL, Stream).StatusCode = 200;
+    finally
+      HTTP.Free;
+    end;
+  except
+    Result := False;
+  end;
+end;
+
+class function TDownload.PostFile(URL: string; const Field, FileName: TArray<string>; Stream: TArray<TStream>; Response: TStream): Boolean;
 var
   HTTP: THTTPClient;
   Form: TMultipartFormData;
@@ -137,9 +161,13 @@ begin
   Form := TMultipartFormData.Create;
   try
     HTTP.HandleRedirects := True;
-    Form.AddStream('photo', Stream, 'image.bmp');
+    for var i := Low(Field) to High(Field) do
+      Form.AddStream(Field[i], Stream[i], FileName[i]);
     try
-      Result := HTTP.Post(URL, Form).StatusCode = 200;
+      if Assigned(Response) then
+        Result := HTTP.Post(URL, Form, Response).StatusCode = 200
+      else
+        Result := HTTP.Post(URL, Form).StatusCode = 200;
     finally
       Form.Free;
       HTTP.Free;
@@ -169,28 +197,28 @@ end;
 class function TDownload.PostJson(URL, Json: string; var Text: string): Boolean;
 var
   HTTP: THTTPClient;
-  Form: TStringStream;
+  Body: TStringStream;
   Stream: TStringStream;
 begin
   Result := False;
   if URL.IsEmpty then
     Exit;
   HTTP := THTTPClient.Create;
-  Form := TStringStream.Create;
+  Body := TStringStream.Create;
   Stream := TStringStream.Create;
   try
+    HTTP.HandleRedirects := True;
+    HTTP.ContentType := 'application/json';
     try
-      Form.WriteString(Json);
-      Form.Position := 0;
-      HTTP.ContentType := 'application/json';
-      HTTP.HandleRedirects := True;
-      Result := HTTP.Post(URL, Form, Stream).StatusCode = 200;
+      Body.WriteString(Json);
+      Body.Position := 0;
+      Result := HTTP.Post(URL, Body, Stream).StatusCode = 200;
       Text := Stream.DataString;
     except
       Result := False;
     end;
   finally
-    Form.Free;
+    Body.Free;
     HTTP.Free;
     Stream.Free;
   end;

@@ -21,7 +21,8 @@ type
     class function Sorted<T>(const Target: TArray<T>; Compare: TFuncCompare<T>): TArray<T>; inline;
     class procedure FreeArrayOfObject<T: class>(var Target: TArray<T>); overload; inline; static;
     class procedure FreeArrayOfArrayOfObject<T: class>(var Target: TArray<TArray<T>>); overload; inline; static;
-    class procedure Sort<T>(var Target: TArray<T>; Compare: TFuncCompare<T>); inline;
+    class procedure Sort<T>(var Target: TArray<T>; Compare: TFuncCompare<T>); overload; inline;
+    class procedure Sort(var Target: TArray<integer>); overload; inline;
     class procedure Walk<T>(const Target: TArray<T>; Proc: TArrayWalker<T>; Offset: Integer = 0); overload; inline; static;
     class procedure Walk<T>(const Target: array of T; Proc: TArrayWalker<T>; Offset: Integer = 0); overload; static;
     class procedure Walk<T>(var Target: TArray<T>; Proc: TArrayWalkerWrite<T>; Offset: Integer = 0); overload; inline; static;
@@ -56,6 +57,21 @@ begin
   for i := Low(Target) to High(Target) do
     if Comparer.Compare(Target[i], Item) = 0 then
       Exit(True);
+end;
+
+class procedure TArrayHelp.Sort(var Target: TArray<integer>);
+var
+  i, j: Integer;
+  Buf: integer;
+begin
+  for i := 1 to High(Target) - 1 do
+    for j := 0 to High(Target) - i do
+      if Target[j] > Target[j + 1] then
+        begin
+          Buf := Target[j];
+          Target[j] := Target[j + 1];
+          Target[j + 1] := Buf;
+        end;
 end;
 
 class procedure TArrayHelp.Sort<T>(var Target: TArray<T>; Compare: TFuncCompare<T>);
