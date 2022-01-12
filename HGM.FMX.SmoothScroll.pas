@@ -134,7 +134,7 @@ end;
 
 procedure TSmoothScroll.ToEnd;
 begin
-  FScroll.ViewportPosition := TPointF.Create(FScroll.ViewportPosition.X, FScroll.ContentBounds.Bottom - FScroll.ClientHeight);
+  FScroll.ViewportPosition := TPointF.Create(FScroll.ViewportPosition.X, FScroll.ContentBounds.Bottom + 100);
 end;
 
 procedure TSmoothScroll.ScrollEvent(WheelDelta: Single);
