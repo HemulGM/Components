@@ -54,7 +54,8 @@ type
     class function GetText(URL: string; var Text: string): Boolean; overload;
     class function Post(URL: string; Stream: TStream; Response: TStream = nil): Boolean; overload;
     class function PostJson(URL, Json: string; var Text: string): Boolean; overload;
-    class function PostFile(URL: string; const Field, FileName: TArray<string>; Stream: TArray<TStream>; Response: TStream = nil): Boolean; static;
+    class function PostFile(URL: string; const Field, FileName: TArray<string>; Stream: TArray<TStream>; Response: TStream = nil): Boolean; overload; static;
+    class function PostFile(URL: string; const Field, FileName: TArray<string>; Response: TStream = nil): Boolean; overload; static;
   end;
 
 implementation
@@ -163,6 +164,34 @@ begin
     HTTP.HandleRedirects := True;
     for var i := Low(Field) to High(Field) do
       Form.AddStream(Field[i], Stream[i], FileName[i]);
+    try
+      if Assigned(Response) then
+        Result := HTTP.Post(URL, Form, Response).StatusCode = 200
+      else
+        Result := HTTP.Post(URL, Form).StatusCode = 200;
+    finally
+      Form.Free;
+      HTTP.Free;
+    end;
+  except
+    Result := False;
+  end;
+end;
+
+class function TDownload.PostFile(URL: string; const Field, FileName: TArray<string>; Response: TStream): Boolean;
+var
+  HTTP: THTTPClient;
+  Form: TMultipartFormData;
+begin
+  Result := False;
+  if URL.IsEmpty then
+    Exit;
+  HTTP := THTTPClient.Create;
+  Form := TMultipartFormData.Create;
+  try
+    HTTP.HandleRedirects := True;
+    for var i := Low(Field) to High(Field) do
+      Form.AddFile(Field[i], FileName[i]);
     try
       if Assigned(Response) then
         Result := HTTP.Post(URL, Form, Response).StatusCode = 200
