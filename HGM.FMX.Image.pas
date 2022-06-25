@@ -45,6 +45,8 @@ type
     function LoadFromUrlAsync(const Url: string; UseCache: Boolean = True; AfterLoaded: TProc<TBitmap> = nil): Boolean;
     procedure LoadFromResource(ResName: string); overload;
     procedure LoadFromResource(Instanse: NativeUInt; ResName: string); overload;
+    procedure SaveToStream(Stream: TStream; const Ext: string); overload;
+    procedure SaveToFile(const AFileName: string; const Ext: string); overload;
     class procedure DropCache;
     class procedure SetLoaded(Url: string);
     class procedure DeleteCache(Url: string);
@@ -96,7 +98,7 @@ type
 implementation
 
 uses
-  HGM.Common.Download;
+  HGM.Common.Download, FMX.Surfaces, FMX.Types, FMX.Consts;
 
 { TBitmapHelper }
 
@@ -314,6 +316,37 @@ begin
           end);
       end;
     end);
+end;
+
+procedure TBitmapHelper.SaveToFile(const AFileName, Ext: string);
+var
+  Stream: TFileStream;
+begin
+  Stream := TFileStream.Create(AFileName, fmCreate);
+  try
+    SaveToStream(Stream, Ext);
+  finally
+    Stream.Free;
+  end;
+end;
+
+procedure TBitmapHelper.SaveToStream(Stream: TStream; const Ext: string);
+var
+  Surf: TBitmapSurface;
+begin
+  TMonitor.Enter(Self);
+  try
+    Surf := TBitmapSurface.Create;
+    try
+      Surf.Assign(Self);
+      if not TBitmapCodecManager.SaveToStream(Stream, Surf, Ext) then
+        raise EBitmapSavingFailed.Create(SBitmapSavingFailed);
+    finally
+      Surf.Free;
+    end;
+  finally
+    TMonitor.Exit(Self);
+  end;
 end;
 
 class procedure TBitmapHelper.SetLoaded(Url: string);
