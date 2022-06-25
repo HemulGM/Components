@@ -394,6 +394,7 @@ end;
 constructor TCustomPanelExt.Create(AOwner: TComponent);
 begin
   inherited;
+  FDefaultPaint := False;
   inherited OnMouseMove := FMouseMove;
   inherited OnMouseDown := FMouseDown;
   inherited OnMouseUp := FMouseUp;

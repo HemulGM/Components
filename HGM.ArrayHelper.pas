@@ -49,7 +49,6 @@ end;
 class function TArrayHelp.InArray<T>(Target: TArray<T>; Item: T): Boolean;
 var
   i: Integer;
-var
   Comparer: IComparer<T>;
 begin
   Comparer := TComparer<T>.Default;
@@ -67,11 +66,11 @@ begin
   for i := 1 to High(Target) - 1 do
     for j := 0 to High(Target) - i do
       if Target[j] > Target[j + 1] then
-        begin
-          Buf := Target[j];
-          Target[j] := Target[j + 1];
-          Target[j + 1] := Buf;
-        end;
+      begin
+        Buf := Target[j];
+        Target[j] := Target[j + 1];
+        Target[j + 1] := Buf;
+      end;
 end;
 
 class procedure TArrayHelp.Sort<T>(var Target: TArray<T>; Compare: TFuncCompare<T>);
@@ -82,11 +81,11 @@ begin
   for i := 1 to High(Target) - 1 do
     for j := 0 to High(Target) - i do
       if Compare(Target[j], Target[j + 1]) <> 0 then
-        begin
-          Buf := Target[j];
-          Target[j] := Target[j + 1];
-          Target[j + 1] := Buf;
-        end;
+      begin
+        Buf := Target[j];
+        Target[j] := Target[j + 1];
+        Target[j + 1] := Buf;
+      end;
 end;
 
 class function TArrayHelp.Sorted<T>(const Target: TArray<T>; Compare: TFuncCompare<T>): TArray<T>;
@@ -177,9 +176,7 @@ begin
   Result := Length(Target);
   SetLength(Target, Length(Target) + Length(Items));
   for i := Low(Target) + (Result - 1) to High(Target) do
-  begin
     Target[i] := Items[i - Result];
-  end;
   Result := Length(Target);
 end;
 
