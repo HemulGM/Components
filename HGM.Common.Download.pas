@@ -54,6 +54,7 @@ type
     class function GetText(URL: string; var Text: string): Boolean; overload;
     class function Post(URL: string; Stream: TStream; Response: TStream = nil): Boolean; overload;
     class function PostJson(URL, Json: string; var Text: string): Boolean; overload;
+    class function PostJson(URL, Json: string; Stream: TStream): Boolean; overload;
     class function PostFile(URL: string; const Field, FileName: TArray<string>; Stream: TArray<TStream>; Response: TStream = nil): Boolean; overload; static;
     class function PostFile(URL: string; const Field, FileName: TArray<string>; Response: TStream = nil): Boolean; overload; static;
   end;
@@ -223,18 +224,16 @@ begin
   end;
 end;
 
-class function TDownload.PostJson(URL, Json: string; var Text: string): Boolean;
+class function TDownload.PostJson(URL, Json: string; Stream: TStream): Boolean;
 var
   HTTP: THTTPClient;
   Body: TStringStream;
-  Stream: TStringStream;
 begin
   Result := False;
   if URL.IsEmpty then
     Exit;
   HTTP := THTTPClient.Create;
   Body := TStringStream.Create;
-  Stream := TStringStream.Create;
   try
     HTTP.HandleRedirects := True;
     HTTP.ContentType := 'application/json';
@@ -242,13 +241,25 @@ begin
       Body.WriteString(Json);
       Body.Position := 0;
       Result := HTTP.Post(URL, Body, Stream).StatusCode = 200;
-      Text := Stream.DataString;
     except
       Result := False;
     end;
   finally
     Body.Free;
     HTTP.Free;
+  end;
+end;
+
+class function TDownload.PostJson(URL, Json: string; var Text: string): Boolean;
+var
+  Stream: TStringStream;
+begin
+  Stream := TStringStream.Create;
+  try
+    Result := PostJson(URL, Json, Stream);
+    if Result then
+      Text := Stream.DataString;
+  finally
     Stream.Free;
   end;
 end;

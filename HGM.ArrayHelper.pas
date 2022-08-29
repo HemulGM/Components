@@ -53,7 +53,6 @@ end;
 class function TArrayHelp.InArray<T>(Target: TArray<T>; Item: T): Boolean;
 var
   i: Integer;
-var
   Comparer: IComparer<T>;
 begin
   Comparer := TComparer<T>.Default;
@@ -229,9 +228,7 @@ begin
   Result := Length(Target);
   SetLength(Target, Length(Target) + Length(Items));
   for i := Low(Target) + (Result - 1) to High(Target) do
-  begin
     Target[i] := Items[i - Result];
-  end;
   Result := Length(Target);
 end;
 
