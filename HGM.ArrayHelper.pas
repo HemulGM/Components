@@ -14,6 +14,8 @@ type
 
   TArrayHelp = class(TArray)
   public
+    class function SimpleArrayToTArray<T>(const Values: array of T): TArray<T>;
+    class function StringArrayToTArray(const Values: array of WideString): TArray<string>;
     class function Add<T>(var Target: TArray<T>; const Items: array of T): Integer; overload;
     class function Add<T>(var Target: TArray<T>; const Item: T): Integer; overload;
     class function Append<T>(var Target: TArray<T>; Count: Integer = 1): Integer; inline; static;
@@ -27,6 +29,8 @@ type
     class procedure Walk<T>(const Target: array of T; Proc: TArrayWalker<T>; Offset: Integer = 0); overload; static;
     class procedure Walk<T>(var Target: TArray<T>; Proc: TArrayWalkerWrite<T>; Offset: Integer = 0); overload; inline; static;
     class procedure Walk<T>(var Target: array of T; Proc: TArrayWalkerWrite<T>; Offset: Integer = 0); overload; static;
+    class function Exclude<T>(const Target, Excluding: TArray<T>): TArray<T>; overload; static;
+    class function Unique<T>(const Target: TArray<T>): TArray<T>; overload; static;
   end;
 
 implementation
@@ -67,11 +71,11 @@ begin
   for i := 1 to High(Target) - 1 do
     for j := 0 to High(Target) - i do
       if Target[j] > Target[j + 1] then
-        begin
-          Buf := Target[j];
-          Target[j] := Target[j + 1];
-          Target[j + 1] := Buf;
-        end;
+      begin
+        Buf := Target[j];
+        Target[j] := Target[j + 1];
+        Target[j + 1] := Buf;
+      end;
 end;
 
 class procedure TArrayHelp.Sort<T>(var Target: TArray<T>; Compare: TFuncCompare<T>);
@@ -82,17 +86,50 @@ begin
   for i := 1 to High(Target) - 1 do
     for j := 0 to High(Target) - i do
       if Compare(Target[j], Target[j + 1]) <> 0 then
-        begin
-          Buf := Target[j];
-          Target[j] := Target[j + 1];
-          Target[j + 1] := Buf;
-        end;
+      begin
+        Buf := Target[j];
+        Target[j] := Target[j + 1];
+        Target[j + 1] := Buf;
+      end;
 end;
 
 class function TArrayHelp.Sorted<T>(const Target: TArray<T>; Compare: TFuncCompare<T>): TArray<T>;
 begin
   Result := Target;
   Sort<T>(Result, Compare);
+end;
+
+class function TArrayHelp.SimpleArrayToTArray<T>(const Values: array of T): TArray<T>;
+var
+  i: Integer;
+begin
+  SetLength(Result, Length(Values));
+  for i := Low(Values) to High(Values) do
+    Result[i] := Values[i];
+end;
+
+class function TArrayHelp.StringArrayToTArray(const Values: array of WideString): TArray<string>;
+var
+  i: Integer;
+begin
+  SetLength(Result, Length(Values));
+  for i := Low(Values) to High(Values) do
+    Result[i] := Values[i];
+end;
+
+class function TArrayHelp.Unique<T>(const Target: TArray<T>): TArray<T>;
+var
+  i: Integer;
+  Hash: TDictionary<T, integer>;
+begin
+  Hash := TDictionary<T, integer>.Create(Length(Target));
+  try
+    for i := Low(Target) to High(Target) do
+      Hash.AddOrSetValue(Target[i], 0);
+    Result := Hash.Keys.ToArray;
+  finally
+    Hash.Free;
+  end;
 end;
 
 class procedure TArrayHelp.Walk<T>(var Target: array of T; Proc: TArrayWalkerWrite<T>; Offset: Integer);
@@ -116,6 +153,21 @@ class function TArrayHelp.Append<T>(var Target: TArray<T>; Count: Integer): Inte
 begin
   Result := Length(Target);
   SetLength(Target, Result + 1);
+end;
+
+class function TArrayHelp.Exclude<T>(const Target, Excluding: TArray<T>): TArray<T>;
+var
+  i, c: Integer;
+begin
+  SetLength(Result, Length(Target));
+  c := 0;
+  for i := Low(Target) to High(Target) do
+    if not TArrayHelp.InArray<T>(Excluding, Target[i]) then
+    begin
+      Result[c] := Target[i];
+      Inc(c);
+    end;
+  SetLength(Result, c);
 end;
 
 class procedure TArrayHelp.Walk<T>(var Target: TArray<T>; Proc: TArrayWalkerWrite<T>; Offset: Integer);
