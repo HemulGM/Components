@@ -331,17 +331,17 @@ end;
 
 function HexToTColor(Value: string): TColor;
 begin
-  Result := RGBToColor(StrToInt('$' + Copy(Value, 1, 2)), StrToInt('$' + Copy(Value, 3, 2)), StrToInt('$' + Copy(Value, 5, 2)));
+  Result := RGBToColor(StrToInt('$' + Copy(Value, 5, 2)), StrToInt('$' + Copy(Value, 3, 2)), StrToInt('$' + Copy(Value, 1, 2)));
 end;
 
 function ColorToHex(Color: TColor): string;
 begin
-  Result := IntToHex(GetRValue(Color), 2) + IntToHex(GetGValue(Color), 2) + IntToHex(GetBValue(Color), 2);
+  Result := IntToHex(GetBValue(Color), 2) + IntToHex(GetGValue(Color), 2) + IntToHex(GetRValue(Color), 2);
 end;
 
 function ColorToHtml(Color: TColor): string;
 begin
-  Result := '#' + ColorToHex(Color);
+  Result := '#' + IntToHex(GetRValue(Color), 2) + IntToHex(GetGValue(Color), 2) + IntToHex(GetBValue(Color), 2);
 end;
 
 function HtmlToColor(Color: string): TColor;

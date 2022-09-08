@@ -3,9 +3,11 @@
 interface
 
 uses
-  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics, Vcl.Controls,
-  Vcl.Forms, Vcl.Dialogs, System.Generics.Collections, Vcl.ValEdit, System.DateUtils, System.Math, Vcl.ComCtrls,
-  Vcl.Imaging.jpeg, Vcl.Grids, Vcl.Imaging.pngimage, Vcl.StdCtrls, Vcl.Mask, Vcl.ExtCtrls, System.Types;
+  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants,
+  System.Classes, Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs,
+  System.Generics.Collections, Vcl.ValEdit, System.DateUtils, System.Math,
+  Vcl.ComCtrls, Vcl.Imaging.jpeg, Vcl.Grids, Vcl.Imaging.pngimage, Vcl.StdCtrls,
+  Vcl.Mask, Vcl.ExtCtrls, System.Types;
 
 function Between(FMin, FValue, FMax: Integer): Boolean;
 
@@ -252,9 +254,12 @@ begin
     try
       FileClose(FileCreate(FileName));
       Mem := TFileStream.Create(FileName, fmOpenWrite);
-      HTTP.HandleRedirects := True;
-      HTTP.Get(URL, Mem);
-      Mem.Free;
+      try
+        HTTP.HandleRedirects := True;
+        HTTP.Get(URL, Mem);
+      finally
+        Mem.Free;
+      end;
       Result := True;
     except
       Result := False;

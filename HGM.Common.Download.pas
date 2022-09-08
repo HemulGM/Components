@@ -52,6 +52,7 @@ type
     class function Get(URL, FileName: string): Boolean; overload;
     class function Get(URL: string): TMemoryStream; overload;
     class function GetText(URL: string; var Text: string): Boolean; overload;
+    class function GetText(URL: string): string; overload;
     class function Post(URL: string; Stream: TStream; Response: TStream = nil): Boolean; overload;
     class function PostJson(URL, Json: string; var Text: string): Boolean; overload;
     class function PostJson(URL, Json: string; Stream: TStream): Boolean; overload;
@@ -125,6 +126,19 @@ begin
     end;
   except
     Result := False;
+  end;
+end;
+
+class function TDownload.GetText(URL: string): string;
+var
+  Stream: TStringStream;
+begin
+  Stream := TStringStream.Create;
+  try
+    if Get(URL, Stream) then
+      Result := Stream.DataString;
+  finally
+    Stream.Free;
   end;
 end;
 
