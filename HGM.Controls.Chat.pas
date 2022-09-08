@@ -3,8 +3,9 @@ unit HGM.Controls.Chat;
 interface
 
 uses
-  Winapi.Messages, Winapi.Windows, System.SysUtils, System.Classes, System.Contnrs, System.Types, System.UITypes,
-  Vcl.Controls, Vcl.Forms, Vcl.Menus, Vcl.Graphics, Vcl.StdCtrls, Vcl.GraphUtil, Vcl.ImgList, Vcl.Themes,
+  Winapi.Messages, Winapi.Windows, System.SysUtils, System.Classes,
+  System.Contnrs, System.Types, System.UITypes, Vcl.Controls, Vcl.Forms,
+  Vcl.Menus, Vcl.Graphics, Vcl.StdCtrls, Vcl.GraphUtil, Vcl.ImgList, Vcl.Themes,
   Winapi.ShellAPI, System.Generics.Collections, HGM.Common, Vcl.Dialogs;
 
 type
@@ -151,6 +152,7 @@ type
     FOnPaint: TNotifyEvent;
     FUpdateCount: Integer;
     FOnListEnd: TNotifyEvent;
+    FShowDownButton: Boolean;
     function GetItem(Index: Integer): TChatItem;
     procedure SetItem(Index: Integer; const Value: TChatItem);
     procedure SetItems(const Value: TChatItems);
@@ -187,6 +189,9 @@ type
     procedure SetRevertAdding(const Value: Boolean);
     procedure SetOnPaint(const Value: TNotifyEvent);
     procedure SetOnListEnd(const Value: TNotifyEvent);
+    function NeedDrawDownButton: Boolean;
+    function GetShowDownButton: Boolean;
+    procedure SetShowDownButton(const Value: Boolean);
   protected
     procedure CreateParams(var Params: TCreateParams); override;
     procedure Paint; override;
@@ -221,6 +226,7 @@ type
     property RevertAdding: Boolean read FRevertAdding write SetRevertAdding;
     property OnPaint: TNotifyEvent read FOnPaint write SetOnPaint;
     property OnListEnd: TNotifyEvent read FOnListEnd write SetOnListEnd;
+    property ShowDownButton: Boolean read GetShowDownButton write SetShowDownButton;
   end;
 
   ThChat = class(ThCustomChat)
@@ -253,6 +259,7 @@ type
     property BorderWidth;
     property PaddingSize;
     property ImageMargin;
+    property ShowDownButton default False;
   end;
 
 procedure Register;
@@ -321,6 +328,8 @@ begin
   OnMouseUp := FOnMouseUp;
   OnMouseEnter := FOnMouseEnter;
   OnMouseLeave := FOnMouseLeave;
+
+  FShowDownButton := False;
 
   FRevertAdding := False;
   FWasEventListEnd := False;
@@ -529,6 +538,11 @@ begin
   Result := FItems[Index];
 end;
 
+function ThCustomChat.GetShowDownButton: Boolean;
+begin
+  Result := FShowDownButton;
+end;
+
 procedure ThCustomChat.NeedRepaint;
 begin
   if FUpdateCount <= 0 then
@@ -726,7 +740,7 @@ begin
       end;
     end;
 
-    if FShowingDownButton then
+    if NeedDrawDownButton then
     begin
       Rect := ClientRect;
       FDownButtonRect := TRect.Create(TPoint.Create(Rect.Right - 100, Rect.Bottom - 100), 40, 40);
@@ -737,6 +751,11 @@ begin
     TextOut(0, 40, FPaintCounter.ToString);  }
   end;
   EndPaint(Handle, lpPaint);
+end;
+
+function ThCustomChat.NeedDrawDownButton: Boolean;
+begin
+  Result := FShowDownButton and FShowingDownButton;
 end;
 
 procedure ThCustomChat.Reset;
@@ -923,6 +942,12 @@ end;
 procedure ThCustomChat.SetScrollBarVisible(const Value: Boolean);
 begin
   FScrollBarVisible := Value;
+  NeedRepaint;
+end;
+
+procedure ThCustomChat.SetShowDownButton(const Value: Boolean);
+begin
+  FShowDownButton := Value;
   NeedRepaint;
 end;
 

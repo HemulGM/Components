@@ -2,8 +2,8 @@ object Form3: TForm3
   Left = 0
   Top = 0
   Caption = 'Form3'
-  ClientHeight = 505
-  ClientWidth = 735
+  ClientHeight = 643
+  ClientWidth = 819
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -16,21 +16,22 @@ object Form3: TForm3
   object hChat1: ThChat
     Left = 0
     Top = 49
-    Width = 735
-    Height = 456
+    Width = 819
+    Height = 594
     Align = alClient
-    ExplicitTop = 136
-    ExplicitHeight = 369
+    ExplicitLeft = -24
+    ExplicitTop = 33
   end
   object Panel1: TPanel
     Left = 0
     Top = 0
-    Width = 735
+    Width = 819
     Height = 49
     Align = alTop
     BevelOuter = bvNone
     TabOrder = 1
     ExplicitTop = -6
+    ExplicitWidth = 735
     object ButtonLAdd100: TButton
       Left = 75
       Top = 0
@@ -58,7 +59,7 @@ object Form3: TForm3
       ExplicitHeight = 25
     end
     object ButtonRAdd1: TButton
-      Left = 585
+      Left = 669
       Top = 0
       Width = 75
       Height = 49
@@ -71,7 +72,7 @@ object Form3: TForm3
       ExplicitHeight = 25
     end
     object ButtonRAdd100: TButton
-      Left = 660
+      Left = 744
       Top = 0
       Width = 75
       Height = 49
