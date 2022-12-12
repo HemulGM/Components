@@ -3,7 +3,7 @@ unit HGM.Common.Download;
 interface
 
 uses
-  System.SysUtils, System.Classes, System.Net.HttpClient;
+  System.SysUtils, System.Classes, System.Net.HttpClient, System.JSON;
 
 type
   TDownload = class;
@@ -37,8 +37,8 @@ type
     procedure Execute; override;
   public
     constructor Create(CreateSuspended: Boolean = True); overload;
-    constructor CreateAndStart(AUrl, AFileName: string; OnReceiveProc: TOnReceiveRef = nil; OnFinishProc: TOnFinishRef = nil); overload;
-    constructor CreateAndStart(AUrl: string; OnReceiveProc: TOnReceiveRef = nil; OnFinishProc: TOnFinishRefStream = nil); overload;
+    constructor CreateAndStart(const AUrl, AFileName: string; OnReceiveProc: TOnReceiveRef = nil; OnFinishProc: TOnFinishRef = nil); overload;
+    constructor CreateAndStart(const AUrl: string; OnReceiveProc: TOnReceiveRef = nil; OnFinishProc: TOnFinishRefStream = nil); overload;
     destructor Destroy; override;
     property URL: string read FURL write FURL;
     property FileName: string read FFileName write FFileName;
@@ -47,16 +47,19 @@ type
     property OnReceive: TOnReceiveRef read FOnReceive write FOnReceive;
     property OnFinish: TOnFinishRef read FOnFinish write FOnFinish;
     property OnFinishStream: TOnFinishRefStream read FOnFinishStream write SetOnFinishStream;
-    class function GetRequest(URL: string): Boolean; overload;
-    class function Get(URL: string; Stream: TStream): Boolean; overload;
-    class function Get(URL, FileName: string): Boolean; overload;
-    class function Get(URL: string): TMemoryStream; overload;
-    class function GetText(URL: string; var Text: string): Boolean; overload;
-    class function Post(URL: string; Stream: TStream; Response: TStream = nil): Boolean; overload;
-    class function PostJson(URL, Json: string; var Text: string): Boolean; overload;
-    class function PostJson(URL, Json: string; Stream: TStream): Boolean; overload;
-    class function PostFile(URL: string; const Field, FileName: TArray<string>; Stream: TArray<TStream>; Response: TStream = nil): Boolean; overload; static;
-    class function PostFile(URL: string; const Field, FileName: TArray<string>; Response: TStream = nil): Boolean; overload; static;
+    class function GetRequest(const URL: string): Boolean; overload;
+    class function Get(const URL: string; Response: TStream): Boolean; overload;
+    class function Get(const URL, FileName: string): Boolean; overload;
+    class function Get(const URL: string): TMemoryStream; overload;
+    class function GetText(const URL: string; var Response: string): Boolean; overload;
+    class function Post(const URL: string; Stream: TStream; Response: TStream = nil): Boolean; overload;
+    class function PostJson(const URL, Json: string; var Response: string): Boolean; overload;
+    class function PostJson(const URL, Json: string; Response: TStream): Boolean; overload;
+    class function PostJson(const URL: string; Json: TJsonValue; var Response: string): Boolean; overload;
+    class function PostJson(const URL: string; Json: TJsonValue; Response: TStream): Boolean; overload;
+    class function PostFile(const URL: string; const Field, FileName: TArray<string>; Stream: TArray<TStream>; Response: TStream = nil): Boolean; overload; static;
+    class function PostFile(const URL: string; const Field, FileName: TArray<string>; Response: TStream = nil): Boolean; overload; static;
+    class function PostFile(const URL: string; const FileName: string; Response: TStream = nil): Boolean; overload; static;
   end;
 
 implementation
@@ -73,7 +76,7 @@ begin
   FHTTP.OnReceiveData := InternalOnReceive;
 end;
 
-constructor TDownload.CreateAndStart(AUrl, AFileName: string; OnReceiveProc: TOnReceiveRef; OnFinishProc: TOnFinishRef);
+constructor TDownload.CreateAndStart(const AUrl, AFileName: string; OnReceiveProc: TOnReceiveRef; OnFinishProc: TOnFinishRef);
 begin
   inherited Create(False);
   FreeOnTerminate := True;
@@ -86,20 +89,20 @@ begin
   FOnReceive := OnReceiveProc;
 end;
 
-class function TDownload.Get(URL: string; Stream: TStream): Boolean;
+class function TDownload.Get(const URL: string; Response: TStream): Boolean;
 var
   HTTP: THTTPClient;
 begin
   Result := False;
-  Stream.Size := 0;
+  Response.Size := 0;
   if URL.IsEmpty then
     Exit;
   HTTP := THTTPClient.Create;
   HTTP.HandleRedirects := True;
   try
     try
-      Result := (HTTP.Get(URL, Stream).StatusCode = 200) and (Stream.Size > 0);
-      Stream.Position := 0;
+      Result := (HTTP.Get(URL, Response).StatusCode = 200) and (Response.Size > 0);
+      Response.Position := 0;
     finally
       HTTP.Free;
     end;
@@ -108,7 +111,7 @@ begin
   end;
 end;
 
-class function TDownload.GetRequest(URL: string): Boolean;
+class function TDownload.GetRequest(const URL: string): Boolean;
 var
   HTTP: THTTPClient;
 begin
@@ -128,7 +131,7 @@ begin
   end;
 end;
 
-class function TDownload.Post(URL: string; Stream, Response: TStream): Boolean;
+class function TDownload.Post(const URL: string; Stream, Response: TStream): Boolean;
 var
   HTTP: THTTPClient;
 begin
@@ -151,7 +154,7 @@ begin
   end;
 end;
 
-class function TDownload.PostFile(URL: string; const Field, FileName: TArray<string>; Stream: TArray<TStream>; Response: TStream): Boolean;
+class function TDownload.PostFile(const URL: string; const Field, FileName: TArray<string>; Stream: TArray<TStream>; Response: TStream): Boolean;
 var
   HTTP: THTTPClient;
   Form: TMultipartFormData;
@@ -179,7 +182,7 @@ begin
   end;
 end;
 
-class function TDownload.PostFile(URL: string; const Field, FileName: TArray<string>; Response: TStream): Boolean;
+class function TDownload.PostFile(const URL: string; const Field, FileName: TArray<string>; Response: TStream): Boolean;
 var
   HTTP: THTTPClient;
   Form: TMultipartFormData;
@@ -207,7 +210,17 @@ begin
   end;
 end;
 
-class function TDownload.GetText(URL: string; var Text: string): Boolean;
+class function TDownload.PostJson(const URL: string; Json: TJsonValue; Response: TStream): Boolean;
+begin
+  Result := PostJson(URL, Json.ToJSON, Response);
+end;
+
+class function TDownload.PostJson(const URL: string; Json: TJsonValue; var Response: string): Boolean;
+begin
+  Result := PostJson(URL, Json.ToJSON, Response);
+end;
+
+class function TDownload.GetText(const URL: string; var Response: string): Boolean;
 var
   Stream: TStringStream;
 begin
@@ -216,7 +229,7 @@ begin
   try
     if Get(URL, Stream) then
     begin
-      Text := Stream.DataString;
+      Response := Stream.DataString;
       Result := True;
     end;
   finally
@@ -224,7 +237,7 @@ begin
   end;
 end;
 
-class function TDownload.PostJson(URL, Json: string; Stream: TStream): Boolean;
+class function TDownload.PostJson(const URL, Json: string; Response: TStream): Boolean;
 var
   HTTP: THTTPClient;
   Body: TStringStream;
@@ -240,7 +253,7 @@ begin
     try
       Body.WriteString(Json);
       Body.Position := 0;
-      Result := HTTP.Post(URL, Body, Stream).StatusCode = 200;
+      Result := HTTP.Post(URL, Body, Response).StatusCode = 200;
     except
       Result := False;
     end;
@@ -250,7 +263,36 @@ begin
   end;
 end;
 
-class function TDownload.PostJson(URL, Json: string; var Text: string): Boolean;
+class function TDownload.PostFile(const URL, FileName: string; Response: TStream): Boolean;
+var
+  HTTP: THTTPClient;
+  Body: TFileStream;
+  LKind: TMimeTypes.TKind;
+  LType: string;
+begin
+  Result := False;
+  if URL.IsEmpty then
+    Exit;
+  HTTP := THTTPClient.Create;
+  Body := TFileStream.Create(FileName, fmShareDenyWrite);
+  try
+    HTTP.HandleRedirects := True;
+    TMimeTypes.Default.GetFileInfo(FileName, LType, LKind);
+    HTTP.ContentType := LType;
+    try
+      Body.Position := 0;
+      Result := HTTP.Post(URL, Body, Response).StatusCode = 200;
+    except
+      Result := False;
+    end;
+  finally
+    Body.Free;
+    HTTP.Free;
+  end;
+
+end;
+
+class function TDownload.PostJson(const URL, Json: string; var Response: string): Boolean;
 var
   Stream: TStringStream;
 begin
@@ -258,13 +300,13 @@ begin
   try
     Result := PostJson(URL, Json, Stream);
     if Result then
-      Text := Stream.DataString;
+      Response := Stream.DataString;
   finally
     Stream.Free;
   end;
 end;
 
-class function TDownload.Get(URL: string): TMemoryStream;
+class function TDownload.Get(const URL: string): TMemoryStream;
 var
   HTTP: THTTPClient;
 begin
@@ -285,7 +327,7 @@ begin
   end;
 end;
 
-class function TDownload.Get(URL: string; FileName: string): Boolean;
+class function TDownload.Get(const URL, FileName: string): Boolean;
 var
   HTTP: THTTPClient;
   FS: TFileStream;
@@ -308,7 +350,7 @@ begin
   end;
 end;
 
-constructor TDownload.CreateAndStart(AUrl: string; OnReceiveProc: TOnReceiveRef; OnFinishProc: TOnFinishRefStream);
+constructor TDownload.CreateAndStart(const AUrl: string; OnReceiveProc: TOnReceiveRef; OnFinishProc: TOnFinishRefStream);
 begin
   inherited Create(False);
   FreeOnTerminate := True;
