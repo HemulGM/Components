@@ -25,7 +25,19 @@ function HumanTime(Value: TTime): string;
 
 function HumanDate(Value: TDate): string;
 
+function SecondsToMinFormat(const Value: Int64): string;
+
 implementation
+
+uses
+  System.StrUtils;
+
+function SecondsToMinFormat(const Value: Int64): string;
+begin
+  var Mins := Value div SecsPerMin;
+  var Secs := Value - (Mins * SecsPerMin);
+  Result := Format(IfThen(Value < 0, '-') + '%d:%.2d', [Abs(Mins), Abs(Secs)]);
+end;
 
 function HumanTime(Value: TTime): string;
 var

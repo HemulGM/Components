@@ -109,9 +109,17 @@ function ColorToHex(Color: TColor): string;
 
 function ColorToHtml(Color: TColor): string;
 
+function ColorToFMXColor(Color: TColor): string;
+
+function FMXColorToColor(Color: string): TColor;
+
 function HtmlToColor(Color: string): TColor;
 
 function ColorToString(Color: TColor): string;
+
+function InvertColor(const Color: TColor): TColor;
+
+function VisibilityColor(const Color: TColor): TColor;
 
 implementation
 
@@ -120,6 +128,22 @@ uses
   Winapi.Windows,
   {$ENDIF}
   System.Math;
+
+function VisibilityColor(const Color: TColor): TColor;
+begin
+  Result := RGBToColor(
+    IfThen(GetRValue(Color) > $40, $00, $FF),
+    IfThen(GetGValue(Color) > $40, $00, $FF),
+    IfThen(GetBValue(Color) > $40, $00, $FF));
+end;
+
+function InvertColor(const Color: TColor): TColor;
+begin
+  Result := RGBToColor(
+    255 - GetRValue(Color),
+    255 - GetGValue(Color),
+    255 - GetBValue(Color));
+end;
 
 function ColorToString(Color: TColor): string;
 begin
@@ -344,9 +368,19 @@ begin
   Result := '#' + IntToHex(GetRValue(Color), 2) + IntToHex(GetGValue(Color), 2) + IntToHex(GetBValue(Color), 2);
 end;
 
+function ColorToFMXColor(Color: TColor): string;
+begin
+  Result := '#FF' + IntToHex(GetRValue(Color), 2) + IntToHex(GetGValue(Color), 2) + IntToHex(GetBValue(Color), 2);
+end;
+
 function HtmlToColor(Color: string): TColor;
 begin
   Result := StringToColor('$' + Copy(Color, 6, 2) + Copy(Color, 4, 2) + Copy(Color, 2, 2));
+end;
+
+function FMXColorToColor(Color: string): TColor;
+begin
+  Result := StringToColor('$' + Copy(Color, 8, 2) + Copy(Color, 6, 2) + Copy(Color, 4, 2));
 end;
 
 { TRGB }
