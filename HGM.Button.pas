@@ -3,8 +3,9 @@ unit HGM.Button;
 interface
 
 uses
-  Winapi.Windows, Winapi.Messages, System.Classes, Vcl.Graphics, Vcl.Controls, Vcl.StdCtrls, System.Generics.Collections,
-  Vcl.ExtCtrls, System.UITypes, System.Types, HGM.Controls.VirtualTable, Vcl.Direct2D, Winapi.D2D1, HGM.Common,
+  Winapi.Windows, Winapi.Messages, System.Classes, Vcl.Graphics, Vcl.Controls,
+  Vcl.StdCtrls, System.Generics.Collections, Vcl.ExtCtrls, System.UITypes,
+  System.Types, HGM.Controls.VirtualTable, Vcl.Direct2D, Winapi.D2D1, HGM.Common,
   HGM.Common.Utils, Vcl.Menus, System.SysUtils;
 
 type
@@ -72,6 +73,7 @@ type
     FShowCaption: Boolean;
     FSubTextColorBorder: TColor;
     FSubTextColorBorderDepth: Integer;
+    FBackgroundColor: TColor;
     procedure FOnDblClick(Sender: TObject);
     function FGetTextWidth: Integer;
     procedure SetLabel(const Value: string);
@@ -127,6 +129,7 @@ type
     procedure SetOnMouseLeave(const Value: TNotifyEvent);
     procedure SetSubTextColorBorder(const Value: TColor);
     procedure SetSubTextColorBorderDepth(const Value: Integer);
+    procedure SetBackgroundColor(const Value: TColor);
     property ButtonState: TButtonFlatState read FButtonState write SetButtonState;
     property StyledColor: TColor read FStyledColor write SetStyledColor;
     property FromColor: TColor read FFromColor write FFromColor;
@@ -140,6 +143,7 @@ type
     procedure TimedText(Text: string; Delay: Cardinal);
     procedure ShowPopup;
     procedure Click; override;
+    property GetTextWidth: Integer read FGetTextWidth;
   published
     property Align;
     property Anchors;
@@ -157,6 +161,7 @@ type
     property EllipseRectVertical: Boolean read FEllipseRectVertical write SetEllipseRectVertical default False;
     property Font;
     property Flat: Boolean read FFlat write SetFlat default True;
+    property BackgroundColor: TColor read FBackgroundColor write SetBackgroundColor default clNone;
     property BorderColor: TColor read FBorderColor write SetBorderColor default clNone;
     property BorderWidth: Integer read FBorderWidth write SetBorderWidth default 1;
     property FontOver: TFont read FFontOver write SetFontOver;
@@ -209,7 +214,6 @@ type
     property VisibleSubText: Boolean read FVisibleSubText write SetVisibleSubText default False;
     property Touch;
     property Visible;
-    property GetTextWidth: Integer read FGetTextWidth;
     property AutoClick: Cardinal read FAutoClick write SetAutoClick default 0;
     property DblClickTooClick: Boolean read FDblClickTooClick write SetDblClickTooClick default False;
     property Popup: TPopupMenu read FPopup write SetPopup;
@@ -343,6 +347,7 @@ end;
 
 procedure TButtonFlat.TimedText(Text: string; Delay: Cardinal);
 begin
+  Enabled := False;
   FTimedText := Text;
   FDrawTimedText := True;
   FTimerTT.Interval := Delay;
@@ -403,6 +408,7 @@ begin
   OnDblClick := FOnDblClick;
   FDblClickTooClick := False;
   FAutoClick := 0;
+  FBackgroundColor := clNone;
   FTimerAnimate := TTimer.Create(nil);
   FTimerAnimate.Interval := 10;
   FTimerAnimate.Enabled := False;
@@ -571,6 +577,7 @@ end;
 procedure TButtonFlat.OnTimerTTTime(Sender: TObject);
 begin
  //if csFreeNotification in ComponentState then Exit;
+  Enabled := True;
   FDrawTimedText := False;
   FTimerTT.Enabled := False;
   Repaint;
@@ -638,10 +645,18 @@ begin
       if Assigned(Parent) and (Parent is TControl) then
       begin
         //TColorControl(Parent).ParentColor
-        Brush.Color := GetColor(Parent);
+        if FBackgroundColor = clNone then
+          Brush.Color := GetColor(Parent)
+        else
+          Brush.Color := FBackgroundColor;
       end
       else
-        Brush.Color := ColorNormal;
+      begin
+        if FBackgroundColor = clNone then
+          Brush.Color := ColorNormal
+        else
+          Brush.Color := FBackgroundColor;
+      end;
       FillRect(ClientRect);
       if Enabled then
         Brush.Color := StyledColor
@@ -894,6 +909,11 @@ procedure TButtonFlat.SetAutoClick(const Value: Cardinal);
 begin
   FAutoClick := Value;
   FTimerAutoClick.Interval := FAutoClick;
+end;
+
+procedure TButtonFlat.SetBackgroundColor(const Value: TColor);
+begin
+  FBackgroundColor := Value;
 end;
 
 procedure TButtonFlat.SetBorderColor(const Value: TColor);

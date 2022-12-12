@@ -131,6 +131,19 @@ begin
   end;
 end;
 
+class function TDownload.GetText(const URL: string): string;
+var
+  Stream: TStringStream;
+begin
+  Stream := TStringStream.Create;
+  try
+    if Get(URL, Stream) then
+      Result := Stream.DataString;
+  finally
+    Stream.Free;
+  end;
+end;
+
 class function TDownload.Post(const URL: string; Stream, Response: TStream): Boolean;
 var
   HTTP: THTTPClient;
