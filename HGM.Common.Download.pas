@@ -52,6 +52,7 @@ type
     class function Get(const URL, FileName: string): Boolean; overload;
     class function Get(const URL: string): TMemoryStream; overload;
     class function GetText(const URL: string; var Response: string): Boolean; overload;
+    class function GetText(const URL: string): string; overload;
     class function Post(const URL: string; Stream: TStream; Response: TStream = nil): Boolean; overload;
     class function PostJson(const URL, Json: string; var Response: string): Boolean; overload;
     class function PostJson(const URL, Json: string; Response: TStream): Boolean; overload;
