@@ -19,13 +19,15 @@ type
 
 function HumanDateTime(Value: TDateTime; ShowTime: Boolean = True; WeekDay: Boolean = False): string;
 
-function SecondsToTime(Value: Integer): TTime;
+function SecondsToTime(Value: Double): TTime;
 
 function HumanTime(Value: TTime): string;
 
 function HumanDate(Value: TDate): string;
 
 function SecondsToMinFormat(const Value: Int64): string;
+
+function MSecondsToMinFormat(const Value: Int64): string;
 
 implementation
 
@@ -37,6 +39,18 @@ begin
   var Mins := Value div SecsPerMin;
   var Secs := Value - (Mins * SecsPerMin);
   Result := Format(IfThen(Value < 0, '-') + '%d:%.2d', [Abs(Mins), Abs(Secs)]);
+end;
+
+function MSecondsToMinFormat(const Value: Int64): string;
+begin
+  var Secs := Value div (MSecsPerSec);
+
+  var MSecs := Value - (Secs * MSecsPerSec);
+
+  var Mins := Secs div (SecsPerMin);
+  Secs :=  Secs - (Mins * SecsPerMin);
+
+  Result := Format(IfThen(Value < 0, '-') + '%d:%.2d.%.3d', [Abs(Mins), Abs(Secs), Abs(MSecs)]);
 end;
 
 function HumanTime(Value: TTime): string;
@@ -63,7 +77,7 @@ begin
     Result := Result + D.ToString + ' ä. ';
 end;
 
-function SecondsToTime(Value: Integer): TTime;
+function SecondsToTime(Value: Double): TTime;
 begin
   Result := Value / SecsPerDay;
 end;
