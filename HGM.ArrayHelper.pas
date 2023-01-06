@@ -45,7 +45,8 @@ var
 begin
   {$IFNDEF AUTOREFCOUNT}
   for Item in Target do
-    Item.Free;
+    if Assigned(Item) then
+      Item.Free;
   SetLength(Target, 0);
   {$ENDIF}
 end;
@@ -242,7 +243,8 @@ begin
   {$IFNDEF AUTOREFCOUNT}
   for Items in Target do
     for Item in Items do
-      Item.Free;
+      if Assigned(Item) then
+        Item.Free;
   SetLength(Target, 0);
   {$ENDIF}
 end;
