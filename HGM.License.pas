@@ -6,7 +6,7 @@ uses
   Vcl.Controls, System.Classes, Winapi.Messages, Winapi.Windows, System.SysUtils,
   Vcl.Graphics, Vcl.ExtCtrls, Vcl.Themes, Vcl.Forms, Vcl.ImgList, Vcl.ActnList,
   System.SyncObjs, System.Types, System.UITypes, HGM.Controls.PanelExt,
-  HGM.Common, HGM.WinAPI;
+  HGM.Common;
 
 type
   ThTrueInstance = class(TThread)

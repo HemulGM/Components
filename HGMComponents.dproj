@@ -127,14 +127,8 @@
         <DCCReference Include="HGM.Controls.SpinEdit.pas"/>
         <DCCReference Include="HGM.Controls.VirtualTable.pas"/>
         <DCCReference Include="HGM.Graphics.AnimateControl.pas"/>
-        <DCCReference Include="HGM.TestForm.pas">
-            <Form>FormList</Form>
-        </DCCReference>
         <DCCReference Include="HGM.Tools.Hint.pas"/>
         <DCCReference Include="HGM.AutoTextType.pas"/>
-        <DCCReference Include="HGM.Popup.pas">
-            <Form>FormPopup</Form>
-        </DCCReference>
         <DCCReference Include="HGM.Controls.ColorGrid.pas"/>
         <DCCReference Include="HGM.License.pas"/>
         <DCCReference Include="HGM.Controls.Labels.Base.pas"/>
@@ -142,7 +136,6 @@
         <DCCReference Include="HGM.Controls.ProgressBar.pas"/>
         <DCCReference Include="HGM.Controls.TrackBar.pas"/>
         <DCCReference Include="HGM.Common.Utils.pas"/>
-        <DCCReference Include="HGM.WinAPI.pas"/>
         <BuildConfiguration Include="Debug">
             <Key>Cfg_2</Key>
             <CfgParent>Base</CfgParent>

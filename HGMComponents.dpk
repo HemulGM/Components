@@ -48,19 +48,17 @@ contains
   HGM.Controls.SpinEdit in 'HGM.Controls.SpinEdit.pas',
   HGM.Controls.VirtualTable in 'HGM.Controls.VirtualTable.pas',
   HGM.Graphics.AnimateControl in 'HGM.Graphics.AnimateControl.pas',
-  HGM.TestForm in 'HGM.TestForm.pas' {FormList},
   HGM.Tools.Hint in 'HGM.Tools.Hint.pas',
   HGM.AutoTextType in 'HGM.AutoTextType.pas',
-  HGM.Popup in 'HGM.Popup.pas' {FormPopup},
   HGM.Controls.ColorGrid in 'HGM.Controls.ColorGrid.pas',
   HGM.License in 'HGM.License.pas',
   HGM.Controls.Labels.Base in 'HGM.Controls.Labels.Base.pas',
   HGM.Controls.Chat in 'HGM.Controls.Chat.pas',
   HGM.Controls.ProgressBar in 'HGM.Controls.ProgressBar.pas',
   HGM.Controls.TrackBar in 'HGM.Controls.TrackBar.pas',
-  HGM.Common.Utils in 'HGM.Common.Utils.pas',
-  HGM.WinAPI in 'HGM.WinAPI.pas';
+  HGM.Common.Utils in 'HGM.Common.Utils.pas';
 
 end.
+
 
 
