@@ -32,14 +32,7 @@ package HGMComponents;
 requires
   rtl,
   vcl,
-  xmlrtl,
-  vclimg,
-  VclSmp,
-  IndySystem,
-  IndyProtocols,
-  IndyCore,
-  fmx,
-  PngComponentsD;
+  vclimg;
 
 contains
   HGM.Autorun in 'HGM.Autorun.pas',
@@ -64,7 +57,9 @@ contains
   HGM.Controls.Labels.Base in 'HGM.Controls.Labels.Base.pas',
   HGM.Controls.Chat in 'HGM.Controls.Chat.pas',
   HGM.Controls.ProgressBar in 'HGM.Controls.ProgressBar.pas',
-  HGM.Controls.TrackBar in 'HGM.Controls.TrackBar.pas';
+  HGM.Controls.TrackBar in 'HGM.Controls.TrackBar.pas',
+  HGM.Common.Utils in 'HGM.Common.Utils.pas',
+  HGM.WinAPI in 'HGM.WinAPI.pas';
 
 end.
 
