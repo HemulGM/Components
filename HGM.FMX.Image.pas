@@ -12,6 +12,9 @@ type
     Owner: TComponent;
     Bitmap: TBitmap;
     Url: string;
+    Task: ITask;
+    OnDone: TProc<Boolean>;
+    procedure Done(const Success: Boolean);
   end;
 
   TObjectOwner = class(TComponent)
@@ -25,26 +28,33 @@ type
       FCallbackList: TThreadList<TCallbackObject>;
       FObjectOwner: TComponent;
       FClient: THTTPClient;
+      FCachePath: string;
+    class function UrlToCacheName(const Url: string): string;
     class procedure AddCallback(Callback: TCallbackObject);
     class procedure Ready(const Url: string; Stream: TStream);
     class function Get(const URL: string): TMemoryStream; static;
-    class function GetClient: THTTPClient;
+    class function GetClient: THTTPClient; static;
+    class procedure SetCachePath(const Value: string); static;
+    class function FindCached(const Url: string; out Stream: TMemoryStream): Boolean;
+    class procedure AddCache(const Url: string; Stream: TMemoryStream);
   public
     class procedure RemoveCallback(const AOwner: TComponent);
     procedure LoadFromUrl(const Url: string; UseCache: Boolean = True);
-    procedure LoadFromUrlAsync(AOwner: TComponent; const Url: string; Cache: Boolean = True); overload;
+    procedure LoadFromUrlAsync(AOwner: TComponent; const Url: string; Cache: Boolean = True; OnDone: TProc<Boolean> = nil); overload;
     procedure LoadFromResource(ResName: string); overload;
     procedure LoadFromResource(Instanse: NativeUInt; ResName: string); overload;
     procedure SaveToStream(Stream: TStream; const Ext: string); overload;
     procedure SaveToFile(const AFileName: string; const Ext: string); overload;
     class function CreateFromUrl(const Url: string; UseCache: Boolean = True): TBitmap;
     class function CreateFromResource(ResName: string; Url: string = ''): TBitmap;
+    class property Client: THTTPClient read GetClient;
+    class property CachePath: string read FCachePath write SetCachePath;
   end;
 
 implementation
 
 uses
-  FMX.Surfaces, FMX.Types, FMX.Consts;
+  FMX.Surfaces, FMX.Types, FMX.Consts, System.Hash, System.IOUtils;
 
 { TBitmapHelper }
 
@@ -102,7 +112,12 @@ begin
   Result := TMemoryStream.Create;
   try
     if (GetClient.Get(URL, Result).StatusCode = 200) and (Result.Size > 0) then
-      Result.Position := 0;
+      Result.Position := 0
+    else
+    begin
+      Result.Free;
+      Result := nil;
+    end;
   except
     Result.Free;
     Result := nil;
@@ -119,20 +134,58 @@ begin
   Result := FClient;
 end;
 
-procedure TBitmapHelper.LoadFromUrlAsync(AOwner: TComponent; const Url: string; Cache: Boolean);
+class function TBitmapHelper.FindCached(const Url: string; out Stream: TMemoryStream): Boolean;
 begin
+  Result := False;
+  Stream := nil;
+  var FileName := TPath.Combine(FCachePath, UrlToCacheName(Url));
+  if TFile.Exists(FileName) then
+  try
+    Stream := TMemoryStream.Create;
+    Stream.LoadFromFile(FileName);
+    Result := True;
+  except
+    Stream.Free;
+    Stream := nil;
+  end;
+end;
+
+class procedure TBitmapHelper.AddCache(const Url: string; Stream: TMemoryStream);
+begin
+  var FileName := TPath.Combine(FCachePath, UrlToCacheName(Url));
+  try
+    if TFile.Exists(FileName) then
+      TFile.Delete(FileName);
+  except
+    Exit;
+  end;
+  try
+    Stream.SaveToFile(FileName);
+  except
+    //
+  end;
+end;
+
+procedure TBitmapHelper.LoadFromUrlAsync(AOwner: TComponent; const Url: string; Cache: Boolean; OnDone: TProc<Boolean>);
+begin
+  if AOwner = nil then
+    raise Exception.Create('You must specify an owner (responsible) who will ensure that the Bitmap is not destroyed before the owner');
   var Callback: TCallbackObject;
   Callback.Owner := AOwner;
   Callback.Bitmap := Self;
   Callback.Url := Url;
-  AddCallback(Callback);
-  TTask.Run(
+  Callback.OnDone := OnDone;
+  Callback.Task := TTask.Run(
     procedure
     begin
       try
-        var Mem := Get(Url);
-        //if Cache then
-        //  AddCache(Url, Mem);
+        var Mem: TMemoryStream;
+        if not FindCached(Url, Mem) then
+        begin
+          Mem := Get(Url);
+          if Cache and Assigned(Mem) then
+            AddCache(Url, Mem);
+        end;
         TThread.ForceQueue(nil,
           procedure
           begin
@@ -146,48 +199,41 @@ begin
           end);
       end;
     end, Pool);
+  AddCallback(Callback);
 end;
 
 class procedure TBitmapHelper.Ready(const Url: string; Stream: TStream);
 begin
-  if Assigned(Stream) then
   try
     var List := FCallbackList.LockList;
     try
       for var i := List.Count - 1 downto 0 do
-        if List[i].Url = Url then
-        begin
+      begin
+        var Item := List[i];
+        if Item.Url <> Url then
+          Continue;
+        var Success: Boolean := False;
+        try
+          if Assigned(Stream) then
           try
             Stream.Position := 0;
-            List[i].Bitmap.LoadFromStream(Stream);
+            Item.Bitmap.LoadFromStream(Stream);
+            Success := True;
           except
             //
-          end;
-          List.Delete(i);
+          end
+          else
+            Item.Bitmap.Assign(nil);
+        finally
+          Item.Done(Success);
         end;
+        List.Delete(i);
+      end;
     finally
       FCallbackList.UnlockList;
     end;
   finally
     Stream.Free;
-  end
-  else
-  begin
-    var List := FCallbackList.LockList;
-    try
-      for var i := List.Count - 1 downto 0 do
-        if List[i].Url = Url then
-        begin
-          try
-            List[i].Bitmap.Assign(nil);
-          except
-            //
-          end;
-          List.Delete(i);
-        end;
-    finally
-      FCallbackList.UnlockList;
-    end;
   end;
 end;
 
@@ -197,7 +243,10 @@ begin
   try
     for var i := List.Count - 1 downto 0 do
       if List[i].Owner = AOwner then
+      begin
+        List[i].Task.Cancel;
         List.Delete(i);
+      end;
   finally
     FCallbackList.UnlockList;
   end;
@@ -234,6 +283,16 @@ begin
   end;
 end;
 
+class procedure TBitmapHelper.SetCachePath(const Value: string);
+begin
+  FCachePath := Value;
+end;
+
+class function TBitmapHelper.UrlToCacheName(const Url: string): string;
+begin
+  Result := THashMD5.GetHashString(Url);
+end;
+
 { TObjectOwner }
 
 procedure TObjectOwner.Notification(AComponent: TComponent; Operation: TOperation);
@@ -245,9 +304,24 @@ begin
   try
     for var i := List.Count - 1 downto 0 do
       if List[i].Owner = AComponent then
+      begin
+        List[i].Task.Cancel;
         List.Delete(i);
+      end;
   finally
     TBitmap.FCallbackList.UnlockList;
+  end;
+end;
+
+{ TCallbackObject }
+
+procedure TCallbackObject.Done(const Success: Boolean);
+begin
+  if Assigned(OnDone) then
+  try
+    OnDone(Success);
+  except
+    //
   end;
 end;
 
