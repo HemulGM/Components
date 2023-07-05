@@ -39,8 +39,10 @@ type
     class procedure AddCache(const Url: string; Stream: TMemoryStream);
   public
     class procedure RemoveCallback(const AOwner: TComponent);
+    class procedure CancelAll;
     procedure LoadFromUrl(const Url: string; UseCache: Boolean = True);
     procedure LoadFromUrlAsync(AOwner: TComponent; const Url: string; Cache: Boolean = True; OnDone: TProc<Boolean> = nil); overload;
+    procedure LoadFromUrlAsyncCF(AOwner: TComponent; const Url: string; Cache: Boolean = True; OnDone: TProc<Boolean> = nil); overload;
     procedure LoadFromResource(ResName: string); overload;
     procedure LoadFromResource(Instanse: NativeUInt; ResName: string); overload;
     procedure SaveToStream(Stream: TStream; const Ext: string); overload;
@@ -62,6 +64,18 @@ class procedure TBitmapHelper.AddCallback(Callback: TCallbackObject);
 begin
   Callback.Owner.FreeNotification(FObjectOwner);
   FCallbackList.Add(Callback);
+end;
+
+class procedure TBitmapHelper.CancelAll;
+begin
+  var List := FCallbackList.LockList;
+  try
+    for var i := List.Count - 1 downto 0 do
+      List[i].Task.Cancel;
+    List.Clear;
+  finally
+    FCallbackList.UnlockList;
+  end;
 end;
 
 class function TBitmapHelper.CreateFromResource(ResName, Url: string): TBitmap;
@@ -200,6 +214,19 @@ begin
       end;
     end, Pool);
   AddCallback(Callback);
+end;
+
+procedure TBitmapHelper.LoadFromUrlAsyncCF(AOwner: TComponent; const Url: string; Cache: Boolean; OnDone: TProc<Boolean>);
+begin
+  var Stream: TMemoryStream;
+  if FindCached(Url, Stream) then
+  try
+    LoadFromStream(Stream);
+    Exit;
+  finally
+    Stream.Free;
+  end;
+  LoadFromUrlAsync(AOwner, Url, Cache, OnDone);
 end;
 
 class procedure TBitmapHelper.Ready(const Url: string; Stream: TStream);
