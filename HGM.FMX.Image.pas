@@ -35,14 +35,18 @@ type
     class function Get(const URL: string): TMemoryStream; static;
     class function GetClient: THTTPClient; static;
     class procedure SetCachePath(const Value: string); static;
-    class function FindCached(const Url: string; out Stream: TMemoryStream): Boolean;
+    class function FindCached(const Url: string; out Stream: TMemoryStream): Boolean; static;
     class procedure AddCache(const Url: string; Stream: TMemoryStream);
+    class procedure AddCacheFileName(const FileName: string; Stream: TMemoryStream);
+    class function FindCachedFileName(const FileName: string; out Stream: TMemoryStream): Boolean; static;
   public
     class procedure RemoveCallback(const AOwner: TComponent);
     class procedure CancelAll;
     procedure LoadFromUrl(const Url: string; UseCache: Boolean = True);
     procedure LoadFromUrlAsync(AOwner: TComponent; const Url: string; Cache: Boolean = True; OnDone: TProc<Boolean> = nil); overload;
+    // Cache first check
     procedure LoadFromUrlAsyncCF(AOwner: TComponent; const Url: string; Cache: Boolean = True; OnDone: TProc<Boolean> = nil); overload;
+    procedure LoadFromUrlAsyncCF(AOwner: TComponent; const Url, CachedFileName: string; OnDone: TProc<Boolean> = nil); overload;
     procedure LoadFromResource(ResName: string); overload;
     procedure LoadFromResource(Instanse: NativeUInt; ResName: string); overload;
     procedure SaveToStream(Stream: TStream; const Ext: string); overload;
@@ -101,6 +105,7 @@ var
 begin
   Mem := TResourceStream.Create(Instanse, ResName, RT_RCDATA);
   try
+    Mem.Position := 0;
     Self.LoadFromStream(Mem);
   finally
     Mem.Free;
@@ -113,6 +118,7 @@ var
 begin
   Mem := Get(Url);
   try
+    Mem.Position := 0;
     Self.LoadFromStream(Mem);
   finally
     Mem.Free;
@@ -161,6 +167,38 @@ begin
   except
     Stream.Free;
     Stream := nil;
+  end;
+end;
+
+class function TBitmapHelper.FindCachedFileName(const FileName: string; out Stream: TMemoryStream): Boolean;
+begin
+  Result := False;
+  Stream := nil;
+  var FilePath := TPath.Combine(FCachePath, FileName);
+  if TFile.Exists(FilePath) then
+  try
+    Stream := TMemoryStream.Create;
+    Stream.LoadFromFile(FilePath);
+    Result := True;
+  except
+    Stream.Free;
+    Stream := nil;
+  end;
+end;
+
+class procedure TBitmapHelper.AddCacheFileName(const FileName: string; Stream: TMemoryStream);
+begin
+  var FilePath := TPath.Combine(FCachePath, FileName);
+  try
+    if TFile.Exists(FilePath) then
+      TFile.Delete(FilePath);
+  except
+    Exit;
+  end;
+  try
+    Stream.SaveToFile(FilePath);
+  except
+    //
   end;
 end;
 
@@ -216,11 +254,59 @@ begin
   AddCallback(Callback);
 end;
 
+procedure TBitmapHelper.LoadFromUrlAsyncCF(AOwner: TComponent; const Url, CachedFileName: string; OnDone: TProc<Boolean>);
+begin
+  var Stream: TMemoryStream;
+  if FindCachedFileName(CachedFileName, Stream) then
+  try
+    Stream.Position := 0;
+    try
+      LoadFromStream(Stream);
+      if Assigned(OnDone) then
+        OnDone(True);
+      Exit;
+    except
+      // reload
+    end;
+  finally
+    Stream.Free;
+  end;
+  if AOwner = nil then
+    raise Exception.Create('You must specify an owner (responsible) who will ensure that the Bitmap is not destroyed before the owner');
+  var Callback: TCallbackObject;
+  Callback.Owner := AOwner;
+  Callback.Bitmap := Self;
+  Callback.Url := Url;
+  Callback.OnDone := OnDone;
+  Callback.Task := TTask.Run(
+    procedure
+    begin
+      try
+        var Mem := Get(Url);
+        if Assigned(Mem) then
+          AddCacheFileName(CachedFileName, Mem);
+        TThread.ForceQueue(nil,
+          procedure
+          begin
+            Ready(Url, Mem);
+          end);
+      except
+        TThread.ForceQueue(nil,
+          procedure
+          begin
+            Ready(Url, nil);
+          end);
+      end;
+    end, Pool);
+  AddCallback(Callback);
+end;
+
 procedure TBitmapHelper.LoadFromUrlAsyncCF(AOwner: TComponent; const Url: string; Cache: Boolean; OnDone: TProc<Boolean>);
 begin
   var Stream: TMemoryStream;
   if FindCached(Url, Stream) then
   try
+    Stream.Position := 0;
     LoadFromStream(Stream);
     Exit;
   finally
