@@ -303,11 +303,24 @@ end;
 
 procedure TBitmapHelper.LoadFromUrlAsyncCF(AOwner: TComponent; const Url: string; Cache: Boolean; OnDone: TProc<Boolean>);
 begin
+  if Url.IsEmpty then
+  begin
+    if Assigned(OnDone) then
+      OnDone(False);
+    Exit;
+  end;
   var Stream: TMemoryStream;
   if FindCached(Url, Stream) then
   try
     Stream.Position := 0;
-    LoadFromStream(Stream);
+    try
+      LoadFromStream(Stream);
+      if Assigned(OnDone) then
+        OnDone(True);
+    except
+      if Assigned(OnDone) then
+        OnDone(False);
+    end;
     Exit;
   finally
     Stream.Free;
@@ -334,9 +347,7 @@ begin
             Success := True;
           except
             //
-          end
-          else
-            Item.Bitmap.Assign(nil);
+          end;
         finally
           Item.Done(Success);
         end;
