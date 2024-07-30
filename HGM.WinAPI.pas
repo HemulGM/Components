@@ -3,10 +3,10 @@ unit HGM.WinAPI;
 interface
 
 uses
-  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics, Vcl.Controls,
-  Vcl.Forms, Winapi.Dwmapi, System.Math;
+  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, System.UITypes,
+  Winapi.Dwmapi, System.Math;
 
-function AdvSelectDirectory(const Caption: string; const Root: WideString; var Directory: string; EditBox: Boolean = False; ShowFiles: Boolean = False; AllowCreateDirs: Boolean = True): Boolean;
+function AdvSelectDirectory(AOwner: THandle; const Caption: string; const Root: WideString; var Directory: string; EditBox: Boolean = False; ShowFiles: Boolean = False; AllowCreateDirs: Boolean = True): Boolean;
 
 function CompareFileTimeOwn(t1, t2: FILETIME): Int64;
 
@@ -30,8 +30,6 @@ function GetFileNameFromLink(LinkFileName: string): string;
 
 function GetFileDescription(const FileName, ExceptText: string): string;
 
-function ShowModalFor(Parent: TWinControl; Form: TForm): TModalResult;
-
 function GetVersion: string;
 
 function ConvertSidToStringSid(Sid:PSID; out StringSid:PChar):BOOL; stdcall; external 'ADVAPI32.DLL' name {$IFDEF UNICODE} 'ConvertSidToStringSidW'{$ELSE} 'ConvertSidToStringSidA'{$ENDIF};
@@ -39,7 +37,7 @@ function ConvertSidToStringSid(Sid:PSID; out StringSid:PChar):BOOL; stdcall; ext
 implementation
 
 uses
-  ShlObj, ComObj, ActiveX, HGM.Common.Utils;
+  ShlObj, ComObj, ActiveX;
 
 function GetVersion: string;
 var
@@ -59,27 +57,6 @@ begin
     end;
   finally
     Res.Free;
-  end;
-end;
-
-function ShowModalFor(Parent: TWinControl; Form: TForm): TModalResult;
-begin
-  Form.Show;
-  //Parent.Enabled := False;
-  try
-    SendMessage(Form.Handle, CM_ACTIVATE, 0, 0);
-    Form.ModalResult := 0;
-    Form.BringToFront;
-    repeat
-      Application.HandleMessage;
-      if Application.Terminated then
-        Form.ModalResult := mrCancel;
-    until Form.ModalResult <> 0;
-    Result := Form.ModalResult;
-    SendMessage(Form.Handle, CM_DEACTIVATE, 0, 0);
-  finally
-    Form.Hide;
-    //Parent.Enabled := True;
   end;
 end;
 
@@ -125,7 +102,7 @@ begin
       else
         Exit('')
     else
-      Result := GetFileNameWoE(FileName);
+      Result := ExtractFileName(FileName);
 end;
 
 function GetAppData: string;
@@ -271,7 +248,7 @@ begin
   end;
 end;
 
-function AdvSelectDirectory(const Caption: string; const Root: WideString; var Directory: string; EditBox: Boolean = False; ShowFiles: Boolean = False; AllowCreateDirs: Boolean = True): Boolean;
+function AdvSelectDirectory(AOwner: THandle; const Caption: string; const Root: WideString; var Directory: string; EditBox: Boolean = False; ShowFiles: Boolean = False; AllowCreateDirs: Boolean = True): Boolean;
 
   function SelectDirCB(Wnd: HWND; uMsg: UINT; lParam, lpData: lParam): Integer; stdcall;
   begin
@@ -306,12 +283,12 @@ begin
       if Root <> '' then
       begin
         SHGetDesktopFolder(IDesktopFolder);
-        IDesktopFolder.ParseDisplayName(Application.Handle, nil, POleStr(Root), Eaten, RootItemIDList, Flags);
+        IDesktopFolder.ParseDisplayName(AOwner, nil, POleStr(Root), Eaten, RootItemIDList, Flags);
       end;
       OleInitialize(nil);
       with BrowseInfo do
       begin
-        hwndOwner := Application.Handle;
+        hwndOwner := AOwner;
         pidlRoot := RootItemIDList;
         pszDisplayName := Buffer;
         lpszTitle := PChar(Caption);
@@ -320,12 +297,7 @@ begin
         if Directory <> '' then
           lParam := Integer(PChar(Directory));
       end;
-      WindowList := DisableTaskWindows(0);
-      try
-        ItemIDList := ShBrowseForFolder(BrowseInfo);
-      finally
-        EnableTaskWindows(WindowList);
-      end;
+      ItemIDList := ShBrowseForFolder(BrowseInfo);
       Result := ItemIDList <> nil;
       if Result then
       begin
@@ -350,7 +322,7 @@ begin
   OSInfo.dwOSVersionInfoSize := SizeOf(TOSVERSIONINFO);
   if (((not GetVersionEx(OSInfo)) and (OSInfo.dwPlatformId <> VER_PLATFORM_WIN32_NT) and (OSInfo.dwMajorVersion < 5))) or (Winapi.Dwmapi.DwmGetColorizationColor(AColor, OpaqueBlend) = S_FALSE) then
   begin
-    Result := clNone;
+    Result := TColors.SysNone;
     Exit;
   end;
   A := (AColor and $FF000000) shr 24;
