@@ -260,7 +260,6 @@ function AdvSelectDirectory(AOwner: THandle; const Caption: string; const Root: 
   end;
 
 var
-  WindowList: Pointer;
   BrowseInfo: TBrowseInfo;
   Buffer: PChar;
   RootItemIDList, ItemIDList: PItemIDList;

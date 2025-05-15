@@ -18,7 +18,7 @@ type
   TColorColumns = class(TList<TColorColumn>)
   public
     procedure Clear;
-    procedure Delete(Index: Integer);
+    procedure Delete(Index: NativeInt);
     destructor Destroy; override;
   end;
 
@@ -520,7 +520,7 @@ begin
   inherited;
 end;
 
-procedure TColorColumns.Delete(Index: Integer);
+procedure TColorColumns.Delete(Index: NativeInt);
 begin
   Items[Index].Free;
   inherited;

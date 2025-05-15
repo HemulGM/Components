@@ -99,7 +99,7 @@ type
     function Insert(Index: Integer; Value: TChatItem): Integer;
     function SelectCount: Integer;
     function GetTop<T: TChatItem>(): T;
-    procedure Delete(Index: Integer);
+    procedure Delete(Index: NativeInt);
     procedure Clear;
     procedure DoChanged(Item: TChatItem);
     procedure NeedResize;
@@ -1002,7 +1002,7 @@ begin
   FOwner := AOwner;
 end;
 
-procedure TChatItems.Delete(Index: Integer);
+procedure TChatItems.Delete(Index: NativeInt);
 begin
   Items[Index].Free;
   inherited;

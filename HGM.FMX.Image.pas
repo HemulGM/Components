@@ -227,7 +227,7 @@ begin
   Callback.Bitmap := Self;
   Callback.Url := Url;
   Callback.OnDone := OnDone;
-  Callback.Task := TTask.Run(
+  Callback.Task := TTask.Create(
     procedure
     begin
       try
@@ -252,6 +252,7 @@ begin
       end;
     end, Pool);
   AddCallback(Callback);
+  Callback.Task.Start;
 end;
 
 procedure TBitmapHelper.LoadFromUrlAsyncCF(AOwner: TComponent; const Url, CachedFileName: string; OnDone: TProc<Boolean>);
@@ -278,7 +279,7 @@ begin
   Callback.Bitmap := Self;
   Callback.Url := Url;
   Callback.OnDone := OnDone;
-  Callback.Task := TTask.Run(
+  Callback.Task := TTask.Create(
     procedure
     begin
       try
@@ -299,6 +300,7 @@ begin
       end;
     end, Pool);
   AddCallback(Callback);
+  Callback.Task.Start;
 end;
 
 procedure TBitmapHelper.LoadFromUrlAsyncCF(AOwner: TComponent; const Url: string; Cache: Boolean; OnDone: TProc<Boolean>);
