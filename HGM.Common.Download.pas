@@ -181,7 +181,7 @@ begin
   try
     HTTP.HandleRedirects := True;
     for var i := Low(Field) to High(Field) do
-      Form.AddStream(Field[i], Stream[i], FileName[i]);
+      Form.AddStream(Field[i], Stream[i], False, FileName[i]);
     try
       if Assigned(Response) then
         Result := HTTP.Post(URL, Form, Response).StatusCode = 200
