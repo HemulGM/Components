@@ -29,6 +29,8 @@ type
       FObjectOwner: TComponent;
       FClient: THTTPClient;
       FCachePath: string;
+      FCacheExpire: Double;
+  private
     class function UrlToCacheName(const Url: string): string;
     class procedure AddCallback(Callback: TCallbackObject);
     class procedure Ready(const Url: string; Stream: TStream);
@@ -39,6 +41,7 @@ type
     class procedure AddCache(const Url: string; Stream: TMemoryStream);
     class procedure AddCacheFileName(const FileName: string; Stream: TMemoryStream);
     class function FindCachedFileName(const FileName: string; out Stream: TMemoryStream): Boolean; static;
+    class procedure SetCacheExpire(const Value: Double); static;
   public
     class procedure RemoveCallback(const AOwner: TComponent);
     class procedure CancelAll;
@@ -55,6 +58,7 @@ type
     class function CreateFromResource(ResName: string; Url: string = ''): TBitmap;
     class property Client: THTTPClient read GetClient;
     class property CachePath: string read FCachePath write SetCachePath;
+    class property CacheExpire: Double read FCacheExpire write SetCacheExpire;
   end;
 
 implementation
@@ -160,13 +164,27 @@ begin
   Stream := nil;
   var FileName := TPath.Combine(FCachePath, UrlToCacheName(Url));
   if TFile.Exists(FileName) then
-  try
-    Stream := TMemoryStream.Create;
-    Stream.LoadFromFile(FileName);
-    Result := True;
-  except
-    Stream.Free;
-    Stream := nil;
+  begin
+    if CacheExpire > 0 then
+    begin
+      if TFile.GetCreationTime(FileName) + CacheExpire < Now then
+      begin
+        try
+          TFile.Delete(FileName);
+        except
+          // не смог удалить файл
+        end;
+        Exit;
+      end;
+    end;
+    try
+      Stream := TMemoryStream.Create;
+      Stream.LoadFromFile(FileName);
+      Result := True;
+    except
+      Stream.Free;
+      Stream := nil;
+    end;
   end;
 end;
 
@@ -409,6 +427,11 @@ begin
   end;
 end;
 
+class procedure TBitmapHelper.SetCacheExpire(const Value: Double);
+begin
+  FCacheExpire := Value;
+end;
+
 class procedure TBitmapHelper.SetCachePath(const Value: string);
 begin
   FCachePath := Value;
@@ -452,6 +475,7 @@ begin
 end;
 
 initialization
+  TBitmap.CacheExpire := 0;
   TBitmap.Pool := TThreadPool.Create;
   TBitmap.FCallbackList := TThreadList<TCallbackObject>.Create;
   TBitmap.FObjectOwner := TObjectOwner.Create(nil);
