@@ -14,7 +14,7 @@ type
     Url: string;
     Task: ITask;
     OnDone: TProc<Boolean>;
-    procedure Done(const Success: Boolean);
+    procedure Done(Success: Boolean);
   end;
 
   TObjectOwner = class(TComponent)
@@ -393,7 +393,7 @@ begin
             Item.Bitmap.Assign(Bitmap);
             Success := True;
           except
-            //
+            Success := False;
           end;
         finally
           Item.Done(Success);
@@ -491,7 +491,7 @@ end;
 
 { TCallbackObject }
 
-procedure TCallbackObject.Done(const Success: Boolean);
+procedure TCallbackObject.Done(Success: Boolean);
 begin
   if Assigned(OnDone) then
   try
