@@ -14,7 +14,7 @@ type
     Url: string;
     Task: ITask;
     OnDone: TProc<Boolean>;
-    procedure Done(const Success: Boolean);
+    procedure Done(Success: Boolean);
   end;
 
   TObjectOwner = class(TComponent)
@@ -29,20 +29,28 @@ type
       FObjectOwner: TComponent;
       FClient: THTTPClient;
       FCachePath: string;
+      FCacheExpire: Double;
+  private
     class function UrlToCacheName(const Url: string): string;
     class procedure AddCallback(Callback: TCallbackObject);
-    class procedure Ready(const Url: string; Stream: TStream);
+    class procedure Ready(const Url: string; Bitmap: TBitmap);
     class function Get(const URL: string): TMemoryStream; static;
+    class function GetBitmap(const URL: string): TBitmap; static;
     class function GetClient: THTTPClient; static;
     class procedure SetCachePath(const Value: string); static;
-    class function FindCached(const Url: string; out Stream: TMemoryStream): Boolean;
-    class procedure AddCache(const Url: string; Stream: TMemoryStream);
+    class function FindCached(const Url: string; out Bitmap: TBitmap): Boolean; static;
+    class procedure AddCache(const Url: string; Bitmap: TBitmap);
+    class procedure AddCacheFileName(const FileName: string; Bitmap: TBitmap);
+    class function FindCachedFileName(const FileName: string; out Bitmap: TBitmap): Boolean; static;
+    class procedure SetCacheExpire(const Value: Double); static;
   public
     class procedure RemoveCallback(const AOwner: TComponent);
     class procedure CancelAll;
     procedure LoadFromUrl(const Url: string; UseCache: Boolean = True);
     procedure LoadFromUrlAsync(AOwner: TComponent; const Url: string; Cache: Boolean = True; OnDone: TProc<Boolean> = nil); overload;
+    // Cache first check
     procedure LoadFromUrlAsyncCF(AOwner: TComponent; const Url: string; Cache: Boolean = True; OnDone: TProc<Boolean> = nil); overload;
+    procedure LoadFromUrlAsyncCF(AOwner: TComponent; const Url, CachedFileName: string; OnDone: TProc<Boolean> = nil); overload;
     procedure LoadFromResource(ResName: string); overload;
     procedure LoadFromResource(Instanse: NativeUInt; ResName: string); overload;
     procedure SaveToStream(Stream: TStream; const Ext: string); overload;
@@ -51,6 +59,7 @@ type
     class function CreateFromResource(ResName: string; Url: string = ''): TBitmap;
     class property Client: THTTPClient read GetClient;
     class property CachePath: string read FCachePath write SetCachePath;
+    class property CacheExpire: Double read FCacheExpire write SetCacheExpire;
   end;
 
 implementation
@@ -101,6 +110,7 @@ var
 begin
   Mem := TResourceStream.Create(Instanse, ResName, RT_RCDATA);
   try
+    Mem.Position := 0;
     Self.LoadFromStream(Mem);
   finally
     Mem.Free;
@@ -113,6 +123,7 @@ var
 begin
   Mem := Get(Url);
   try
+    Mem.Position := 0;
     Self.LoadFromStream(Mem);
   finally
     Mem.Free;
@@ -138,6 +149,24 @@ begin
   end;
 end;
 
+class function TBitmapHelper.GetBitmap(const URL: string): TBitmap;
+begin
+  Result := TBitmap.Create;
+  try
+    var Mem := Get(Url);
+    if Assigned(Mem) then
+      Result.LoadFromStream(Mem)
+    else
+    begin
+      Result.Free;
+      Result := nil;
+    end;
+  except
+    Result.Free;
+    raise;
+  end;
+end;
+
 class function TBitmapHelper.GetClient: THTTPClient;
 begin
   if not Assigned(FClient) then
@@ -148,23 +177,69 @@ begin
   Result := FClient;
 end;
 
-class function TBitmapHelper.FindCached(const Url: string; out Stream: TMemoryStream): Boolean;
+class function TBitmapHelper.FindCached(const Url: string; out Bitmap: TBitmap): Boolean;
 begin
   Result := False;
-  Stream := nil;
+  Bitmap := nil;
   var FileName := TPath.Combine(FCachePath, UrlToCacheName(Url));
   if TFile.Exists(FileName) then
-  try
-    Stream := TMemoryStream.Create;
-    Stream.LoadFromFile(FileName);
-    Result := True;
-  except
-    Stream.Free;
-    Stream := nil;
+  begin
+    if CacheExpire > 0 then
+    begin
+      if TFile.GetCreationTime(FileName) + CacheExpire < Now then
+      begin
+        try
+          TFile.Delete(FileName);
+        except
+          // не смог удалить файл
+        end;
+        Exit;
+      end;
+    end;
+    try
+      Bitmap := TBitmap.Create;
+      Bitmap.LoadThumbnailFromFile(FileName, 150, 150);
+      Result := True;
+    except
+      Bitmap.Free;
+      Bitmap := nil;
+    end;
   end;
 end;
 
-class procedure TBitmapHelper.AddCache(const Url: string; Stream: TMemoryStream);
+class function TBitmapHelper.FindCachedFileName(const FileName: string; out Bitmap: TBitmap): Boolean;
+begin
+  Result := False;
+  Bitmap := nil;
+  var FilePath := TPath.Combine(FCachePath, FileName);
+  if TFile.Exists(FilePath) then
+  try
+    Bitmap := TBitmap.Create;
+    Bitmap.LoadThumbnailFromFile(FilePath, 150, 150);
+    Result := True;
+  except
+    Bitmap.Free;
+    Bitmap := nil;
+  end;
+end;
+
+class procedure TBitmapHelper.AddCacheFileName(const FileName: string; Bitmap: TBitmap);
+begin
+  var FilePath := TPath.Combine(FCachePath, FileName);
+  try
+    if TFile.Exists(FilePath) then
+      TFile.Delete(FilePath);
+  except
+    Exit;
+  end;
+  try
+    Bitmap.SaveToFile(FilePath);
+  except
+    //
+  end;
+end;
+
+class procedure TBitmapHelper.AddCache(const Url: string; Bitmap: TBitmap);
 begin
   var FileName := TPath.Combine(FCachePath, UrlToCacheName(Url));
   try
@@ -174,7 +249,7 @@ begin
     Exit;
   end;
   try
-    Stream.SaveToFile(FileName);
+    Bitmap.SaveToFile(FileName, '.png');
   except
     //
   end;
@@ -182,6 +257,12 @@ end;
 
 procedure TBitmapHelper.LoadFromUrlAsync(AOwner: TComponent; const Url: string; Cache: Boolean; OnDone: TProc<Boolean>);
 begin
+  if Url.IsEmpty then
+  begin
+    if Assigned(OnDone) then
+      OnDone(False);
+    Exit;
+  end;
   if AOwner = nil then
     raise Exception.Create('You must specify an owner (responsible) who will ensure that the Bitmap is not destroyed before the owner');
   var Callback: TCallbackObject;
@@ -189,14 +270,14 @@ begin
   Callback.Bitmap := Self;
   Callback.Url := Url;
   Callback.OnDone := OnDone;
-  Callback.Task := TTask.Run(
+  Callback.Task := TTask.Create(
     procedure
     begin
       try
-        var Mem: TMemoryStream;
+        var Mem: TBitmap;
         if not FindCached(Url, Mem) then
         begin
-          Mem := Get(Url);
+          Mem := GetBitmap(Url);
           if Cache and Assigned(Mem) then
             AddCache(Url, Mem);
         end;
@@ -214,14 +295,78 @@ begin
       end;
     end, Pool);
   AddCallback(Callback);
+  Callback.Task.Start;
+end;
+
+procedure TBitmapHelper.LoadFromUrlAsyncCF(AOwner: TComponent; const Url, CachedFileName: string; OnDone: TProc<Boolean>);
+begin
+  var Stream: TBitmap;
+  if FindCachedFileName(CachedFileName, Stream) then
+  try
+    try
+      //LoadFromStream(Stream);
+      Assign(Stream);
+      if Assigned(OnDone) then
+        OnDone(True);
+      Exit;
+    except
+      // reload
+    end;
+  finally
+    Stream.Free;
+  end;
+  if AOwner = nil then
+    raise Exception.Create('You must specify an owner (responsible) who will ensure that the Bitmap is not destroyed before the owner');
+  var Callback: TCallbackObject;
+  Callback.Owner := AOwner;
+  Callback.Bitmap := Self;
+  Callback.Url := Url;
+  Callback.OnDone := OnDone;
+  Callback.Task := TTask.Create(
+    procedure
+    begin
+      try
+        var Mem := GetBitmap(Url);
+        if Assigned(Mem) then
+          AddCacheFileName(CachedFileName, Mem);
+        TThread.ForceQueue(nil,
+          procedure
+          begin
+            Ready(Url, Mem);
+          end);
+      except
+        TThread.ForceQueue(nil,
+          procedure
+          begin
+            Ready(Url, nil);
+          end);
+      end;
+    end, Pool);
+  AddCallback(Callback);
+  Callback.Task.Start;
 end;
 
 procedure TBitmapHelper.LoadFromUrlAsyncCF(AOwner: TComponent; const Url: string; Cache: Boolean; OnDone: TProc<Boolean>);
 begin
-  var Stream: TMemoryStream;
+  if Url.IsEmpty then
+  begin
+    if Assigned(OnDone) then
+      OnDone(False);
+    Exit;
+  end;
+  var Stream: TBitmap;
   if FindCached(Url, Stream) then
   try
-    LoadFromStream(Stream);
+    //Stream.Position := 0;
+    try
+      //LoadFromStream(Stream);
+      Assign(Stream);
+      if Assigned(OnDone) then
+        OnDone(True);
+    except
+      if Assigned(OnDone) then
+        OnDone(False);
+    end;
     Exit;
   finally
     Stream.Free;
@@ -229,7 +374,7 @@ begin
   LoadFromUrlAsync(AOwner, Url, Cache, OnDone);
 end;
 
-class procedure TBitmapHelper.Ready(const Url: string; Stream: TStream);
+class procedure TBitmapHelper.Ready(const Url: string; Bitmap: TBitmap);
 begin
   try
     var List := FCallbackList.LockList;
@@ -241,16 +386,15 @@ begin
           Continue;
         var Success: Boolean := False;
         try
-          if Assigned(Stream) then
+          if Assigned(Bitmap) then
           try
-            Stream.Position := 0;
-            Item.Bitmap.LoadFromStream(Stream);
+            //Stream.Position := 0;
+            //Item.Bitmap.LoadFromStream(Stream);
+            Item.Bitmap.Assign(Bitmap);
             Success := True;
           except
-            //
-          end
-          else
-            Item.Bitmap.Assign(nil);
+            Success := False;
+          end;
         finally
           Item.Done(Success);
         end;
@@ -260,7 +404,7 @@ begin
       FCallbackList.UnlockList;
     end;
   finally
-    Stream.Free;
+    Bitmap.Free;
   end;
 end;
 
@@ -310,6 +454,11 @@ begin
   end;
 end;
 
+class procedure TBitmapHelper.SetCacheExpire(const Value: Double);
+begin
+  FCacheExpire := Value;
+end;
+
 class procedure TBitmapHelper.SetCachePath(const Value: string);
 begin
   FCachePath := Value;
@@ -342,7 +491,7 @@ end;
 
 { TCallbackObject }
 
-procedure TCallbackObject.Done(const Success: Boolean);
+procedure TCallbackObject.Done(Success: Boolean);
 begin
   if Assigned(OnDone) then
   try
@@ -353,6 +502,7 @@ begin
 end;
 
 initialization
+  TBitmap.CacheExpire := 0;
   TBitmap.Pool := TThreadPool.Create;
   TBitmap.FCallbackList := TThreadList<TCallbackObject>.Create;
   TBitmap.FObjectOwner := TObjectOwner.Create(nil);

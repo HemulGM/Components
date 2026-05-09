@@ -94,7 +94,7 @@ procedure WaitTime(MS: Int64);
 implementation
 
 uses
-  ClipBrd, System.Net.HttpClient, Winapi.RichEdit;
+   System.Net.HttpClient, Winapi.RichEdit;
 
 function GetLastDir(Path: string): string;
 begin
@@ -356,7 +356,7 @@ begin
       EnableMenuItem(hmnu, IDM_UNDO, Enables[Target.CanUndo]);
       EnableMenuItem(hmnu, IDM_CUT, Enables[HasSelText]);
       EnableMenuItem(hmnu, IDM_COPY, Enables[HasSelText]);
-      EnableMenuItem(hmnu, IDM_PASTE, Enables[not Clipboard.HasFormat(0)]);
+      //EnableMenuItem(hmnu, IDM_PASTE, Enables[not Clipboard.HasFormat(0)]);
       EnableMenuItem(hmnu, IDM_DELETE, Enables[HasSelText]);
       EnableMenuItem(hmnu, IDM_SELALL, Enables[Length(Target.Text) <> 0]);
 

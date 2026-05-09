@@ -223,8 +223,6 @@ end;
 class function TArrayHelp.Add<T>(var Target: TArray<T>; const Items: array of T): Integer;
 var
   i: Integer;
-  Item: T;
-  Buf: array of T;
 begin
   Result := Length(Target);
   SetLength(Target, Length(Target) + Length(Items));
