@@ -155,7 +155,11 @@ begin
   try
     var Mem := Get(Url);
     if Assigned(Mem) then
-      Result.LoadFromStream(Mem)
+    try
+      Result.LoadFromStream(Mem);
+    finally
+      Mem.Free;
+    end
     else
     begin
       Result.Free;
